@@ -157,6 +157,87 @@ def workflow_simu_to_mysql_pin_hex_to_honeycomb_oop(account,index1,lcr,seed=9):
         i+=1
 
     return end_index
+ 
+def workflow_simu_to_mysql_pin_hex_to_honeycomb_oop_klt_2m(index1,lcr,kT=1.0,seed=9,account='tplab'):
+    R"""
+    INTRODUCTION:
+
+    Parameters:
+        initial state: hex3-16-8
+        traps:honeycomb3-8-12
+        safe lcr: [0.71,1.00]
+    Examples1:
+        index1=4686
+        lcr1=0.816#less than 0.71 is dangerous! some particles may not effected by trap!
+        tt.workflow_simu_to_mysql_pin_hex_to_honeycomb_oop_klt_2m(index1=index1,lcr=lcr1,account='remote')
+    example2:
+        #pin sequence-GPU
+        index1=4576
+        lcr1=0.74#less than 0.71 is dangerous! some particles may not effected by trap!
+        while lcr1<0.845:
+            end_index = tt.workflow_simu_to_mysql_pin_hex_to_honeycomb_oop_klt_2m(index1=index1,lcr=lcr1,account='remote')
+            index1=end_index+1
+            lcr1=lcr1+0.01    
+    """
+    #step1
+    #pin check
+    R"""
+    import getDataAndScatter as scatt
+    scatt.draw_points_and_traps_preview(draw_points=True,show=False,account='remote')
+
+    #traps:"testhoneycomb3-8-12"lcr=0.71
+    #particle:"testhex3-16-8"
+    #"lcr0.71~k100honeycomb3-8-12&hex3-16-8.png"
+
+    size_par < size_trap checked right!
+    """
+    #step2
+    #set parameters
+    k1=100.0
+    stp=100.0
+    kend=1000.0
+    trap_name = "testhoneycomb3-8-12"
+    #get simulation results
+    import symmetry_transformation.pin_seed_oop as pin
+    
+    wk = pin.workflow_uniform(index1,account,k1,stp,kend,lcr,kT,seed,trap_name)
+    end_index = wk.workflow()
+  
+    #end_index =3565
+    #end_index=sa_k.workflow(index1=index1,k1=k1,step=stp,k_end=kend,linear_compression_ratio=lcr,seed_set=seed)
+    'get file index123'
+
+    #step3
+    #get analyzed data
+    import data_analysis_cycle as da
+    filename_klp=da.saveIndexklTPsi36Seed(start_index=index1,end_index=end_index,k1=k1,step=stp,linear_compression_ratio=lcr,kT=kT,randomseed=seed,account=account)   	    	#filename_kl=da.saveIndexPsi(start_index=206,end_index=215,k1=k1,step=stp,linear_compression_ratio=0.79)
+    print('\n'+filename_klp)
+    'get file named index1 index2 kl'
+
+    #step4
+    #loadDataToMysql
+    R"""
+    Note: the format of table_name='pin_hex_to_honeycomb_klt_2m'
+        |simu_index | HarmonicK | LinearCompressionRatio | kT |
+      Psi3Global | Psi6Global | RandomSeed | 
+    """
+    import opertateOnMysql as osql
+    osql.loadDataToMysql(path_to_file_name=filename_klp,table_name="pin_hex_to_honeycomb_klt_2m")#"/home/tplab/Downloads/193-205kl"
+
+    #step5
+    #watch kT limitation while melting
+    import data_analysis_cycle as da
+    i=index1
+    while i<3566:
+        da.save_from_gsd(simu_index=i,seed=seed,final_cut=True,
+                                bond_plot =True,
+                                show_traps=False,
+                                trap_filename="/home/"+account+"/hoomd-examples_0/testhoneycomb3-8-12",
+                                trap_lcr=0.79,
+                                account=account)
+        i+=1
+
+    return end_index 
 
 def workflow_simu_to_mysql_pin_hex_to_honeycomb_rectangle1(index1,lcr,seed=9):#num
     R"""
