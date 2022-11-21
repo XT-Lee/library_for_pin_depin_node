@@ -865,6 +865,7 @@ def phase_diagram_line(select=True):
 
 def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
                     trajectory=False,
+                    save_result_txt=False,
                     displacement_field=False,
                     final_cut=False,
                     psik=False,
@@ -980,6 +981,12 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
         
         a_frame = points_analysis_2D.PointsAnalysis2D(points=gsd_data.read_a_frame(i))#hide_figure=False
         snap = gsd_data.trajectory.read_frame(i)
+        
+        if save_result_txt:
+            result_filename=prefix+'index'+str_index 
+            points=snap.particles.position[:]#temp
+            numpy.savetxt(result_filename,points)#temp
+
 
         if displacement_field:
             png_filename1 = prefix +'Displacement_Field_xy_'+'index'+str_index+'_'+str(int(i))+'.png'

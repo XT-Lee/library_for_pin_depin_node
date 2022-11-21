@@ -164,6 +164,42 @@ def workflow_mysql_to_data_pin_hex_to_honeycomb_random():
     plt.savefig(png_filename)
     plt.close()
 
+def workflow_mysql_to_data_pin_hex_to_honeycomb_klt_2m(account='tplab'):
+    R"""
+
+    Note: the format of table_name='pin_hex_to_honeycomb_klt_2m'
+    | SimuIndex | HarmonicK | LinearCompressionRatio | kT | 
+    Psi3     | Psi6     | RandomSeed | 
+    
+    FIGURE scatter  HarmonicK vs KBT, Psi6 as value 
+
+    import getDataAndScatter as scatt
+    scatt.workflow_mysql_to_data_pin_hex_to_honeycomb_klt_2m()
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+    #getDataToMysql
+    import opertateOnMysql as osql
+    U_interaction=300*np.exp(-0.25)
+
+    con='where HarmonicK > 99'
+    data=osql.getDataFromMysql(table_name='pin_hex_to_honeycomb_klt_2m',search_condition=con)
+    data=np.array(data)
+    prefix='/home/'+account+'/Downloads/'
+    postfix = '_pin_hex_to_honeycomb_klt_2m.png'
+
+    plt.figure()
+    #plot lcr VS k, Psi3 as value
+    plt.scatter(data[:,2],data[:,1]*0.5,c=data[:,4])# LCR VS K, Psi3 as value
+    #plt.show()
+    plt.title('lcr VS k, Psi3 as value, Uparticle='+str(int(U_interaction)) )
+    plt.xlabel('LinearCompressionRatio(1)')
+    plt.ylabel('U trap (kBT)[honeycomb]')
+    plt.colorbar()
+    png_filename=prefix+'K_VS_T_Psi3_as_value'+postfix
+    plt.savefig(png_filename)
+    plt.close()
+
 def workflow_mysql_to_data_depin_from_honeycomb():
     R"""
     table_name='depin_from_honeycomb'
