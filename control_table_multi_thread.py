@@ -4,13 +4,20 @@ import workflow_part as tt
 
 tm1=time.localtime(time.time())
 
+#scan seed
 seed=0
-index1=4709
-lcr1=0.86
 while seed<8.5:
-    tt.workflow_simu_to_mysql_pin_hex_to_kagome_oop_klt_2m_kt25(index1=index1,lcr=lcr1,seed=seed,account='remote')
-    #print(index1,lcr1,seed)
-    seed=seed+1
+    #pin sequence-GPU
+    index1=4466
+    lcr1=0.80#less than 0.75 is dangerous! some particles may not effected by trap!
+    while lcr1<0.905:
+        print(index1,lcr1,seed)
+        end_index=tt.workflow_simu_to_mysql_pin_hex_to_kagome_oop_klt_2m(index1=index1,lcr=lcr1,seed=seed,account='remote')
+        end_index+1
+        lcr1=lcr1+0.01
+    seed+=1
+    
+
 
 """
 import data_analysis_cycle as da
