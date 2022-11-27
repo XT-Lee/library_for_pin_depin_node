@@ -909,6 +909,15 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
                         gr=True,
                         sk=True)#,seed=9
             i+=1
+    example3:
+        import data_analysis_cycle as da
+        da.save_from_gsd(simu_index=4728,seed=9,
+        coordination_number=True,
+        bond_plot=True,
+        show_traps=True,
+        trap_filename='/home/tplab/hoomd-examples_0/testkagome3-11-6',
+        trap_lcr=0.853,
+        account='remote',)
     """
     import freud
     prefix='/home/'+account+'/Downloads/'#'/home/tplab/Downloads/'

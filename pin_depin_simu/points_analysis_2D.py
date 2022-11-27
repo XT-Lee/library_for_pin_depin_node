@@ -49,6 +49,7 @@ class PointsAnalysis2D:
         points_analysis: get the parameters listed before
         get_ridge_length: 
         get_bond_length:
+        get_first_minima_bond_length_distribution: 
         get_coordination_number_conditional:
         get_cluster_vertices:
         get_vertices_triangle:[x]
@@ -116,7 +117,7 @@ class PointsAnalysis2D:
         #should I list point pair like small-to-large？
         del self.bond_length_temp #delete temp data
 
-    def get_first_minima_bond_length_distribution(self,lattice_constant=3.0,method="global_compare_method",png_filename=""):
+    def get_first_minima_bond_length_distribution(self,lattice_constant=3.0,method="global_compare_method",png_filename=None,hist_cutoff=2):
         R"""  
         Introduction:
             It's likely that bonds whose length are larger than 2A are not bonded. 
@@ -132,6 +133,7 @@ class PointsAnalysis2D:
                 selecting the 1st main peak(ignoring tiny peak before which), 
                 finding the 1st main minima just after the 1st main peak, 
                 suitable systems with powerful perturbation.
+            hist_cutoff: plot hist of bond_length till n times lattice_constant where n is hist_cutoff. 
 
         Warning:
             [x]What if there is no minima found? 
@@ -151,7 +153,7 @@ class PointsAnalysis2D:
         
         #locate the 1st minima of bond-length distribution
         plt.figure()
-        count_bins=plt.hist(self.bond_length[:,2]/self.lattice_constant,bins=20,range=[0,2])
+        count_bins=plt.hist(self.bond_length[:,2]/self.lattice_constant,bins=20,range=[0,hist_cutoff])
         
         self._count=count_bins[0]
         self._bins=count_bins[1]
@@ -213,10 +215,13 @@ class PointsAnalysis2D:
         self.bond_first_minima_left=self._bins[i]
         self.bond_first_neighbour=self.bond_sorted[numpy.where(self.bond_sorted[:]<self.bond_first_minima_left)]
         
-        if not png_filename == "":
+        self.bond_length_mean = numpy.around( numpy.mean(self.bond_first_neighbour),2)
+        self.bond_length_std = numpy.around(numpy.std(self.bond_first_neighbour),2)
+
+        if not png_filename  is None:
             #plot divide line
             plt.plot([self.bond_first_minima_left,self.bond_first_minima_left],[0,self._count[i]],linestyle='--')
-            plt.title("1st peak:"+str( numpy.around( numpy.mean(self.bond_first_neighbour),2) )+"+-"+str( numpy.around(numpy.std(self.bond_first_neighbour),2) ))
+            plt.title("1st peak:"+str( self.bond_length_mean )+"+-"+str( self.bond_length_std ))
             plt.xlabel("bond length (unit=A)")
             plt.ylabel("count (1)")
             #plt.show()
@@ -286,7 +291,7 @@ class PointsAnalysis2D:
         self.bond_first_minima_left=self._bins[i]
         self.bond_first_neighbour=self.bond_sorted[numpy.where(self.bond_sorted[:]<self.bond_first_minima_left)]
         
-        if not png_filename == "":
+        if not png_filename  is None:
             #plot divide line
             plt.plot([self.bond_first_minima_left,self.bond_first_minima_left],[0,0.5],linestyle='--')#self._count[i]
             plt.title("1st peak:"+str( numpy.around( numpy.mean(self.bond_first_neighbour),2) )+"+-"+str( numpy.around(numpy.std(self.bond_first_neighbour),2) ))
@@ -477,7 +482,7 @@ index 10 is out of bounds for axis 0 with size 10
             plt.savefig(png_filename)
             plt.close()
 
-    def draw_bonds_conditional_bond_cloud(self,check=[0.9,2.0],png_filename=""):
+    def draw_bonds_conditional_bond_cloud(self,check=[0.9,2.0],png_filename=None):
         R"""
         Parameters:
             png_filename: "prefix/bond_plot_index1513"
@@ -503,7 +508,7 @@ index 10 is out of bounds for axis 0 with size 10
                 plt.gca().add_line(line)
         #plt.show()
         plt.title("bond_length:"+str(numpy.around(check,2))+"um")
-        if not png_filename=="":
+        if not png_filename is None:
             plt.savefig(png_filename)
         #plt.close()
 
@@ -568,7 +573,7 @@ index 10 is out of bounds for axis 0 with size 10
             plt.figure()
             plt.scatter(self.points[:,0],self.points[:,1],c=self.Psi_k_abs)
             plt.colorbar()
-            if not png_filename==None:
+            if not png_filename is None:
                 plt.savefig(png_filename)
             plt.close()
 
@@ -608,7 +613,7 @@ index 10 is out of bounds for axis 0 with size 10
         if show:
             plt.show()
 
-    def draw_bonds_conditional_bond(self,check=[0.9,2.0],png_filename="",show_traps=False,LinearCompressionRatio=0.79,trap_filename="/home/tplab/hoomd-examples_0/testhoneycomb3-8-12-part1"):
+    def draw_bonds_conditional_bond(self,check=[0.9,2.0],png_filename=None,show_traps=False,LinearCompressionRatio=0.79,trap_filename="/home/tplab/hoomd-examples_0/testhoneycomb3-8-12-part1"):
         #bond_plot+trap_plot[X]
         R"""
         Parameters:
@@ -632,8 +637,13 @@ index 10 is out of bounds for axis 0 with size 10
         ymax = max(self.points[:,1]) #- 3
         xmin = min(self.points[:,0]) #+ 3
         ymin = min(self.points[:,1]) #+ 3
-        dis = min(xmax,ymax,-xmin,-ymin)
+        dis = min(xmax-xmin,ymax-ymin)/2.0#half of the length of the system.
         dis = dis - 0 #cut the edge if necessary(eg. size & scale of images not match)
+
+        center = [(xmax+xmin)*0.5,(ymax+ymin)*0.5]
+        center_origin_distance = numpy.abs(numpy.dot(center,center))
+        if  center_origin_distance < 1.0:# center is really close to origin
+            center = [0,0]
 
         #draw a figure with edges
         plt.figure()
@@ -667,8 +677,8 @@ index 10 is out of bounds for axis 0 with size 10
         plt.yticks(new_ticks,new_ticks.astype(str))
         """
         #restrict data region to show
-        plt.xlim(-dis,dis)
-        plt.ylim(-dis,dis)
+        plt.xlim(-dis+center[0],dis+center[0])
+        plt.ylim(-dis+center[1],dis+center[1])
         
         #add lines for edges
         for i in range(numpy.shape(self.bond_length)[0]):
@@ -679,7 +689,7 @@ index 10 is out of bounds for axis 0 with size 10
                 plt.gca().add_line(line)
         #plt.show()
         plt.title("bond_length:"+str(numpy.around(check,2))+"um")
-        if not png_filename=="":
+        if not png_filename is None:
             plt.savefig(png_filename)
         plt.close()
 
