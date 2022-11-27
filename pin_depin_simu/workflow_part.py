@@ -1328,16 +1328,16 @@ def workflow_simu_to_mysql_pin_hex_to_kagome_oop_klt_2m(index1,lcr,kT=1.0,seed=9
     R"""
     INTRODUCTION:
     example4 :
-        #scan seed
+         #scan seed
         seed=0
         while seed<8.5:
             #pin sequence-GPU
             index1=4466
             lcr1=0.80#less than 0.75 is dangerous! some particles may not effected by trap!
             while lcr1<0.905:
-                print(index1,lcr1,seed)
+                #print(index1,lcr1,seed)
                 end_index=tt.workflow_simu_to_mysql_pin_hex_to_kagome_oop_klt_2m(index1=index1,lcr=lcr1,seed=seed,account='remote')
-                end_index+1
+                index1=end_index+1
                 lcr1=lcr1+0.01
             seed+=1
     exp5:
@@ -1400,7 +1400,7 @@ def workflow_simu_to_mysql_pin_hex_to_kagome_oop_klt_2m(index1,lcr,kT=1.0,seed=9
     
     #step5
     #watch kT limitation while cooling
-    
+    """
     import data_analysis_cycle as da
     i=index1
     while i<end_index+1:
@@ -1408,6 +1408,8 @@ def workflow_simu_to_mysql_pin_hex_to_kagome_oop_klt_2m(index1,lcr,kT=1.0,seed=9
         coordination_number=True,
         account=account)
         i+=1
+    
+    """
     
     return end_index
 
