@@ -19,7 +19,7 @@ class particle_track:
     def __init__(self):
         pass
     
-    def single_frame_particle_tracking(self,filename,D=35,minmass=7000,calibration=False):
+    def single_frame_particle_tracking(self,filename,D=19,minmass=1000,calibration=False):
         R"""
         introduction:
             algorithm from Eric Weeks
@@ -70,11 +70,11 @@ class particle_track:
             #plt.show()
             
             #selected_feature
-            sf=self.f[self.f['mass'] > 2100 ]
-            sf2=sf[sf['mass'] < 3000]
+            #sf=self.f[self.f['mass'] > 6000 ]
+            #sf2=sf[sf['mass'] < 3000]
 
             plt.figure(3)
-            tp.annotate(sf, f0)#,imshow_style=
+            tp.annotate(self.f, f0)#,imshow_style=
             #plt.imsave(png_filename)#savefig(png_filename)   miss array
             #plt.close()
         """
