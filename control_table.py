@@ -1,12 +1,13 @@
 #import threading
-from fileinput import filename
 import time
-import workflow_part as tt
 
 tm1=time.localtime(time.time())
 
-import search_and_record_images as sri
-sri.script(dir_path='/home/remote/xiaotian_file/20210417')
+
+
+import get_a_from_image as gf
+filename='/home/remote/xiaotian_file/20210417/DefaultImage_3.jpg'
+frame=gf.get_a_from_image(filename)
 
 """
 import particle_tracking as pt
@@ -34,7 +35,7 @@ da.save_from_gsd(simu_index=i,seed=seed,final_cut=True,
                                 account=account)
 """
 
-#time.sleep(1)
+
 """
 seed=9
 index1=4176
@@ -47,7 +48,7 @@ print(kT)
 index1 = index_end + 1
 """
 
-
+#time.sleep(1)
 tm2=time.localtime(time.time())
 #calculate the time cost
 import computeTime as ct

@@ -16,7 +16,9 @@ exp:
     import search_and_record_images as sri
     sri.script(dir_path='/home/remote/xiaotian_file/20210417')
 
-    
+plan:
+    use file (type:dict())to compare and get new file 
+    use persitence homology to calculate cluster.
 """
 
 def script(dir_path = None,silent=False):

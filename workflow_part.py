@@ -2194,12 +2194,11 @@ OLD CODE
 
 def workflow_simu_to_mysql_kl(index1,lcr,seed):#num
     #set parameters
-
     k1=0.1
     stp=0.1
     kend=2.0
     #get simulation results
-    import melt_auto_honeycomb as sa_h
+    import symmetry_transformation.melt_auto_honeycomb as sa_h
     end_index=sa_h.workflow(index1=index1,k1=k1,step=stp,k_end=kend,linear_compression_ratio=lcr,seed_set=seed)
     'get file index123'
 
