@@ -1,5 +1,6 @@
 #particle tracking
 
+from urllib.parse import parse_qs
 import matplotlib as mpl, matplotlib.pyplot as plt#, matplotlib.image as imread
 import numpy as np
 #import pandas as pd
@@ -114,7 +115,7 @@ class particle_track:
         #mpl.rc('image', cmap='gray')
 
         #read a tiff file
-        
+        """
         frames = pims.open(filename)
         f0= frames[i]
         sz=np.shape(f0)
@@ -122,6 +123,7 @@ class particle_track:
         #plt.imshow(frames[0])
         #diameter of particles should includes dark edge! 35
         f = tp.locate(frames[i], D, minmass= minmass,invert=False)#diameter must be odd in pixels
+        """
         
         #f means feature.
         #collumn name: y 	x 	mass 	size 	ecc 	signal 	raw_mass 	ep 	frame
@@ -141,14 +143,16 @@ class particle_track:
         self.minmass = minmass
 
     def multiple_particle_tracking(self,filename):
-        frames = pims.open(filename)
+        
         """
+        frames = pims.open(filename)
         sz=np.shape(frames)
         f=[]
         #for i in range(sz[0]):
         for i in range(3):
             fi = tp.locate(frames[i], 35, minmass= 2000,invert=False)
             f.append(fi)
+        """
         """
         f = tp.batch(frames[:100],35,minmass=5000)# self.Diameter self.minmass what the fuck corrupted tag list
         t = tp.link(f, 5, memory=3)
@@ -158,6 +162,8 @@ class particle_track:
         print('After:', t1['particle'].nunique())
         plt.figure()
         tp.plot_traj(t);
+        """
+        pass
 
     def track_bright_field(self,filename):
         R"""
@@ -165,6 +171,7 @@ class particle_track:
         filename= '/home/tplab/xiaotian_file/data/20220924/DefaultVideo_5.tif'
         track = pt.particle_track()
         track.track_bright_field(filename)
+        """
         """
         frames = pims.open(filename)
         micron_per_pixel = 3.0/32.0
@@ -182,6 +189,9 @@ class particle_track:
         plt.hist(f_locate['mass'], bins=20)#here mass is the brightness of a particle
         plt.show()
 
+        """
+        pass
+        
 
     
 

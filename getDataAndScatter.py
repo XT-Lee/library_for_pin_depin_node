@@ -1427,6 +1427,42 @@ def workflow_mysql_to_data_pin_hex_to_kagome_klt_2m(account='tplab'):
     plt.savefig(png_filename)
     plt.close()
 
+def workflow_mysql_to_data_pin_hex_to_kagome_klt_2m_precise(account='tplab'):
+    R"""
+
+    Note: the format of table_name='pin_hex_to_kagome_klt_2m'
+    | SimuIndex | HarmonicK | LinearCompressionRatio | kT | 
+    CoordinationNum3Rate | CoordinationNum4Rate | RandomSeed | 
+    
+    FIGURE scatter  HarmonicK vs KBT, Psi6 as value 
+
+    import getDataAndScatter as scatt
+    scatt.workflow_mysql_to_data_pin_hex_to_kagome_klt_2m_precise(account='remote')
+
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+    #getDataToMysql
+    import opertateOnMysql as osql
+    U_interaction=300*np.exp(-0.25)
+
+    con='where SimuIndex > 4717'#'where HarmonicK < 101'
+    data=osql.getDataFromMysql(table_name='pin_hex_to_kagome_klt_2m',search_condition=con)
+    data=np.array(data)
+    prefix='/home/'+account+'/Downloads/'
+    postfix = '_pin_hex_to_kagome_klt_2m_precise.png'
+
+    plt.figure()
+    #plot k VS T, CN4 as value
+    plt.scatter(data[:,2],data[:,1]*0.5,c=data[:,5])# LCR VS K, CN4 as value
+    #plt.show()
+    plt.title('k VS lcr, CN4 as value, Uparticle='+str(int(U_interaction)) )
+    plt.xlabel('LinearCompressionRatio(1)')
+    plt.ylabel('U trap (kBT)[Kagome]')
+    plt.colorbar()
+    png_filename=prefix+'K_VS_T_CN4_as_value_precise'+postfix
+    plt.savefig(png_filename)
+    plt.close()
 def workflow_mysql_to_data_depin_from_kagome_part_random():#[x]
     R"""
     Introduction:

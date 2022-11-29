@@ -215,13 +215,13 @@ class PointsAnalysis2D:
         self.bond_first_minima_left=self._bins[i]
         self.bond_first_neighbour=self.bond_sorted[numpy.where(self.bond_sorted[:]<self.bond_first_minima_left)]
         
-        self.bond_length_mean = numpy.around( numpy.mean(self.bond_first_neighbour),2)
+        self.bond_length_median = numpy.around( numpy.median(self.bond_first_neighbour),2)
         self.bond_length_std = numpy.around(numpy.std(self.bond_first_neighbour),2)
 
         if not png_filename  is None:
             #plot divide line
             plt.plot([self.bond_first_minima_left,self.bond_first_minima_left],[0,self._count[i]],linestyle='--')
-            plt.title("1st peak:"+str( self.bond_length_mean )+"+-"+str( self.bond_length_std ))
+            plt.title("1st peak:"+str( self.bond_length_median )+"+-"+str( self.bond_length_std ))
             plt.xlabel("bond length (unit=A)")
             plt.ylabel("count (1)")
             #plt.show()
@@ -294,7 +294,7 @@ class PointsAnalysis2D:
         if not png_filename  is None:
             #plot divide line
             plt.plot([self.bond_first_minima_left,self.bond_first_minima_left],[0,0.5],linestyle='--')#self._count[i]
-            plt.title("1st peak:"+str( numpy.around( numpy.mean(self.bond_first_neighbour),2) )+"+-"+str( numpy.around(numpy.std(self.bond_first_neighbour),2) ))
+            plt.title("1st peak:"+str( numpy.around( numpy.median(self.bond_first_neighbour),2) )+"+-"+str( numpy.around(numpy.std(self.bond_first_neighbour),2) ))
             plt.xlabel("interparticle distance (unit=A)")
             plt.ylabel("count (1)")
             #plt.show()
