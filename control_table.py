@@ -3,12 +3,16 @@ import time
 
 tm1=time.localtime(time.time())
 
-
-
-import get_a_from_image as gf
-filename='/home/remote/xiaotian_file/20210417/DefaultImage_3.jpg'
-frame=gf.get_a_from_image(filename)
-
+import workflow_part as tt
+seed=9
+#pin sequence-GPU
+index1=4918
+lcr1=0.80#less than 0.75 is dangerous! some particles may not effected by trap!
+while lcr1<0.901:
+    print(index1,lcr1,seed)
+    end_index=tt.workflow_simu_to_mysql_pin_hex_to_kagome_oop_klt_2m(index1=index1,lcr=lcr1,kT=0.1,seed=seed,account='remote')
+    index1=end_index+1#index1=index1+10#
+    lcr1=lcr1+0.01
 """
 import particle_tracking as pt
 frame=pt.particle_track()

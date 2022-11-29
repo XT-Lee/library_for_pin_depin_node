@@ -1373,7 +1373,7 @@ def workflow_simu_to_mysql_pin_hex_to_kagome_oop_klt_2m(index1,lcr,kT=1.0,seed=9
     #get simulation results
     
     import symmetry_transformation.pin_seed_oop as pin
-    wk = pin.workflow_uniform(index1,account,k1,stp,kend,lcr,kT,seed,trap_name)
+    wk = pin.workflow_uniform(index1,account,k1,stp,kend,lcr,kT,seed,trap_name,mode="--mode=cpu")
     end_index = wk.workflow()
     #end_index = index1 + 9
     'get file index123'

@@ -10,7 +10,7 @@ class workflow_uniform:
     R"""
         Introduction
     """
-    def __init__(self,index1,account='tplab',k1=100.0,step=100.0,k_end=1000.0,linear_compression_ratio=1.0,kT=1.0,seed_set=9,trap_name="testkagome_cycle3-4-6"):
+    def __init__(self,index1,account='tplab',k1=100.0,step=100.0,k_end=1000.0,linear_compression_ratio=1.0,kT=1.0,seed_set=9,trap_name="testkagome_cycle3-4-6",mode=""):
         #set parameters
         self.account = account
         self.index_start = index1
@@ -21,7 +21,7 @@ class workflow_uniform:
         self.kT = kT
         self.seed_set = seed_set
         self.trap_name = trap_name
-        
+        self.mode=mode
         #this should be set independently!
         self.set_init_state_parameters(pin=True)
 
@@ -74,7 +74,7 @@ class workflow_uniform:
             i: this is the i-th cycle time
         """
         #initialization
-        hoomd.context.initialize("");#--mode=cpu
+        hoomd.context.initialize(self.mode);#--mode=cpu
         self.__init_state_launch()
             #ex_render.render_disk_frame(self.sys.take_snapshot())
 
