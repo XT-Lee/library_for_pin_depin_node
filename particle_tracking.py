@@ -1,6 +1,5 @@
 #particle tracking
 
-from urllib.parse import parse_qs
 import matplotlib as mpl, matplotlib.pyplot as plt#, matplotlib.image as imread
 import numpy as np
 #import pandas as pd
