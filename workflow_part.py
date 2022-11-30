@@ -480,7 +480,7 @@ def workflow_simu_to_mysql_depin_from_honeycomb_part_oop_kT(index1,lcr,kT=1.0,se
     
     return end_index
 
-def workflow_simu_to_mysql_pin_hex_to_honeycomb_part_oop_kT(index1,lcr,kT=1.0,seed=9,account='tplab'):
+def workflow_simu_to_mysql_pin_hex_to_honeycomb_part_oop_klt_2m(index1,lcr,kT=1.0,seed=9,account='tplab'):
     R"""
     INTRODUCTION:
     example4 :
@@ -516,6 +516,16 @@ def workflow_simu_to_mysql_pin_hex_to_honeycomb_part_oop_kT(index1,lcr,kT=1.0,se
             print(index1)
             index1 = index_end+1
             lcr1 = lcr1+0.01
+    exp low T:
+        import workflow_part as tt
+        seed=9
+        index1=5028
+        lcr1=0.77
+        while lcr1<0.845:
+            print(index1,lcr1,seed)
+            index_end=tt.workflow_simu_to_mysql_pin_hex_to_honeycomb_part_oop_klt_2m(index1=index1,lcr=lcr1,kT=0.1,seed=seed,account='remote')
+            index1 = index_end+1#index1 = index1+10#
+            lcr1 = lcr1+0.01
     """
     #step1
     #pin check
@@ -538,7 +548,7 @@ def workflow_simu_to_mysql_pin_hex_to_honeycomb_part_oop_kT(index1,lcr,kT=1.0,se
     trap_name = "testhoneycomb3-8-12-part1"
     #get simulation results
     import symmetry_transformation.pin_seed_oop as pin
-    wk = pin.workflow_uniform(index1,account,k1,stp,kend,lcr,kT,seed,trap_name)
+    wk = pin.workflow_uniform(index1,account,k1,stp,kend,lcr,kT,seed,trap_name,mode="--mode=cpu")
     end_index = wk.workflow()#period=1000;steps=2e6+1
     #end_index = index1 + 9
     'get file index123'
@@ -569,7 +579,7 @@ def workflow_simu_to_mysql_pin_hex_to_honeycomb_part_oop_kT(index1,lcr,kT=1.0,se
     
     #step5
     #watch kT limitation while cooling
-    
+    """
     import data_analysis_cycle as da
     i=index1
     while i<end_index+1:
@@ -584,6 +594,7 @@ def workflow_simu_to_mysql_pin_hex_to_honeycomb_part_oop_kT(index1,lcr,kT=1.0,se
                                     trap_lcr=lcr,
                                     account='remote')
         i+=1
+    """
     
     
     """
@@ -1517,6 +1528,16 @@ def workflow_simu_to_mysql_pin_hex_to_kagome_part_oop_klt_2m(index1,lcr,kT=1.0,s
             index_end=tt.workflow_simu_to_mysql_pin_hex_to_kagome_part_oop_klt_2m(index1=index1,lcr=lcr1,seed=seed,account='remote')
             index1 = index_end + 1
             lcr1 = lcr1 + 0.01
+    exp low T:
+        import workflow_part as tt
+        seed=9
+        index1=5108
+        lcr1=0.81
+        while lcr1<0.905:
+            #print(index1,lcr1,seed)
+            index_end=tt.workflow_simu_to_mysql_pin_hex_to_kagome_part_oop_klt_2m(index1=index1,lcr=lcr1,kT=0.1,seed=seed,account='remote')
+            index1 = index_end + 1#index1 = index1+10#
+            lcr1 = lcr1 + 0.01
     """
     #step1
     #depin check
@@ -1540,7 +1561,7 @@ def workflow_simu_to_mysql_pin_hex_to_kagome_part_oop_klt_2m(index1,lcr,kT=1.0,s
     #get simulation results
     
     import symmetry_transformation.pin_seed_oop as pin
-    wk = pin.workflow_uniform(index1,account,k1,stp,kend,lcr,kT,seed,trap_name)
+    wk = pin.workflow_uniform(index1,account,k1,stp,kend,lcr,kT,seed,trap_name,mode="--mode=cpu")
     end_index = wk.workflow()
     #end_index = index1 + 9
     'get file index123'
