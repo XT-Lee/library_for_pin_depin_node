@@ -7,13 +7,13 @@ import os
 def saveIndexPsi3Psi6(start_index,end_index,k1,step,linear_compression_ratio):
     R"""
     This function will save a txt file named 'start index - end index kl', which contains
-    n rows of data [| simu_index | HarmonicK | LinearCompressionRatio | Psi3Global | Psi6Global]
+    n rows of data [| simu_index | HarmonicK | LinearCompressionRatio | Psi3Global | Psi6Global|RandomSeed]
     """
     #start_index=193
     #end_index=205
     diference_index=end_index-start_index+1
     prefix='/home/tplab/Downloads/'
-    record=numpy.zeros((diference_index,5))
+    record=numpy.zeros((diference_index,6))
 
     for index in numpy.linspace(start_index,end_index,diference_index):
         #index=index0+(i-1.0)
@@ -27,14 +27,17 @@ def saveIndexPsi3Psi6(start_index,end_index,k1,step,linear_compression_ratio):
 
         record[(index-start_index).astype(int),2]=linear_compression_ratio
 
-        png_filename=prefix+'index'+str(index)+'Psi3.png'
+        png_filename=None#prefix+'index'+str(index)+'Psi3.png'
         obj_of_simu_index.get_bond_orientational_order(k_set=3,plot=True,png_filename=png_filename)
-        record[(index-start_index).astype(int),3]=obj_of_simu_index.Psi_k_global
+        record[(index-start_index).astype(int),3]=obj_of_simu_index.Psi_k_global_cut_edge
 
-        png_filename=prefix+'index'+str(index)+'Psi6.png'
+        png_filename=None#prefix+'index'+str(index)+'Psi6.png'
         obj_of_simu_index.get_bond_orientational_order(k_set=6,plot=True,png_filename=png_filename)#plot=True
-        record[(index-start_index).astype(int),4]=obj_of_simu_index.Psi_k_global
+        record[(index-start_index).astype(int),4]=obj_of_simu_index.Psi_k_global_cut_edge
         #print(obj_of_simu_index.Psi_k_global)
+
+        record[(index-start_index).astype(int),5]=9
+
     save_file_name=prefix+str(start_index)+'-'+str(end_index)+'kl'
     numpy.savetxt(save_file_name,record)
     #print(record)
@@ -279,7 +282,7 @@ def saveIndexCN4CN6SeedPsi6(start_index,end_index,k1,step,linear_compression_rat
 
         #png_filename=prefix+'index'+str(index)+'Psi6.png'
         obj_of_simu_index.get_bond_orientational_order(k_set=6)#plot=True
-        record[(index-start_index).astype(int),6]=obj_of_simu_index.Psi_k_global
+        record[(index-start_index).astype(int),6]=obj_of_simu_index.Psi_k_global_cut_edge
         
         
     save_file_name=prefix+str(start_index)+'-'+str(end_index)+'kl4'

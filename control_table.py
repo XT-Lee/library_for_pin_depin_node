@@ -1,20 +1,20 @@
 #import threading
 import time
-
+import numpy as np
 tm1=time.localtime(time.time())
+import workflow_part as tt
+index1=1183
+lists = np.linspace(0.77,0.84,8)
+
+
+for lcr in lists:
+    tt.workflow_simu_to_mysql_depin_from_honeycomb_part(index1,lcr)
+    #print(index1,lcr)
+    index1=index1+10
+
 
 import getDataAndScatter as scatt
-scatt.workflow_mysql_to_data_pin_hex_to_honeycomb_part_klt_2m(account='remote')
-"""
-import data_analysis_cycle as da
-da.save_from_gsd(simu_index=4302,seed=9,
-                    final_cut=True,
-                    psik_plot=3,
-                    account='remote')
-
-"""
-
-
+scatt.workflow_mysql_to_data_depin_from_honeycomb_part1()
 
 #time.sleep(1)
 tm2=time.localtime(time.time())
