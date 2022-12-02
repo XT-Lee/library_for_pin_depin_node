@@ -1,12 +1,8 @@
-from matplotlib import projections
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.core.fromnumeric import mean, var
 from numpy.lib import average
-from numpy.lib.arraypad import _pad_dispatcher
-from numpy.lib.function_base import median
-from data_analysis_cycle import phase_diagram
 import opertateOnMysql as sql
 from points_analysis_2D import PointsAnalysis2D
 import freud
@@ -516,20 +512,33 @@ def workflow_mysql_to_data_pin_hex_to_honeycomb_part_klt_2m(account='tplab'):
     import opertateOnMysql as osql
     U_interaction=300*np.exp(-0.25)
 
-    data=osql.getDataFromMysql(table_name='pin_hex_to_honeycomb_part_klt_2m')
+    condition="where kT = 1"
+    data=osql.getDataFromMysql(table_name='pin_hex_to_honeycomb_part_klt_2m',search_condition=condition)
     data=np.array(data)
     prefix='/home/'+account+'/Downloads/'
     postfix = '_pin_hex_to_honeycomb_part_klt_2m.png'
-
+    print(data[:,4])
     plt.figure()
-    #plot k VS T, CN4 as value
-    plt.scatter(data[:,2],data[:,1]*0.5,c=data[:,4])# LCR VS K, CN4 as value
+    #plot k VS T, Psi3 as value
+    plt.scatter(data[:,2],data[:,1]*0.5,c=data[:,4])# LCR VS K, Psi3 as value
     #plt.show()
     plt.title('k VS T, Psi3 as value, Uparticle='+str(int(U_interaction)) )
     plt.xlabel('Linear Compression Ratio (1)')
     plt.ylabel('U trap (kBT)[Honeycomb part]')
     plt.colorbar()
     png_filename=prefix+'K_VS_T_Psi3_as_value'+postfix
+    plt.savefig(png_filename)
+    plt.close()
+
+    plt.figure()
+    #plot k VS T, Psi6 as value
+    plt.scatter(data[:,2],data[:,1]*0.5,c=data[:,5])# LCR VS K, Psi6 as value
+    #plt.show()
+    plt.title('k VS T, Psi6 as value, Uparticle='+str(int(U_interaction)) )
+    plt.xlabel('Linear Compression Ratio (1)')
+    plt.ylabel('U trap (kBT)[Honeycomb part]')
+    plt.colorbar()
+    png_filename=prefix+'K_VS_T_Psi6_as_value'+postfix
     plt.savefig(png_filename)
     plt.close()
 

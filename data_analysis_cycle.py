@@ -869,6 +869,7 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
                     displacement_field=False,
                     final_cut=False,
                     psik=False,
+                    psik_plot=None,
                     neighbor_cloud=False,
                     coordination_number=False,
                     coordination_number3_plot=False,
@@ -1014,6 +1015,10 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
             record_psik[i,1] = a_frame.Psi_k_global_cut_edge
             a_frame.get_bond_orientational_order(k_set=6)
             record_psik[i,2] = a_frame.Psi_k_global_cut_edge
+
+        if  not psik_plot is None:
+            png_filename_psik = prefix +'bond_orientational_order_'+str(int(psik_plot))+'_'+'index'+str_index+'_'+str(int(i))+'.png'
+            a_frame.get_bond_orientational_order(k_set=psik_plot,plot=True,png_filename=png_filename_psik)
 
         if neighbor_cloud:
             folder_name=prefix+"record_"+str_index#+"/"
