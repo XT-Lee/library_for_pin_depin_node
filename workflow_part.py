@@ -1,7 +1,4 @@
 
-from threading import activeCount
-
-
 def workflow_simu_to_mysql_pin_hex_to_honeycomb(index1,lcr,seed=9):#num
     R"""
     INTRODUCTION:
@@ -310,7 +307,7 @@ def workflow_simu_to_mysql_depin_from_honeycomb_part(index1,lcr):
     kend=90.0
     #get simulation results
     import symmetry_transformation.symmetry_transformation_auto_honeycomb_bidispersion_depin as sa_hb
-    end_index=sa_hb.workflow(index1=index1,k1=k1,step=stp,k_end=kend,linear_compression_ratio=lcr)
+    end_index=index1+9#end_index=sa_hb.workflow(index1=index1,k1=k1,step=stp,k_end=kend,linear_compression_ratio=lcr)
     'get file index123'
 
     #get analyzed data
@@ -333,7 +330,7 @@ def workflow_simu_to_mysql_depin_from_honeycomb_part(index1,lcr):
     '''
     
     import opertateOnMysql as osql
-    osql.loadDataToMysql(path_to_file_name=filename_klp,table_name='depin_from_honeycomb_part1_kt_01')#"/home/tplab/Downloads/193-205kl"
+    osql.loadDataToMysql(path_to_file_name=filename_klp,table_name='depin_from_honeycomb_part1')#'depin_from_honeycomb_part1_kt_01'#"/home/tplab/Downloads/193-205kl"
 
 def workflow_simu_to_mysql_pin_hex_to_honeycomb_part(index1,lcr,seed):
     R"""
@@ -875,14 +872,25 @@ def workflow_simu_to_mysql_pin_hex_to_honeycomb_part_step3(index_old,index1,lcr)
     'get file named index1 index2 klp'
 
 def workflow_simu_to_mysql_depin_from_kagome(index1,lcr,seed=9):#num
-    #set parameters
+    R"""
+    EXP:
+        import workflow_part as tt
+        index1=1513
+        lists = np.linspace(0.8,0.99,20)
+        lists = np.insert(lists,0,0.866)
 
+        for lcr in lists:
+            tt.workflow_simu_to_mysql_depin_from_kagome(index1=index1,lcr=lcr)
+            #print(index1,lcr)
+            index1=index1+10
+    """
+    #set parameters
     k1=0.0
     stp=10.0
     kend=90.0
     #get simulation results
     import symmetry_transformation.symmetry_transformation_auto_kagome_depin as sa_k
-    end_index=sa_k.workflow(index1=index1,k1=k1,step=stp,k_end=kend,linear_compression_ratio=lcr,seed_set=seed)
+    end_index=index1+9#end_index=sa_k.workflow(index1=index1,k1=k1,step=stp,k_end=kend,linear_compression_ratio=lcr,seed_set=seed)
     'get file index123'
 
     #get analyzed data and generate txt table
