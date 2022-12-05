@@ -1266,10 +1266,28 @@ class proceed_gsd_file:
 class msd:
     R"""
     EXAMPLE:
-        msds = points_analysis_2D.msd()
-        msds.compute(positions=pos_list)
         print(msds.result_msd)
         print(numpy.shape(msds.result_msd))
+    example:
+        import points_analysis_2D as pa
+        gsd_data = pa.proceed_gsd_file(simu_index=5208,seed=9)
+        gsd_data.get_trajectory_data()
+
+        msd_class = pa.msd(gsd_data.txyz,gsd_data.box)
+
+        import freud
+        msds = freud.msd.MSD(gsd_data.box)#the class is fault,,'direct'
+        msds.compute(positions=msd_class.txyz_stable)
+        import matplotlib.pyplot as plt 
+        plt.figure()
+        plt.plot(msds.msd)
+        plt.title("Mean Squared Displacement")
+        plt.xlabel("$t$")
+        plt.ylabel("MSD$(t)$")
+        png_filename = 'msd_'+'index5208_9'+'.png'
+        plt.savefig(png_filename)#png_filename
+        plt.close()
+        #print(tr.shape)
     """
     def __init__(self,txyz,box=None,account='tplab',plot_trajectory=False):
         R"""
