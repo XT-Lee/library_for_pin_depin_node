@@ -877,6 +877,55 @@ def workflow_mysql_to_data_melt_hex_from_honeycomb_random():
     plt.savefig(png_filename)
     plt.close()
 
+def workflow_mysql_to_data_melt_hex_from_honeycomb_check():
+    R"""
+    Introduction:
+
+    table_name='melt_hex_from_honeycomb_check'
+    SimuIndex | KBT  | LinearCompressionRatio | Pressure | Psi6Global| RandomSeed
+
+    Example:
+    import getDataAndScatter as scatt
+    scatt.workflow_mysql_to_data_melt_hex_from_honeycomb_check()
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+    #getDataToMysql
+    import opertateOnMysql as osql
+    U_interaction=300*np.exp(-0.25)
+
+    record=osql.getDataFromMysql(table_name='melt_hex_from_honeycomb_check')
+    record=np.array(record)
+    #plot
+    prefix='/home/tplab/Downloads/'
+    filename=prefix+"yukawa_phase_diagram_check"
+    #np.savetxt(filename,record)
+    
+    plt.figure()
+    #plt.scatter(record[:,1],record[:,2],c=record[:,3])# KBT VS Psi6 std as value
+    plt.scatter(record[:,2],record[:,1],c=record[:,4])# LCR VS KBT, Psi6 as value
+    plt.title('LCR vs kBT, Psi6 as value, Uparticle='+str(int(U_interaction)) )
+    plt.xlabel('Linear Compression Ratio (1)')
+    plt.ylabel('kBT (1)')
+    plt.colorbar()
+    #plt.legend(np.linspace(0.1,2.0,20))
+    prefix='/home/tplab/Downloads/'
+    png_filename=prefix+'lcr_vs_kBT_Psi6_as_value_check'
+    plt.savefig(png_filename)
+    plt.close()
+
+    plt.figure()
+    plt.scatter(record[:,1],record[:,4])# KBT VS Psi6, std as value
+    plt.title('kBT vs Psi6, std as value, Uparticle='+str(int(U_interaction)) )
+    plt.xlabel('kBT (1)')
+    plt.ylabel('Psi6(1)')
+    #plt.colorbar()
+    #plt.legend(np.linspace(0.1,2.0,20))
+    prefix='/home/tplab/Downloads/'
+    png_filename=prefix+'kBT_vs_Psi6_check'
+    plt.savefig(png_filename)
+    plt.close()
+
 def workflow_mysql_to_data_hex_from_honeycomb_log():
     R"""
     table_name='hex_from_honeycomb'

@@ -2222,13 +2222,23 @@ OLD CODE
 """
 
 def workflow_simu_to_mysql_kl(index1,lcr,seed):#num
+    R"""
+    import workflow_part as tt
+    index1 = 307
+    listl = np.linspace(0.76,0.99,24)
+
+    for lcr in listl:
+        tt.workflow_simu_to_mysql_kl(index1=index1,lcr=lcr,seed=8)
+        #print(index1,lcr)
+        index1 = index1 + 20
+    """
     #set parameters
     k1=0.1
     stp=0.1
     kend=2.0
     #get simulation results
     import symmetry_transformation.melt_auto_honeycomb as sa_h
-    end_index=sa_h.workflow(index1=index1,k1=k1,step=stp,k_end=kend,linear_compression_ratio=lcr,seed_set=seed)
+    #end_index=sa_h.workflow(index1=index1,k1=k1,step=stp,k_end=kend,linear_compression_ratio=lcr,seed_set=seed)
     'get file index123'
 
     #get analyzed data
@@ -2244,7 +2254,7 @@ def workflow_simu_to_mysql_kl(index1,lcr,seed):#num
         | SimuIndex| KBT| LinearCompressionRatio| Pressure| Psi6Global| RandomSeed
     """
     import opertateOnMysql as osql
-    osql.loadDataToMysql(path_to_file_name=filename_kl,table_name='melt_hex_from_honeycomb')#"/home/tplab/Downloads/193-205kl"
+    osql.loadDataToMysql(path_to_file_name=filename_kl,table_name='melt_hex_from_honeycomb_check')#"/home/tplab/Downloads/193-205kl"
     #'hex_from_honeycomb'
     #'depin_from_honeycomb'
 
