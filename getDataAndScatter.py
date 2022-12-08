@@ -512,19 +512,19 @@ def workflow_mysql_to_data_pin_hex_to_honeycomb_part_klt_2m(account='tplab'):
     import opertateOnMysql as osql
     U_interaction=300*np.exp(-0.25)
 
-    condition="where kT = 1"
+    condition="where kT < 0.15"
     data=osql.getDataFromMysql(table_name='pin_hex_to_honeycomb_part_klt_2m',search_condition=condition)
     data=np.array(data)
     prefix='/home/'+account+'/Downloads/'
-    postfix = '_pin_hex_to_honeycomb_part_klt_2m.png'
-    print(data[:,4])
+    postfix = '_pin_hex_to_honeycomb_part_klt_2m_T01.png'
+    #print(data[:,4])
     plt.figure()
     #plot k VS T, Psi3 as value
     plt.scatter(data[:,2],data[:,1]*0.5,c=data[:,4])# LCR VS K, Psi3 as value
     #plt.show()
     plt.title('k VS T, Psi3 as value, Uparticle='+str(int(U_interaction)) )
     plt.xlabel('Linear Compression Ratio (1)')
-    plt.ylabel('U trap (kBT)[Honeycomb part]')
+    plt.ylabel('U trap (kBTm)[Honeycomb part]')
     plt.colorbar()
     png_filename=prefix+'K_VS_T_Psi3_as_value'+postfix
     plt.savefig(png_filename)
@@ -536,7 +536,7 @@ def workflow_mysql_to_data_pin_hex_to_honeycomb_part_klt_2m(account='tplab'):
     #plt.show()
     plt.title('k VS T, Psi6 as value, Uparticle='+str(int(U_interaction)) )
     plt.xlabel('Linear Compression Ratio (1)')
-    plt.ylabel('U trap (kBT)[Honeycomb part]')
+    plt.ylabel('U trap (kBTm)[Honeycomb part]')
     plt.colorbar()
     png_filename=prefix+'K_VS_T_Psi6_as_value'+postfix
     plt.savefig(png_filename)
@@ -874,6 +874,55 @@ def workflow_mysql_to_data_melt_hex_from_honeycomb_random():
     #plt.legend(np.linspace(0.1,2.0,20))
     prefix='/home/tplab/Downloads/'
     png_filename=prefix+'kBT_vs_Psi6_std_as_value_Random'
+    plt.savefig(png_filename)
+    plt.close()
+
+def workflow_mysql_to_data_melt_hex_from_honeycomb_check():
+    R"""
+    Introduction:
+
+    table_name='melt_hex_from_honeycomb_check'
+    SimuIndex | KBT  | LinearCompressionRatio | Pressure | Psi6Global| RandomSeed
+
+    Example:
+    import getDataAndScatter as scatt
+    scatt.workflow_mysql_to_data_melt_hex_from_honeycomb_check()
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+    #getDataToMysql
+    import opertateOnMysql as osql
+    U_interaction=300*np.exp(-0.25)
+
+    record=osql.getDataFromMysql(table_name='melt_hex_from_honeycomb_check')
+    record=np.array(record)
+    #plot
+    prefix='/home/tplab/Downloads/'
+    filename=prefix+"yukawa_phase_diagram_check"
+    #np.savetxt(filename,record)
+    
+    plt.figure()
+    #plt.scatter(record[:,1],record[:,2],c=record[:,3])# KBT VS Psi6 std as value
+    plt.scatter(record[:,2],record[:,1],c=record[:,4])# LCR VS KBT, Psi6 as value
+    plt.title('LCR vs kBT, Psi6 as value, Uparticle='+str(int(U_interaction)) )
+    plt.xlabel('Linear Compression Ratio (1)')
+    plt.ylabel('kBT (1)')
+    plt.colorbar()
+    #plt.legend(np.linspace(0.1,2.0,20))
+    prefix='/home/tplab/Downloads/'
+    png_filename=prefix+'lcr_vs_kBT_Psi6_as_value_check'
+    plt.savefig(png_filename)
+    plt.close()
+
+    plt.figure()
+    plt.scatter(record[:,1],record[:,4])# KBT VS Psi6, std as value
+    plt.title('kBT vs Psi6, std as value, Uparticle='+str(int(U_interaction)) )
+    plt.xlabel('kBT (1)')
+    plt.ylabel('Psi6(1)')
+    #plt.colorbar()
+    #plt.legend(np.linspace(0.1,2.0,20))
+    prefix='/home/tplab/Downloads/'
+    png_filename=prefix+'kBT_vs_Psi6_check'
     plt.savefig(png_filename)
     plt.close()
 
@@ -1411,6 +1460,9 @@ def workflow_mysql_to_data_pin_hex_to_kagome_klt_2m(account='tplab'):
 
     import getDataAndScatter as scatt
     scatt.workflow_mysql_to_data_pin_hex_to_kagome_klt_2m()
+
+    import getDataAndScatter as scatt
+    scatt.workflow_mysql_to_data_pin_hex_to_kagome_klt_2m(account='remote')
     """
     import matplotlib.pyplot as plt
     import numpy as np
@@ -1418,11 +1470,11 @@ def workflow_mysql_to_data_pin_hex_to_kagome_klt_2m(account='tplab'):
     import opertateOnMysql as osql
     U_interaction=300*np.exp(-0.25)
 
-    con='where HarmonicK > 99'
+    con='where SimuIndex >4917 and SimuIndex<5028'
     data=osql.getDataFromMysql(table_name='pin_hex_to_kagome_klt_2m',search_condition=con)
     data=np.array(data)
     prefix='/home/'+account+'/Downloads/'
-    postfix = '_pin_hex_to_kagome_klt_2m.png'
+    postfix = '_pin_hex_to_kagome_klt_2m_T01.png'
 
     plt.figure()
     #plot k VS T, CN4 as value
@@ -1430,7 +1482,7 @@ def workflow_mysql_to_data_pin_hex_to_kagome_klt_2m(account='tplab'):
     #plt.show()
     plt.title('k VS lcr, CN4 as value, Uparticle='+str(int(U_interaction)) )
     plt.xlabel('LinearCompressionRatio(1)')
-    plt.ylabel('U trap (kBT)[Kagome]')
+    plt.ylabel('U trap (kBTm)[Kagome]')
     plt.colorbar()
     png_filename=prefix+'K_VS_T_CN4_as_value'+postfix
     plt.savefig(png_filename)

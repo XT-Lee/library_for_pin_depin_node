@@ -7,13 +7,13 @@ import os
 def saveIndexPsi3Psi6(start_index,end_index,k1,step,linear_compression_ratio):
     R"""
     This function will save a txt file named 'start index - end index kl', which contains
-    n rows of data [| simu_index | HarmonicK | LinearCompressionRatio | Psi3Global | Psi6Global]
+    n rows of data [| simu_index | HarmonicK | LinearCompressionRatio | Psi3Global | Psi6Global|RandomSeed]
     """
     #start_index=193
     #end_index=205
     diference_index=end_index-start_index+1
     prefix='/home/tplab/Downloads/'
-    record=numpy.zeros((diference_index,5))
+    record=numpy.zeros((diference_index,6))
 
     for index in numpy.linspace(start_index,end_index,diference_index):
         #index=index0+(i-1.0)
@@ -27,14 +27,17 @@ def saveIndexPsi3Psi6(start_index,end_index,k1,step,linear_compression_ratio):
 
         record[(index-start_index).astype(int),2]=linear_compression_ratio
 
-        png_filename=prefix+'index'+str(index)+'Psi3.png'
+        png_filename=None#prefix+'index'+str(index)+'Psi3.png'
         obj_of_simu_index.get_bond_orientational_order(k_set=3,plot=True,png_filename=png_filename)
-        record[(index-start_index).astype(int),3]=obj_of_simu_index.Psi_k_global
+        record[(index-start_index).astype(int),3]=obj_of_simu_index.Psi_k_global_cut_edge
 
-        png_filename=prefix+'index'+str(index)+'Psi6.png'
+        png_filename=None#prefix+'index'+str(index)+'Psi6.png'
         obj_of_simu_index.get_bond_orientational_order(k_set=6,plot=True,png_filename=png_filename)#plot=True
-        record[(index-start_index).astype(int),4]=obj_of_simu_index.Psi_k_global
+        record[(index-start_index).astype(int),4]=obj_of_simu_index.Psi_k_global_cut_edge
         #print(obj_of_simu_index.Psi_k_global)
+
+        record[(index-start_index).astype(int),5]=9
+
     save_file_name=prefix+str(start_index)+'-'+str(end_index)+'kl'
     numpy.savetxt(save_file_name,record)
     #print(record)
@@ -279,7 +282,7 @@ def saveIndexCN4CN6SeedPsi6(start_index,end_index,k1,step,linear_compression_rat
 
         #png_filename=prefix+'index'+str(index)+'Psi6.png'
         obj_of_simu_index.get_bond_orientational_order(k_set=6)#plot=True
-        record[(index-start_index).astype(int),6]=obj_of_simu_index.Psi_k_global
+        record[(index-start_index).astype(int),6]=obj_of_simu_index.Psi_k_global_cut_edge
         
         
     save_file_name=prefix+str(start_index)+'-'+str(end_index)+'kl4'
@@ -689,7 +692,7 @@ def saveIndexPressure(start_index,end_index,k1,step,linear_compression_ratio,see
         record[(index-start_index).astype(int),3]=pressure
         
         obj_of_simu_index.get_bond_orientational_order(k_set=6)#plot=True
-        record[(index-start_index).astype(int),4]=obj_of_simu_index.Psi_k_global
+        record[(index-start_index).astype(int),4]=obj_of_simu_index.Psi_k_global_cut_edge#20221202 updated
 
         record[(index-start_index).astype(int),5]=seed_set
 
@@ -940,7 +943,11 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
     #print(gsd_data.num_of_frames)
     #gsd_data.trajectory.
     if msd:
+        #print('this function msd is fault!')
+        #pass
         #load particle trajectory [N_frames,N_particles,system_dimension]
+        
+        """
         iframes = 0
         nframes=gsd_data.num_of_frames
         Np_edge_cut=numpy.shape(gsd_data.edge_cut_positions_list)
@@ -955,8 +962,21 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
         msds = freud.msd.MSD(af.configuration.box)#the class is fault,,'direct'
         msds.compute(positions=pos_list[:,particles_reasonable,:])#,images=pos_list
         #print(msds.msd)#print(msds.particle_msd)
-        # Plot the MSD
+        
         """
+        iframes = 0
+        nframes=gsd_data.num_of_frames
+        af = gsd_data.trajectory.read_frame(iframes)
+        pos_list = numpy.zeros([nframes,af.particles.N,3])#gsd_data.trajectory[0].particles.N,
+        while iframes < nframes:
+            af = gsd_data.trajectory.read_frame(iframes)
+            pos_list[iframes] = af.particles.position
+            iframes = iframes + 1
+        msds = freud.msd.MSD(af.configuration.box)#the class is fault,,'direct'
+        msds.compute(positions=pos_list)#,images=pos_list
+        #print(msds.msd)#print(msds.particle_msd)
+        # Plot the MSD
+        
         plt.figure()
         plt.plot(msds.msd)
         plt.title("Mean Squared Displacement")
@@ -966,7 +986,6 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
         plt.savefig(png_filename)#png_filename
         plt.close()
         
-        """
         if single_particle:
             plt.figure()
             lenth=numpy.shape(msds.particle_msd[0,:])
@@ -1010,7 +1029,7 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
             if not "record_psik" in locals():#check if the variable exists
                 #load Psi_k s
                 record_psik = numpy.zeros((gsd_data.num_of_frames,3))#[time_steps,psi3,psi6]
-                record_psik[:,0] = time_steps
+                record_psik[:,0] = time_steps#[0:25]*20
             a_frame.get_bond_orientational_order(k_set=3)
             record_psik[i,1] = a_frame.Psi_k_global_cut_edge
             a_frame.get_bond_orientational_order(k_set=6)
@@ -1095,7 +1114,7 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
                 #png_filename1 = folder_name+"/" +'bond_hist_index'+str_index+'_'+str(int(i))+'.png'
                 png_filename2 = folder_name+"/" +'bond_plot_1st_minima_index'+str_index+'_'+str(int(i))+'.png'
             
-            rdf = freud.density.RDF(bins=150, r_max=15.0)#
+            rdf = freud.density.RDF(bins=150, r_max=15.0,r_min=1.0)#
             rdf.compute(system=snap)
             a_frame.draw_radial_distribution_function_and_first_minima(rdf,lattice_constant=3,png_filename=png_filename1)#
             a_frame.draw_bonds_conditional_bond(check=[0.4, a_frame.bond_first_minima_left], png_filename=png_filename2,
@@ -1109,6 +1128,20 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
             data_filename=prefix+fig_type+'_index'+str_index+'_'+str(int(i))+'.png'
             plt.savefig(data_filename)
             plt.close()
+            """
+            """
+            #checked right
+            import gsd.hoomd
+            import freud
+            traj = gsd.hoomd.open('/home/tplab/hoomd-examples_0/trajectory_auto5208_9.gsd')
+            rdf = freud.density.RDF(bins=50,r_max=10)
+            rdf.compute(system=traj[-1])
+            r =rdf.bin_centers
+            y = rdf.rdf
+            import matplotlib.pyplot as plt
+            fig,ax = plt.subplots()
+            rdf.plot(ax=ax)
+            plt.savefig('/home/tplab/Downloads/gr.png')
             """
     
         if sk:

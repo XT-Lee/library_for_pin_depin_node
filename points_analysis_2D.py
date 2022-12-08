@@ -7,6 +7,7 @@ from scipy.spatial import  distance
 import matplotlib 
 import os
 import freud
+import threading
 
 R"""
 CLASS list:
@@ -304,7 +305,6 @@ class PointsAnalysis2D:
         #let bond_first_minima_left be a absolute length, not normalized one
         self.bond_first_minima_left=self.bond_first_minima_left*self.lattice_constant
         
-    
     def get_coordination_number_conditional(self):
         #cut edge to remove CN012
         R"""
@@ -903,9 +903,7 @@ def count_honeycomb(self):
             #if all the triangle pairs are read, break the loop
             break
 '''
-    
-                    
-
+                      
 '''
 for i in range(shp[0]):
     if i==0:
@@ -940,8 +938,6 @@ print(self.cutted_bonds[i])
 print(self.delaunay.simplices[self.linked_triangles[i,0].astype(int)])
 print(self.delaunay.simplices[self.linked_triangles[i,1].astype(int)])
 '''
-
-
 
 '''
 for n in [i for i in self.delaunay.simplices]:
@@ -981,7 +977,7 @@ class proceed_gsd_file:
     Examples:
     """
     
-    def __init__(self,filename_gsd_seed=None, account="tplab",simu_index=None):
+    def __init__(self,filename_gsd_seed=None, account="tplab",simu_index=None,seed=None):
         #load positions of particles
         if simu_index is None:
             if filename_gsd_seed is None:
@@ -992,18 +988,21 @@ class proceed_gsd_file:
                 #self.data_gsd = numpy.loadtxt(self.filename_gsd)
                 self.__open_gsd()
 
-                prefix_gsd = '/home/tplab/hoomd-examples_0/trajectory_auto'
+                prefix_gsd = '/home/'+account+'/hoomd-examples_0/trajectory_auto'
                 simu_index = filename_gsd_seed.strip(prefix_gsd)
                 id=simu_index.index('_')
                 self.simu_index = simu_index[0:id]
 
         else :
-            self.account = account
             self.simu_index = simu_index
-            prefix_gsd = '/home/'+self.account+'/hoomd-examples_0/trajectory_auto'
+            if not seed is None:
+                simu_index = str(simu_index)+'_'+str(seed)
+            prefix_gsd = '/home/'+account+'/hoomd-examples_0/trajectory_auto'
             postfix_gsd = '.gsd'
             self.filename_gsd = prefix_gsd+str(simu_index)+postfix_gsd
             self.__open_gsd()
+        
+        self.box = self.trajectory.read_frame(-1).configuration.box
         self.__cut_edge_of_positions()
 
     def __open_gsd(self):
@@ -1156,7 +1155,23 @@ class proceed_gsd_file:
         ccn=obj_of_simu_index.count_coordination_ratio
         """
         pass
-
+    
+    def get_trajectory_data(self):
+        R"""
+        introduction:
+            transform gsd file into an array [N frames,N particles,3],
+            recording the trajectory of particles.
+        """
+        iframe = 0
+        snapi = self.trajectory.read_frame(iframe)
+        pos_list = numpy.zeros([self.num_of_frames,snapi.particles.N,3])#gsd_data.trajectory[0].particles.N,
+        while iframe < self.num_of_frames:
+            pos_list[iframe] = self.trajectory.read_frame(iframe).particles.position
+            #print(self.trajectory.read_frame(iframe).configuration.box)
+            iframe = iframe + 1
+        
+        self.txyz = pos_list
+    
     def get_trajectory(self,length_cut_edge=0):#checked right
         R"""
         Example:
@@ -1251,20 +1266,99 @@ class proceed_gsd_file:
 class msd:
     R"""
     EXAMPLE:
-        msds = points_analysis_2D.msd()
-        msds.compute(positions=pos_list)
         print(msds.result_msd)
         print(numpy.shape(msds.result_msd))
+    example:
+        import points_analysis_2D as pa
+        gsd_data = pa.proceed_gsd_file(simu_index=5208,seed=9)
+        gsd_data.get_trajectory_data()
+
+        msd_class = pa.msd(gsd_data.txyz,gsd_data.box)
+
+        import freud
+        msds = freud.msd.MSD(gsd_data.box)#the class is fault,,'direct'
+        msds.compute(positions=msd_class.txyz_stable)
+        import matplotlib.pyplot as plt 
+        plt.figure()
+        plt.plot(msds.msd)
+        plt.title("Mean Squared Displacement")
+        plt.xlabel("$t$")
+        plt.ylabel("MSD$(t)$")
+        png_filename = 'msd_'+'index5208_9'+'.png'
+        plt.savefig(png_filename)#png_filename
+        plt.close()
+        #print(tr.shape)
     """
-    def __init__(self):
-        pass
-    
-    def compute(self,positions):
+    def __init__(self,txyz,box=None,account='tplab',plot_trajectory=False):
+        R"""
+        parameters:
+            TXYZ:(frames,particles,xyz)
+            BOX: [lx,ly,lz,xy,xz,yz]
+        """
+        self.txyz = txyz
+        self.frames,self.particles,self.dimensions=self.txyz.shape
+        if not box is None:
+            self.box = box
+            self.select_stable_trajectories(plot_trajectory)
+        self.account = account
+        
+
+    def select_stable_trajectories(self,plot_trajectory):
         R"""
         positions: (N_frames,N_particles,3)
         """
-        self.sp=numpy.shape(positions)
-        print(self.sp[0],self.sp[1],self.sp[2])
+        if hasattr(self,'box'):
+            #print(locals())#local variable not of class
+            self.dtxyz = self.txyz[1:,:,:] - self.txyz[:self.frames-1,:,:]
+            #cross is true
+            list_crossleft = self.dtxyz[:,:,0] > 0.9*self.box[0]
+            list_crossbottom = self.dtxyz[:,:,1] > 0.9*self.box[1]
+            list_crossright = self.dtxyz[:,:,0] < -0.9*self.box[0]
+            list_crosstop = self.dtxyz[:,:,1] < -0.9*self.box[1]
+            #mark all the frames where cross event occur as True
+            list_crossx = numpy.logical_or(list_crossleft,list_crossright)
+            list_crossy = numpy.logical_or(list_crossbottom,list_crosstop)
+            list_cross = numpy.logical_or(list_crossx,list_crossy)
+            #mark all the particles who have experienced cross event as True
+            list_cross_true = list_cross[0,:]
+            #list_cross_true = list_cross_true[0]#remove empty extra dimension
+            #print(list_cross_true.shape)
+            i=0
+            while i<self.particles:
+                list_cross_true[i] = numpy.max(list_cross[:,i])
+                i = i + 1
+            list_stable_id = numpy.where(list_cross_true[:]==False)
+            list_stable_id = list_stable_id[0]#remove empty extra dimension
+            print(list_stable_id.shape)
+            #self.txyz = self.txyz[list_stable,:]
+            #self.dtxyz[list_crossleft ,0] = self.dtxyz[list_crossleft ,0] - self.box[0]
+            #print(list_right.shape)#(dt frames,particles)
+            if plot_trajectory:
+                plt.figure()
+                for index_particle in list_stable_id:
+                    txyz_ith = self.txyz[:,index_particle,:]
+                    plt.plot(txyz_ith[:,0],txyz_ith[:,1])
+                    index_particle = index_particle + 1    
+                #png_filename = '/home/'+self.account+'/Downloads/'+'traj_id_'+str(index_particle)+'.png'
+                png_filename = '/home/'+self.account+'/Downloads/'+'traj_stable.png'
+                plt.savefig(png_filename)
+                plt.close()    
+            self.txyz_stable = self.txyz[:,list_stable_id,:]
+    def compute(self):
+        R"""
+        k: the frame to start scan 
+        m: time interval
+        m_max: max time interval
+        """
+        m_max = int(0.1*self.frames)#to ensure the robustness of statistics
+        k_max = 0
+
+
+        m = 0
+        self.txyz[m:,:,:] - self.txyz[:-1-m,:,:]
+        pass
+
+        """
         m=0#frame interval
         record_disp2_1 = numpy.zeros((self.sp[0]-1,3))
         while m<self.sp[0]-1:#m < N frame
@@ -1287,8 +1381,9 @@ class msd:
             m=m+1
         self.result_msd_xyz = record_disp2_1/self.sp[1]#divided by N_particles
         self.result_msd = numpy.zeros((self.sp[0]-1,1))
-        self.result_msd = self.result_msd_xyz[:,0]+self.result_msd_xyz[:,1]+self.result_msd_xyz[:,2]
-
+        self.result_msd = self.result_msd_xyz[:,0]+self.result_msd_xyz[:,1]+self.result_msd_xyz[:,2]        
+        """
+        
 class link_trajectory_x:#just a trial
     R"""
         given the existence of periodic boundary condition, before calculating MSD, 

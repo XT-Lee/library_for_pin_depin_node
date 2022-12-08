@@ -3,16 +3,17 @@ import time
 
 tm1=time.localtime(time.time())
 
-import getDataAndScatter as scatt
-scatt.workflow_mysql_to_data_pin_hex_to_honeycomb_part_klt_2m(account='remote')
-"""
-import data_analysis_cycle as da
-da.save_from_gsd(simu_index=4302,seed=9,
-                    final_cut=True,
-                    psik_plot=3,
-                    account='remote')
-
-"""
+#pin sequence-GPU
+import workflow_part as tt
+import numpy
+lcr_list = numpy.linspace(0.77,0.85,9)
+lcr_list[-1] = 0.816
+print(lcr_list)
+index1=5299
+for lcr1 in lcr_list:
+    end_index = tt.workflow_simu_to_mysql_pin_hex_to_honeycomb_part_oop_klt_2m(index1=index1,lcr=lcr1,account='remote')
+    #print(index1,lcr1)
+    index1=end_index+1 #index1=index1+10 #
 
 
 
