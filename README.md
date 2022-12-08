@@ -3,6 +3,7 @@
 - this is just a library for me to record the codes used to finish my Ph.D project.
 
 ## log:
+- 20221208 add kagome/honeycomb pin precise/low T
 - 20221203 add seed in points_analysis_2D.proceed_gsd_file
 	   add points_analysis_2D.msd ongoing
 - 20221202 cut edge in workflow_part.workflow_simu_to_mysql_depin_from_kagome;
