@@ -1344,20 +1344,72 @@ class msd:
                 plt.savefig(png_filename)
                 plt.close()    
             self.txyz_stable = self.txyz[:,list_stable_id,:]
-    def compute(self):
+    def compute_scan_t(self):
         R"""
+        method:
+            scan t axis, 1 frame for each interval. here may exist some overlaps between two intervals who share the same length of time interval m.
+        record_msd:[interval m, msd_m]
+        k: the frame to start scan 
+        m: time interval
+        m_max: max time interval
+        """
+        m_max = 9000#int(0.5*self.frames)#to ensure the robustness of statistics
+        #k_max = 0
+        start = 1000
+        self.record_msd=numpy.zeros((m_max-start+1,2))#[interval m, msd_m]
+        
+        list_m=numpy.arange(start,m_max+1)
+        self.record_msd[:,0]=list_m
+        for m in list_m:
+            self.dm_xyz = self.txyz_stable[m:,:,:] - self.txyz_stable[:-m,:,:]
+            sq_dm_xyz2 = numpy.square(self.dm_xyz)
+            sum_sq_dm_r2 = numpy.sum(sq_dm_xyz2)
+            self.record_msd[m-start,1]=sum_sq_dm_r2/self.dm_xyz.shape[0]/self.particles
+    def compute_t_chips(self):
+        R"""
+        method:
+            cut t axis into several chips for each interval. there are not any two intervals who share the same length of time interval m would overlap.
+        record_msd:[interval m, msd_m]
         k: the frame to start scan 
         m: time interval
         m_max: max time interval
         """
         m_max = int(0.1*self.frames)#to ensure the robustness of statistics
-        k_max = 0
+        #k_max = 0
+        start = 1
+        self.record_msd=numpy.zeros((m_max-start+1,2))#[interval m, msd_m]
+        
+        list_m=numpy.arange(start,m_max+1)
+        self.record_msd[:,0]=list_m
+        
+        for m in list_m:
+            chips = int(self.txyz_stable.shape[0]/m)# how many chips the time axis is divided into
+            list_frames = m*numpy.arange(0,chips)
+            m_xyz = self.txyz_stable[list_frames,:,:]
+            self.dm_xyz = m_xyz[1:,:,:] - m_xyz[:-1,:,:]
+            sq_dm_xyz2 = numpy.square(self.dm_xyz)
+            sum_sq_dm_r2 = numpy.sum(sq_dm_xyz2)
+            self.record_msd[m-start,1]=sum_sq_dm_r2/self.dm_xyz.shape[0]/self.particles
 
-
-        m = 0
-        self.txyz[m:,:,:] - self.txyz[:-1-m,:,:]
-        pass
-
+    def plot(self):
+        import matplotlib.pyplot as plt 
+        plt.figure()
+        plt.loglog(self.record_msd[:,0],self.record_msd[:,1])#plot
+        plt.title("Mean Squared Displacement")
+        plt.xlabel("$t$")
+        plt.ylabel("MSD$(t)$")
+        png_filename = 'msd_chips_long_loglog_'+'index5208_9'+'.png'
+        plt.savefig(png_filename)#png_filename
+        plt.close()
+        """
+        list_dm_frames = numpy.arange(self.dm_xyz.shape[0])
+        for i in list_dm_frames:
+            #numpy.dot()
+            self.dm_xyz_tr=numpy.transpose(self.dm_xyz)
+            numpy.matmul(self.dm_xyz),self.dm_xyz_tr)
+        """
+        
+        
         """
         m=0#frame interval
         record_disp2_1 = numpy.zeros((self.sp[0]-1,3))
