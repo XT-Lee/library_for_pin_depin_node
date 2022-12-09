@@ -65,7 +65,7 @@ class workflow_uniform:
 
         #set particles
         nl = hoomd.md.nlist.cell();
-        Yukawa = hoomd.md.pair.yukawa(r_cut=15, nlist=nl);
+        Yukawa = hoomd.md.pair.yukawa(r_cut=10, nlist=nl);
         Yukawa.pair_coeff.set('A', 'A', epsilon=300.0,kappa=0.25);
 
         #set system
@@ -93,7 +93,7 @@ class workflow_uniform:
         points=snap.particles.position[:]
         numpy.savetxt(result_filename,points)
 
-    def set_init_state_parameters(self,a=3,nx=16,ny=8,pin=False):
+    def set_init_state_parameters(self,a=2,nx=64,ny=32,pin=False):
         self.a = a
         self.nx= nx
         self.ny = ny
