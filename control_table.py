@@ -1,51 +1,55 @@
 #import threading
 import time
 
+
 tm1=time.localtime(time.time())
 
-import workflow_part as tt
-import numpy
-"""
-x1=[True,False,False]
-x2=[False,False]
-x=numpy.max(x2)
-print(x)
-"""
-#print(int(2999.7))
-"""
-import symmetry_transformation.simple_simulation as st 
-hex = st.workflow_uniform(5208,'remote',kT=0.1,seed_set=5,mode='--mode=cpu')
-hex.workflow()
 
+import pandas as pd
+path_to_results = '/home/remote/xiaotian_file/data/20221129/video_7'
+features_file = path_to_results+'/'+'feature.csv'
+features = pd.read_csv(features_file)
+print(features['y'].head())
+features['y'] = 1420-1 - features['y']
+print(features['y'].head())
 
 """
+import data_analysis_cycle as da
 import points_analysis_2D as pa
-gsd_data = pa.proceed_gsd_file(simu_index=5208,seed=9,account='remote')
-gsd_data.get_trajectory_data()
-#txyz=numpy.load('hex_txyz.npy') 
-#box=numpy.load('hex_box.npy')
-msd_class = pa.msd(gsd_data.txyz,gsd_data.box,account='remote')#pa.msd(txyz,box,account='remote')
-msd_class.compute_t_chips()
-msd_class.plot()
+import numpy as np
+path_to_results = '/home/remote/xiaotian_file/data/20221129/video_7'
+txyz_npy_filename = path_to_results+'/'+'txyz_stable.npy'
+txyz_stable = np.load(txyz_npy_filename)
+msds = pa.dynamic_points_analysis_2d(txyz_stable,mode='exp')
+msds.plot_trajectory_single_particle(path_to_results+'/traj_stable/')#trajectory_stable.png
+#txyz_stable[:] = txyz_stable[:]/2.0
+"""
+"""
+msds.compute_atmsd_t_chips(0.95)
+time_log_file = path_to_results+'/'+'DefaultVideo_7.txt'
+time_log = np.loadtxt(time_log_file)
+png_filename=path_to_results+'/'+'msd_scantchips_loglog_um_95%.png'
+msds.plot_msd(time_log,png_filename)
+
+"""
+"""
+
 
 
 """
-import freud
-msds = freud.msd.MSD(gsd_data.box)#the class is fault,,'direct'
-msds.compute(positions=msd_class.txyz_stable)
-import matplotlib.pyplot as plt 
-plt.figure()
-plt.plot(msds.msd)
-plt.title("Mean Squared Displacement")
-plt.xlabel("$t$")
-plt.ylabel("MSD$(t)$")
-png_filename = 'msd_'+'index5208_9'+'.png'
-plt.savefig(png_filename)#png_filename
-plt.close()
+#print(txyz_stable[0,:5])
+
+#a0 = {('A'+unit):result.bond_length_median*lc}
+#record_msd_id = pa.compute_atmsd_t_chips(0.9,True)
+
 """
-#print(tr.shape)
-
-
+ts_id_dxy['particle']
+#pa.compute_atmsd_t_chips(interval_max=0.9,msd_per_particle=True)
+path_to_folder = '/home/remote/xiaotian_file/data/20221129/video5/'
+time_log = path_to_folder+'DefaultVideo_5.txt'
+png_filename = path_to_folder+'particle_'+str(id)+'_'+'msds_loglog.png'
+pa.plot_msd_uniform(m_msd=1,time_log=time_log,png_filename=png_filename)
+"""
 
 #time.sleep(1)
 tm2=time.localtime(time.time())
