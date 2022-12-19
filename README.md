@@ -3,6 +3,14 @@
 - this is just a library for me to record the codes used to finish my Ph.D project.
 
 ## log:
+- 20221219 invert the pixel coordination from image y-axis to coordination y-axis in particle_tracking.folder_frames_particle_tracking
+	   test data_analysis_cycle.save_points_from_exp, right.
+	   test and correct points_analysis_2d.dynamic_points_analysis_2d.compute_msd_normal, compute_atmsd_scan_t, compute_atmsd_t_chips
+- 20221216 add data_analysis_cycle.save_points_from_exp, waiting test.
+- 20221215 add Lindemann msd in dynamic_points_analysis_2d.
+	   rename points_analysis_2D as dynamic_points_analysis_2d
+- 20221213 add points_analysis_2D.msd.compute_nn_msd()
+- 20221212 add introduction, mode='simu'or'exp', plot_msd,plot_trajectory, for points_analysis_2D.msd
 - 20221209 edit points_analysis_2D.msd 
 - 20221208 add kagome/honeycomb pin precise/low T
 - 20221203 add seed in points_analysis_2D.proceed_gsd_file

@@ -18,7 +18,7 @@ def saveIndexPsi3Psi6(start_index,end_index,k1,step,linear_compression_ratio):
     for index in numpy.linspace(start_index,end_index,diference_index):
         #index=index0+(i-1.0)
         data_filename=prefix+'index'+str(index.astype(int))
-        obj_of_simu_index = points_analysis_2D.PointsAnalysis2D(filename=data_filename)
+        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -57,7 +57,7 @@ def saveIndexPsi4Psi6(start_index,end_index,k1,step,linear_compression_ratio):
     for index in numpy.linspace(start_index,end_index,diference_index):
         #index=index0+(i-1.0)
         data_filename=prefix+'index'+str(index.astype(int))
-        obj_of_simu_index = points_analysis_2D.PointsAnalysis2D(filename=data_filename)
+        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -93,7 +93,7 @@ def saveIndexPsi3Ratio(start_index,end_index,k1,step,linear_compression_ratio):#
     for index in numpy.linspace(start_index,end_index,diference_index):
         #index=index0+(i-1.0)
         data_filename=prefix+'index'+str(index.astype(int))
-        obj_of_simu_index = points_analysis_2D.PointsAnalysis2D(filename=data_filename)
+        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -129,7 +129,7 @@ def saveIndexCairoCN3456(start_index,end_index,k1,step,linear_compression_ratio,
 
     for index in numpy.linspace(start_index,end_index,diference_index):
         data_filename=prefix+'index'+str(index.astype(int))
-        obj_of_simu_index = points_analysis_2D.PointsAnalysis2D(filename=data_filename)
+        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -179,7 +179,7 @@ def saveIndexCairoPsi345(start_index,end_index,k1,step,linear_compression_ratio)
     for index in numpy.linspace(start_index,end_index,diference_index):
         #index=index0+(i-1.0)
         data_filename=prefix+'index'+str(index.astype(int))
-        obj_of_simu_index = points_analysis_2D.PointsAnalysis2D(filename=data_filename)
+        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -206,7 +206,6 @@ def saveIndexCairoPsi345(start_index,end_index,k1,step,linear_compression_ratio)
     #print(record)
     return save_file_name
 
-
 def saveIndexCN346Seed(start_index,end_index,k1,step,linear_compression_ratio,randomseed):
     R"""
     This function will save a txt file named 'start index - end index kl', which contains
@@ -221,7 +220,7 @@ def saveIndexCN346Seed(start_index,end_index,k1,step,linear_compression_ratio,ra
 
     for index in numpy.linspace(start_index,end_index,diference_index):
         data_filename=prefix+'index'+str(index.astype(int))
-        obj_of_simu_index = points_analysis_2D.PointsAnalysis2D(filename=data_filename)
+        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -262,7 +261,7 @@ def saveIndexCN4CN6SeedPsi6(start_index,end_index,k1,step,linear_compression_rat
 
     for index in numpy.linspace(start_index,end_index,diference_index):
         data_filename=prefix+'index'+str(index.astype(int))
-        obj_of_simu_index = points_analysis_2D.PointsAnalysis2D(filename=data_filename)
+        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -304,7 +303,7 @@ def saveIndexCN4CN6SeedPsi6Seed(start_index,end_index,k1,step,linear_compression
 
     for index in numpy.linspace(start_index,end_index,diference_index):
         data_filename=prefix+'index'+str(index.astype(int))+"_"+str(randomseed)
-        obj_of_simu_index = points_analysis_2D.PointsAnalysis2D(filename=data_filename)
+        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -355,7 +354,7 @@ def saveIndexCN4CN3SeedPsi6(start_index,end_index,k1,step,linear_compression_rat
 
     for index in numpy.linspace(start_index,end_index,diference_index):
         data_filename=prefix+'index'+str(index.astype(int))+"_"+str(randomseed)
-        obj_of_simu_index = points_analysis_2D.PointsAnalysis2D(filename=data_filename)
+        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -405,7 +404,7 @@ def saveIndexklTCN3CN4Seed(start_index,end_index,k1,step,linear_compression_rati
 
     for index in numpy.linspace(start_index,end_index,diference_index):
         data_filename=prefix+'index'+str(index.astype(int))+"_"+str(randomseed)
-        obj_of_simu_index = points_analysis_2D.PointsAnalysis2D(filename=data_filename)
+        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -443,7 +442,7 @@ def saveIndexklTPsi36Seed(start_index,end_index,k1,step,linear_compression_ratio
 
     for index in numpy.linspace(start_index,end_index,diference_index):
         data_filename=prefix+'index'+str(index.astype(int))+"_"+str(randomseed)
-        obj_of_simu_index = points_analysis_2D.PointsAnalysis2D(filename=data_filename)
+        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -480,7 +479,7 @@ def saveIndexkTCN4CN3SeedPsi6(start_index,end_index,kt1,step,linear_compression_
 
     for index in numpy.linspace(start_index,end_index,diference_index):
         data_filename=prefix+'index'+str(index.astype(int))+"_"+str(randomseed)
-        obj_of_simu_index = points_analysis_2D.PointsAnalysis2D(filename=data_filename)
+        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -530,7 +529,7 @@ def saveIndexkTCN4CN3SeedPsi6_cool(start_index,end_index,kt1,linear_compression_
 
     for index in numpy.linspace(start_index,end_index,diference_index):
         data_filename=prefix+'index'+str(index.astype(int))+"_"+str(randomseed)
-        obj_of_simu_index = points_analysis_2D.PointsAnalysis2D(filename=data_filename)
+        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -579,7 +578,7 @@ def saveIndexkTPsi36Seed(account,start_index,end_index,kt1,step,linear_compressi
 
     for index in numpy.linspace(start_index,end_index,diference_index):
         data_filename=prefix+'index'+str(index.astype(int))+"_"+str(randomseed)
-        obj_of_simu_index = points_analysis_2D.PointsAnalysis2D(filename=data_filename)
+        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -618,7 +617,7 @@ def saveIndexPsi3Psi6R(account,start_index,end_index,k1,step,linear_compression_
     for index in numpy.linspace(start_index,end_index,diference_index):
         #index=index0+(i-1.0)
         data_filename=prefix+'index'+str(index.astype(int))+'_'+str(randomseed)
-        obj_of_simu_index = points_analysis_2D.PointsAnalysis2D(filename=data_filename)
+        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -681,7 +680,7 @@ def saveIndexPressure(start_index,end_index,k1,step,linear_compression_ratio,see
         
 
         data_filename=prefix+'index'+str_index
-        obj_of_simu_index = points_analysis_2D.PointsAnalysis2D(filename=data_filename)
+        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
 
         record[(index-start_index).astype(int),0]=index
 
@@ -1008,7 +1007,7 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
         if final_cut:
             i = gsd_data.num_of_frames-1#i=9#!!! 23
         
-        a_frame = points_analysis_2D.PointsAnalysis2D(points=gsd_data.read_a_frame(i))#hide_figure=False
+        a_frame = points_analysis_2D.static_points_analysis_2d(points=gsd_data.read_a_frame(i))#hide_figure=False
         snap = gsd_data.trajectory.read_frame(i)
         
         if save_result_txt:
@@ -1231,3 +1230,97 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
         record_filename = prefix +'T_VS_CN_k_cut'+'index'+str_index+'.txt'
         numpy.savetxt(record_filename,record_cn)
         plt.close()
+
+class save_points_from_exp:
+    R"""
+    Introduction:
+        This class provides a routine to follow, which shows the steps to recognize images,
+        to transform videos into positions & trjectories.
+
+        Personally, my raw images are stored in
+        path_to_raw_data = 'home/tplab/xiaotian_file/from_hard_disc_20221209/
+        Xiaotian_file_20200514/1各期工作汇总/20190909项目(油相晶体)（ing）/20221129（测过冷度；24h不漏）'
+    
+    """
+    def __init__(self):
+        pass
+    
+    #step 1: set worksapce
+    def set_worksapce(self):
+        #caution: ensure that path_to_images stores only images(.jpg)!
+        self.path_to_images = '/home/remote/xiaotian_file/data/20221129/DefaultVideo_5'
+        #for path_to_results, any type of file is ok
+        self.path_to_results = '/home/remote/xiaotian_file/data/20221129/video_5'
+    
+    #step2: find suitable parameters to recognize particles
+    #check if (Diameter,minmass) suit for the first and the last frames
+    def check_first_last_frame(self,filename_image_first=None,filename_image_last=None):
+        R"""
+        return:
+            Diameter: minimum diameter(pixel) of particle
+            minmass: minimum lightness of particle
+        """
+        import particle_tracking as ptt
+        import os
+
+        for root, dirs, files in os.walk(self.path_to_images):#
+            files.sort()
+            filename_image_first = self.path_to_images+'/'+files[0]
+            filename_image_last = self.path_to_images+'/'+files[-1]#num_iamges = len(files)
+            break
+        ana = ptt.particle_track()
+        ana.single_frame_particle_tracking(filename_image_first,calibration=True)
+        ana.single_frame_particle_tracking(filename_image_last,calibration=True)
+
+        return ana.Diameter,ana.minmass
+    
+    #step3: recognize particles on all the images
+    #'txy_um.csv' records particle positions for each frame
+    def recognize_all_frames(self,Diameter,minmass,pixel_to_um=3.0/32.0,save_txy=False):
+        import particle_tracking as ptt
+        ana = ptt.particle_track()
+        feature_filename = self.path_to_results+'/'+'feature.csv'
+        ana.folder_frames_particle_tracking(self.path_to_images,Diameter,minmass,feature_filename) 
+        if save_txy:
+            txy_um_filename = self.path_to_results+'/'+'txy_um.csv'
+            ana.get_positions_from_features(feature_filename,pixel_to_um,txy_um_filename)
+    
+    #step4: get stable trajectories of particlesg
+    #'txyz_stable' is a list of trajectories contain only those particles
+    # which are always in field of view in video 
+    def get_stable_trajectory(self,pixel_to_um=3.0/32.0):
+        import particle_tracking as ptt
+        ana = ptt.particle_track()
+        feature_filename = self.path_to_results+'/'+'feature.csv'
+        track_filename = self.path_to_results+'/'+'track_memory0.csv'
+        ana.link_features_to_trajectories(feature_filename=feature_filename,track_filename=track_filename)
+        txyz_filename = self.path_to_results+'/'+'txyz.csv'
+        ana.save_trajectories(track_filename,txyz_filename)
+        txyz_npy_filename = self.path_to_results+'/'+'txyz_stable'
+        ana.select_stable_trajectory(txyz_filename,txyz_npy_filename=txyz_npy_filename,pixel_to_um=pixel_to_um)
+
+class analyze:
+    def __init__(self):
+        pass
+    
+    def get_msd(self,um_to_sigma=1.0/2.0):
+        from points_analysis_2D import dynamic_points_analysis_2d
+        import numpy 
+        txyz_npy_filename = self.path_to_results+'/'+'txyz_stable'
+        traj_um = numpy.load(txyz_npy_filename)
+        traj_sigma = traj_um*um_to_sigma# um to sigma
+        pa = dynamic_points_analysis_2d(traj_sigma,mode='exp')
+        ts_id_dxy, average_1st_bond_length = pa.compute_nearest_neighbor_displacements(unit='sigma')
+        import pandas as pd
+        ts_id_dxy = pd.read_csv('ts_id_dxy.csv')
+        ts_id_dxy['z'] = 0
+        pa = dynamic_points_analysis_2d(ts_id_dxy,mode='exp')
+        txyz_ids_stable = pa.compute_nearest_neighbor_displacements_stable(pa.txyz_stable)
+        pa = dynamic_points_analysis_2d(txyz_ids_stable,mode='exp')
+        pa.compute_atmsd_t_chips(0.9)
+        time_log = self.path_to_results+'DefaultVideo_5.txt'
+        time_log = numpy.loadtxt(time_log)
+        pa.plot_lindemann_msd(pa.record_msd,average_1st_bond_length,time_log)
+        print('average_1st_bond_length\n',average_1st_bond_length)
+        
+    

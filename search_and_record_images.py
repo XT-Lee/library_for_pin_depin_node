@@ -48,7 +48,7 @@ def script(dir_path = None,silent=False):
             plt.show()
             """
             #particle density, averaged bond length
-            result = pa.PointsAnalysis2D(points)
+            result = pa.static_points_analysis_2d(points)
             if silent:
                 png_filename1= None
                 png_filename2 = None

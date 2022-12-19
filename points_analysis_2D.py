@@ -1,4 +1,3 @@
-from turtle import position
 import numpy 
 import matplotlib.pyplot as plt
 from scipy.spatial import Voronoi, voronoi_plot_2d
@@ -7,15 +6,17 @@ from scipy.spatial import  distance
 import matplotlib 
 import os
 import freud
-import threading
+
+from particle_tracking import particle_track
 
 R"""
 CLASS list:
-    PointsAnalysis2D:
+    static_points_analysis_2d: old_class_name: PointsAnalysis2D
     proceed_gsd_file:
-
+    proceed_exp_file:
+    dynamic_points_analysis_2d: old_class_name: msd
 """
-class PointsAnalysis2D:
+class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
     R"""
     Introduction:
         the class is designed to analyze the 
@@ -83,13 +84,12 @@ class PointsAnalysis2D:
                 self.points = self.points[:,0:2]
                 self.points_analysis()
         else :
-            self.points = points
+            self.points = points[:,:2]
             self.points_analysis()
 
         #not show figures
         if hide_figure:
-            matplotlib.use(backend="agg")#Backend agg is non-interactive backend. Turning interactive mode off.
-        
+            matplotlib.use(backend="agg")#Backend agg is non-interactive backend. Turning interactive mode off. 'QtAgg' is interactive mode
         #set basic parameters
         #self.prefix='/home/tplab/Downloads/'
             
@@ -125,20 +125,26 @@ class PointsAnalysis2D:
             Typical bond-lengths of honeycomb are A and 1.73A (bond_first_neighbour & bond_second_neighbour namely),
             hence the range=[0,2] times of lattice constant should be set.
         Parameters:
-            bond_first_minima_left:the upper limit of 1st neighbour bonds comming from the first minima 
-                                    of bond length distribution, with sigma as lower limit.
-            png_filename="prefix/bond_hist_index1512"
+            lattice_constant: particle diameter or lattice constant is recommended(also the unit A in x-axis in hist)
+            
             method:"local_compare_nethod" to get the 1st minima through comparing local minima,
                 suitable for continuous peak-valley hist;
                 "global_compare_method" to get the 1st minima through comparing all the peaks, 
                 selecting the 1st main peak(ignoring tiny peak before which), 
                 finding the 1st main minima just after the 1st main peak, 
                 suitable systems with powerful perturbation.
-            hist_cutoff: plot hist of bond_length till n times lattice_constant where n is hist_cutoff. 
+            
+            hist_cutoff: plot hist of bond_length till n times lattice_constant where n is hist_cutoff.
+            
+            png_filename="prefix/bond_hist_index1512"
 
+            bond_first_minima_left:the upper limit of 1st neighbour bonds comming from the first minima 
+                                    of bond length distribution, with sigma as lower limit.
+            
         Warning:
             [x]What if there is no minima found? 
             count_1st_max / count_1st_minima > 10 used to check the effective of minima? 
+
         Examples:
             s = "/home/tplab/Downloads/"
             index_num = 1387
@@ -359,6 +365,62 @@ index 10 is out of bounds for axis 0 with size 10
         #print(self.count_coordination)
         self.count_coordination_ratio=self.count_coordination/sum(self.count_coordination)
         #print(self.count_coordination_ratio)
+        
+    def get_nearest_neighbor_dispalcement(self):
+        R"""
+        Introduction:
+            lindemann_dispalcement: r(i,t)-<r(j,t)>
+        Return: 
+            list_id_dxy_nb: 
+                list[particle_id,num_neighbors,dx,dy], 
+                id of center particles and their displacements relative to neighbors.
+                if the particle has new neighbors, unless inter-frame time is too long to
+                catch the event of breaking old bond and forming new bond, number of neighbors
+                will change together with the event.  
+            dict_c_nb: 
+                dict{'id_c':id_nb}, center particles and their neighbors.
+                To monitor the event of breaking old bond and forming new bond and hence
+                get the life span of a caging state.
+        """
+        
+        #check whether bond_first_minima_left exist
+        try:
+            bond_length_limit=self.bond_first_minima_left
+        except AttributeError:
+            self.get_first_minima_bond_length_distribution()
+            bond_length_limit=self.bond_first_minima_left
+
+        #select the bonds within the limit(bond length of 1st neighbour)
+        self._bond_min=0.0
+        self._bond_max=bond_length_limit
+        place=numpy.where((self.bond_length[:,2]>self._bond_min) & (self.bond_length[:,2]<self._bond_max))
+        self.__coordination_bond=self.bond_length[place,0:2]
+        self.__coordination_bond=self.__coordination_bond[0]#remove a [] in [[]] structure
+        
+        
+        for id in self.edge_cut_positions_list[0]:
+            place=numpy.where(self.__coordination_bond[:]==id)
+            n_nb=len(place[0])#number of neighbors
+            place_nb=numpy.array(place) 
+            #print(place_nb)
+            place_nb[1]=1-place_nb[1]
+            #print(place_nb)
+            id_nb=self.__coordination_bond[place_nb[0],place_nb[1]].astype(int)
+            #print(id_nb)#id s 
+            
+            #print(self.points[id_nb])
+            center_nb = numpy.average(self.points[id_nb],axis = 0)
+            dxy_id = self.points[id]-center_nb
+            #print(center_nb)
+            if 'list_id_dxy_nb' in locals():
+                list_id_dxy_nb.append([id,n_nb,dxy_id[0],dxy_id[1]]) 
+                dict_c_nb[str(id)] = id_nb
+            else:
+                list_id_dxy_nb = []
+                list_id_dxy_nb.append([id,n_nb,dxy_id[0],dxy_id[1]])
+                dict_c_nb = {str(id):id_nb}
+        
+        return list_id_dxy_nb,dict_c_nb
 
     def get_neighbor_cloud_method_voronoi(self,png_filename=None):#checked right
         R"""
@@ -1263,8 +1325,37 @@ class proceed_gsd_file:
         """
         plt.close()
 
-class msd:
+class proceed_exp_file:
+    pass
+
+class dynamic_points_analysis_2d:#old_class_name: msd
     R"""
+    Introduction:
+        defined by wikipedia(https://en.wikipedia.org/wiki/Mean_squared_displacement)
+        this function is designed to calculate mean squared displacements.
+        particle index: i
+        displacement: dr(i,t-0) = r(i,t) - r(i,0)
+        squared displacement: [ dr(i,t-0) ]^2
+        mean squared displacement: MSD(t) = < [ dr(i,t-0) ]^2 >_i
+        averaged time MSD: MSD(dt) where dt = t2 -t1 to replace t -0, which is used to improve statistical performance.
+        caution: averaged time MSD would hide dynamic events like collapse.
+
+    example_experiment:
+        import numpy
+        import particle_tracking as ptt
+        ana = ptt.particle_track()
+        dir_path='/home/remote/xiaotian_file/data/20221129/DefaultVideo_5'
+        traj = ana.select_stable_trajectory()
+        traj_um = traj/32*3
+        traj_sigma = traj_um/2
+        pa = msd(traj_sigma,mode='exp')
+        pa.compute_atmsd_t_chips(interval_max=0.9)
+        path = '/home/remote/xiaotian_file/data/20221129/video5/'
+        time_log = numpy.loadtxt(path+'DefaultVideo_5.txt')
+
+        pa.plot_msd(time_log,path+'msd_chips_loglog_'+'20221129_video5_90%'+'.png')
+        pa.plot_trajectory(path+'trajectory_stable_'+'20221129_video5'+'.png')
+
     EXAMPLE:
         print(msds.result_msd)
         print(numpy.shape(msds.result_msd))
@@ -1288,25 +1379,63 @@ class msd:
         plt.savefig(png_filename)#png_filename
         plt.close()
         #print(tr.shape)
+    exp-get nn msd:
+        ana = ptt.particle_track()
+        traj = ana.select_stable_trajectory()
+        traj_um = traj/32*3
+        traj_sigma = traj_um/2
+        pa = dynamic_points_analysis_2d(traj_sigma,mode='exp')
+        ts_id_dxy = pa.compute_nearest_neighbor_displacements(unit='sigma')
+        import pandas as pd
+        ts_id_dxy = pd.read_csv('ts_id_dxy.csv')
+        ts_id_dxy['z'] = 0
+        pa = dynamic_points_analysis_2d(ts_id_dxy,mode='exp')
+        txyz_ids_stable = pa.compute_nearest_neighbor_displacements_stable(pa.txyz_stable)
+        pa = dynamic_points_analysis_2d(txyz_ids_stable,mode='exp')
+        pa.compute_atmsd_t_chips(0.9)
+        path_to_folder = '/home/remote/xiaotian_file/data/20221129/video5/'
+        time_log = path_to_folder+'DefaultVideo_5.txt'
+        time_log = np.loadtxt(time_log)
+        pa.plot_msd_t_chips(time_log)
     """
-    def __init__(self,txyz,box=None,account='tplab',plot_trajectory=False):
+    def __init__(self,txyz,box=None,plot_trajectory=False,mode='simu'):#,account='tplab'
         R"""
         parameters:
-            TXYZ:(frames,particles,xyz)
+            TXYZ:array[frames,particles,xyz]
             BOX: [lx,ly,lz,xy,xz,yz]
+            account: 'remote' or 'tplab'
+            mode: 'simu' or 'exp'. 'simu' to select particles in box; 'exp' to direct compute msd
+            chips_max: the largest number of chips the frames can be cut into.
         """
         self.txyz = txyz
-        self.frames,self.particles,self.dimensions=self.txyz.shape
-        if not box is None:
+            
+        if mode == 'simu':
             self.box = box
-            self.select_stable_trajectories(plot_trajectory)
-        self.account = account
-        
+            self.select_stable_trajectories_simu(plot_trajectory)
+        elif mode == 'exp':
+            self.txyz_stable = txyz
+        self.frames,self.particles,self.dimensions=self.txyz.shape
+        self.chips_max = self.frames-1
+        #self.account = account
+        self.mode = mode
 
-    def select_stable_trajectories(self,plot_trajectory):
+    def select_stable_trajectories_simu(self):
         R"""
-        positions: (N_frames,N_particles,3)
+        introduction:
+            transform trajectory data from simulation with periodic boundary condition 
+            into trajectories of which particles never move across boundary(box).
+        parameters:
+            positions: (N_frames,N_particles,3)
+
+        exp:
+            import points_analysis_2D as pa
+            msd_class = pa.msd(gsd_data.txyz,gsd_data.box,account='remote')#pa.msd(txyz,box,account='remote')
+            msd_class.compute_t_chips()
+            msd_class.plot()
+
         """
+        #dedrift?
+        self.frames,self.particles,self.dimensions=self.txyz.shape
         if hasattr(self,'box'):
             #print(locals())#local variable not of class
             self.dtxyz = self.txyz[1:,:,:] - self.txyz[:self.frames-1,:,:]
@@ -1329,76 +1458,319 @@ class msd:
                 i = i + 1
             list_stable_id = numpy.where(list_cross_true[:]==False)
             list_stable_id = list_stable_id[0]#remove empty extra dimension
-            print(list_stable_id.shape)
-            #self.txyz = self.txyz[list_stable,:]
-            #self.dtxyz[list_crossleft ,0] = self.dtxyz[list_crossleft ,0] - self.box[0]
-            #print(list_right.shape)#(dt frames,particles)
-            if plot_trajectory:
-                plt.figure()
-                for index_particle in list_stable_id:
-                    txyz_ith = self.txyz[:,index_particle,:]
-                    plt.plot(txyz_ith[:,0],txyz_ith[:,1])
-                    index_particle = index_particle + 1    
-                #png_filename = '/home/'+self.account+'/Downloads/'+'traj_id_'+str(index_particle)+'.png'
-                png_filename = '/home/'+self.account+'/Downloads/'+'traj_stable.png'
-                plt.savefig(png_filename)
-                plt.close()    
+            #print(list_stable_id.shape)
+            
             self.txyz_stable = self.txyz[:,list_stable_id,:]
-    def compute_scan_t(self):
+            self.particles = list_stable_id.shape[0]
+
+    def compute_msd_normal(self,interval_max=0.8):
+        R"""
+        EXP:
+            import points_analysis_2D as pa
+            import numpy as np
+            path_to_results = '/home/remote/xiaotian_file/data/20221129/video_5'
+            txyz_npy_filename = path_to_results+'/'+'txyz_stable.npy'
+            txyz_stable = np.load(txyz_npy_filename)
+            msds = pa.dynamic_points_analysis_2d(txyz_stable,mode='exp')
+            msds.compute_msd_normal(0.95)
+            time_log_file = path_to_results+'/'+'DefaultVideo_5.txt'
+            time_log = np.loadtxt(time_log_file)
+            png_filename=path_to_results+'/'+'msd_normal_long_loglog.png'
+            msds.plot_msd(time_log,png_filename)
+        """
+        dt_max = int(interval_max*self.chips_max)#to ensure the robustness of statistics
+        #k_max = 0
+        dt_start = 1
+        self.record_msd=numpy.zeros((dt_max-dt_start+1,2))#[interval m, msd_m]
+        
+        list_dt=numpy.arange(dt_start,dt_max+1)
+        self.record_msd[:,0]=list_dt
+        """
+        print(self.txyz_stable[0,:5,:2])
+        print(self.txyz_stable[0,:5,:2]-1.0)
+        """
+        """
+        ff = 1
+        dt_xyz = self.txyz_stable[dt_start:dt_max+1,:,:]
+        while ff < dt_max+1:
+            dt_xyz[ff-1] = dt_xyz[ff-1] - self.txyz_stable[0]
+            ff = ff+1
+        """
+        #print(dt_xyz[1,1])
+        dt_xyz = self.txyz_stable[dt_start:dt_max+1,:,:] - self.txyz_stable[0,:,:]
+        #print(dt_xyz_test[1,1])
+        dt_xyz2 = numpy.square(dt_xyz)
+        sum_dt_r2 = numpy.sum(dt_xyz2,axis=2)
+        sum_dt_r2 = numpy.sum(sum_dt_r2,axis=1)
+        self.record_msd[:,1]=sum_dt_r2[:]/self.particles
+
+    def compute_atmsd_scan_t(self,interval_max=0.66):
         R"""
         method:
             scan t axis, 1 frame for each interval. here may exist some overlaps between two intervals who share the same length of time interval m.
         record_msd:[interval m, msd_m]
-        k: the frame to start scan 
-        m: time interval
-        m_max: max time interval
+        dt_start: the frame to start scan 
+        dt: time interval
+        dt_max: max time interval
         """
-        m_max = 9000#int(0.5*self.frames)#to ensure the robustness of statistics
+        dt_max = int(interval_max*self.chips_max)#to ensure the robustness of statistics
         #k_max = 0
-        start = 1000
-        self.record_msd=numpy.zeros((m_max-start+1,2))#[interval m, msd_m]
+        dt_start = 1
+        self.record_msd=numpy.zeros((dt_max-dt_start+1,2))#[interval m, msd_m]
         
-        list_m=numpy.arange(start,m_max+1)
-        self.record_msd[:,0]=list_m
-        for m in list_m:
-            self.dm_xyz = self.txyz_stable[m:,:,:] - self.txyz_stable[:-m,:,:]
-            sq_dm_xyz2 = numpy.square(self.dm_xyz)
-            sum_sq_dm_r2 = numpy.sum(sq_dm_xyz2)
-            self.record_msd[m-start,1]=sum_sq_dm_r2/self.dm_xyz.shape[0]/self.particles
-    def compute_t_chips(self):
+        list_dt=numpy.arange(dt_start,dt_max+1)
+        self.record_msd[:,0]=list_dt
+        for dt in list_dt:
+            dt_xyz = self.txyz_stable[dt:,:,:] - self.txyz_stable[:-dt,:,:]
+            chips = dt_xyz.shape[0]
+            dt_xyz2 = numpy.square(dt_xyz)
+            sum_dt_r2 = numpy.sum(dt_xyz2)
+            self.record_msd[dt-dt_start,1]=sum_dt_r2/chips/self.particles
+            
+    def compute_atmsd_t_chips(self,interval_max=0.1,msd_per_particle=False):
         R"""
-        method:
-            cut t axis into several chips for each interval. there are not any two intervals who share the same length of time interval m would overlap.
-        record_msd:[interval m, msd_m]
-        k: the frame to start scan 
-        m: time interval
-        m_max: max time interval
-        """
-        m_max = int(0.1*self.frames)#to ensure the robustness of statistics
-        #k_max = 0
-        start = 1
-        self.record_msd=numpy.zeros((m_max-start+1,2))#[interval m, msd_m]
+        parameters:
+            interval_max: (0,1) to which the longest interval dt to which msd is computed.
+            k: the frame to start scan 
+            m: time interval
+            m_max: max time interval
+            msd_per_particle: control the program to calculate msd for each particle
         
-        list_m=numpy.arange(start,m_max+1)
-        self.record_msd[:,0]=list_m
-        
-        for m in list_m:
-            chips = int(self.txyz_stable.shape[0]/m)# how many chips the time axis is divided into
-            list_frames = m*numpy.arange(0,chips)
-            m_xyz = self.txyz_stable[list_frames,:,:]
-            self.dm_xyz = m_xyz[1:,:,:] - m_xyz[:-1,:,:]
-            sq_dm_xyz2 = numpy.square(self.dm_xyz)
-            sum_sq_dm_r2 = numpy.sum(sq_dm_xyz2)
-            self.record_msd[m-start,1]=sum_sq_dm_r2/self.dm_xyz.shape[0]/self.particles
+        return:
+            self.record_msd: [interval m, atmsd(m)]
+            or record_msd_id
 
-    def plot(self):
+        method:
+            cut t axis into several chips for each interval. there are not any two 
+            intervals who share the same length of time interval m would overlap.
+            Hence we get the averaged time mean square displacement(atmsd).
+
+        """
+        if not hasattr(self,'frames'):
+            self.frames,self.particles,self.dimensions=self.txyz_stable.shape
+        dt_max = int(interval_max*self.chips_max)#to ensure the robustness of statistics
+        dt_start = 1
+        self.record_msd=numpy.zeros((dt_max-dt_start+1,2))#[interval m, msd_m]
+        #you can select points [log 1, 1/100*log m_max,log m_max]
+        list_dt=numpy.arange(dt_start,dt_max+1)
+        self.record_msd[:,0]=list_dt
+        
+        for dt in list_dt:
+            chips = int((self.chips_max)/dt)# how many chips the time axis is divided into
+            list_frames = dt*numpy.arange(0,chips+1)
+            dt_xyz = self.txyz_stable[list_frames,:,:]
+            self.dt_xyz = dt_xyz[1:,:,:] - dt_xyz[:-1,:,:]
+            sq_dm_xyz2 = numpy.square(self.dt_xyz)
+            sum_sq_dm_r2 = numpy.sum(sq_dm_xyz2)
+            self.record_msd[dt-dt_start,1]=sum_sq_dm_r2/chips/self.particles
+
+            if msd_per_particle:
+                id_sum_sq_dm_r2_chips = numpy.sum(sq_dm_xyz2,axis=2)
+                print(id_sum_sq_dm_r2_chips.shape)
+                id_sum_sq_dm_r2 = numpy.sum(id_sum_sq_dm_r2_chips,axis=0)
+                print(id_sum_sq_dm_r2.shape)
+                if 'record_msd_id' in locals():
+                    record_msd_id[dt-dt_start,:]=id_sum_sq_dm_r2/self.dt_xyz.shape[0]
+                else:
+                    record_msd_id=numpy.zeros((dt_max-dt_start+1,self.particles))
+                    record_msd_id[dt-dt_start,:]=id_sum_sq_dm_r2/self.dt_xyz.shape[0]
+
+        if msd_per_particle:
+            return record_msd_id
+
+    def compute_nearest_neighbor_displacements(self,unit='sigma'):
+        R"""
+        parameters:
+            input: 
+                trajectory_stable (unit = sigma or um)
+                'stable' means all the particles in the 
+                field of view from the 1st frame to the end.
+                if the trajectory is not stable, a particle id 
+                in different frames would not represent the same particle.
+
+            return: 
+                ts_id_dxy:
+                    a pandas.dataframe contains ["particle", "x","y"."frame"]
+                    which contains all the nn displacements over time.
+                #dict_c_nb:
+                #    a dict() contains {'particle id': [list id of neighbors]} at given frame.
+
+                    #shape = [N_frames, N_ids, dxy], dtype = float64
+                    #shape = [N_frames, N_ids, if_nb_change], dtype = bool
+                    
+        introduction:
+            DOI: 10.1103/PhysRevE.95.022602
+            
+            nearest-neighbor relative mean square displacement(nnmsd): <[r(i,t)-<r(j,t)>]^2>
+            where j is the neighbors of particle i.
+
+            The dynamic Lindemann parameter: gamma_l_tau = nnmsd/2/a^2
+        question:
+            if I should calculate the particle averaged first neighbor bond length( A(t) ), 
+            and calculate the averaged time bond length(<A>)? 
+            dynamic lindemann parameter suits only for the time-scale when the system is stable solid.
+        """
+        id_dxy_pd_columns = ["particle","neighbors", "x","y"]
+        import pandas as pd
+        #get frame-wise 1st neighbor bond length
+        #list_1st_bond_length_framewise
+        self.frames,self.particles,self.dimensions=self.txyz.shape
+        list_frames = range(self.frames)
+        list_1st_bond_length_framewise = numpy.zeros((self.frames,))
+        for frame in list_frames:
+            result = static_points_analysis_2d(self.txyz_stable[frame,:,:])
+            if unit == 'sigma':
+                lc = 1.0#lattice constant, particle diameter(2 um) as default
+            elif unit == 'um':
+                lc = 2.0
+            result.get_first_minima_bond_length_distribution(lattice_constant=lc,hist_cutoff=5)#here lattice_constant is just used to normalize figure, hence set 2.0 is ok
+            #print('recognized bond length: '+str(result.bond_length_median*lc)+'+-'+str(result.bond_length_std*lc)+' '+unit)
+            list_1st_bond_length_framewise[frame] = result.bond_length_median#unit = sigma!
+            #displacement neighbor
+            id_dxy,dict_c_nb = result.get_nearest_neighbor_dispalcement()
+            id_dxy_pd = pd.DataFrame(id_dxy)
+            #print(id_dxy_pd.head())
+            if frame == 0:
+                #ts_id_dxy = t_id_dxy
+                id_dxy_pd.columns = id_dxy_pd_columns
+                id_dxy_pd['frame'] = frame
+                ts_id_dxy = id_dxy_pd
+                #print(ts_id_dxy.head())
+                #print(ts_id_dxy.tail())
+            else:
+                #ts_id_dxy = numpy.concatenate((ts_id_dxy,t_id_dxy), axis=0) #[frame,id,dx,dy]
+                id_dxy_pd.columns = id_dxy_pd_columns#[id,dx,dy,frame]
+                id_dxy_pd['frame'] = frame
+                ts_id_dxy = pd.concat([ts_id_dxy,id_dxy_pd])
+                #print(ts_id_dxy.tail())
+                #print(ts_id_dxy.shape)
+        #select stable trajectories
+        """
+        print(ts_id_dxy[:,1].max)
+        list_ids = numpy.unique(ts_id_dxy[:,1])
+        id_check = numpy.zeros((list_ids.shape[0],),dtype=bool)
+        for id in list_ids:
+            ts_dxy = ts_id_dxy[ts_id_dxy[:,1]==id]
+
+            if ts_dxy.shape[0] == self.frames:
+                id_check[id] = True
+        ts_id_dxy_stable = ts_id_dxy[:,id_check,:,:]
+        """
+        average_1st_bond_length = numpy.average(list_1st_bond_length_framewise) 
+        #particle_tracking.select_stable_trajectory()is great!
+        pd.DataFrame.to_csv(ts_id_dxy,'ts_id_dxy.csv')
+        return ts_id_dxy,average_1st_bond_length
+
+    def compute_nearest_neighbor_displacements_stable(self,ts_id_dxy,unit='sigma'):#compute_nearest_neighbor_displacements_stable
+        R"""
+        input:
+            ts_id_dxy:
+                a pandas.dataframe contains ["particle", "x","y"."frame"]
+                which contains all the nn displacements over time.
+        return:
+            x txy_ids_stable:
+                it is (Nframes,Nparticles,xyz) 3-dimension array,
+                which contains ['particle'] which are always in the field of view in video.
+
+            x msd_c:
+                a pandas.dataframe contains ["particle", "x","y"."frame"]
+        """
+        pt = particle_track()
+        txy_ids_stable = pt.select_stable_trajectory(tpxyz=ts_id_dxy)
+        """
+        list_center_id= ts_id_dxy['particle'].values
+        frame_max = ts_id_dxy['frame'].values.max()
+        for id in list_center_id:
+           ts_dxy = ts_id_dxy[ts_id_dxy['particle'] == id]
+           ts_dxy = numpy.array(ts_dxy.values)
+           print(ts_dxy.shape)
+        """
+        
+            #self.compute_atmsd_t_chips()
+        return txy_ids_stable
+
+    def compute_nn_msd_X(self,unit='sigma'):
+        R"""
+        parameters:
+            input: trajectory (unit = sigma or um)
+
+        introduction:
+            DOI: 10.1103/PhysRevE.95.022602
+            
+            nearest-neighbor relative mean square displacement(nnmsd): <[r(i,t)-<r(j,t)>]^2>
+            where j is the neighbors of particle i.
+
+            The dynamic Lindemann parameter: gamma_l_tau = nnmsd/2/a^2
+        """
+        #get frame-wise 1st neighbor bond length
+        #list_1st_bond_length_framewise
+        list_frames = range(self.frames)
+        list_1st_bond_length_framewise = numpy.zeros((self.frames,))
+        for frame in list_frames:
+            result = static_points_analysis_2d(self.txyz_stable[frame,:,:])
+            if unit == 'sigma':
+                lc = 1.0#lattice constant, particle diameter(2 um) as default
+            elif unit == 'um':
+                lc = 2.0
+            result.get_first_minima_bond_length_distribution(lattice_constant=lc,hist_cutoff=5)#here lattice_constant is just used to normalize figure, hence set 2.0 is ok
+            #print('recognized bond length: '+str(result.bond_length_median*lc)+'+-'+str(result.bond_length_std*lc)+' '+unit)
+            list_1st_bond_length_framewise[frame] = result.bond_length_median#unit = sigma!
+            #displacement neighbor
+            #result.bond_first_neighbour
+            id_dxy = result.get_nearest_neighbor_dispalcement()
+            t_id_dxy = numpy.zeros((id_dxy.shape[0],id_dxy.shape[1]+1))  
+            t_id_dxy[:,0] = frame
+            t_id_dxy[:,1:] = id_dxy  
+            if frame == 0:
+                ts_id_dxy = t_id_dxy
+            else:
+                ts_id_dxy = numpy.concatenate((ts_id_dxy,t_id_dxy), axis=0) #[frame,id,dx,dy]
+            #print(ts_id_dxy.shape)
+        #select stable trajectories
+        print(ts_id_dxy[:,1].max)
+        list_ids = numpy.unique(ts_id_dxy[:,1])
+        id_check = numpy.zeros((list_ids.shape[0],),dtype=bool)
+        for id in list_ids:
+            ts_dxy = ts_id_dxy[ts_id_dxy[:,1]==id]
+
+            if ts_dxy.shape[0] == self.frames:
+                id_check[id] = True
+        ts_id_dxy_stable = ts_id_dxy[:,id_check,:,:]
+        #particle_tracking.select_stable_trajectory()is great!
+
+    def plot_msd(self,time_log=None,png_filename='msd_loglog.png',um_sec=True,sigma=False,lindemann=False):
+        R"""
+        introduction:
+            input: 'txyz_stable.csv' 
+            output: msd plot
+        """
         import matplotlib.pyplot as plt 
         plt.figure()
-        plt.loglog(self.record_msd[:,0],self.record_msd[:,1])#plot
-        plt.title("Mean Squared Displacement")
-        plt.xlabel("$t$")
-        plt.ylabel("MSD$(t)$")
-        png_filename = 'msd_chips_long_loglog_'+'index5208_9'+'.png'
+        if time_log is None:
+            plt.loglog(self.record_msd[:,0],self.record_msd[:,1])
+        else:
+            nth_time = self.record_msd.shape[0]+1#start from 0
+            time_msd=time_log[1:nth_time]
+            plt.loglog(time_msd,self.record_msd[:,1])
+
+        if self.mode =='simu':
+            plt.title("Mean Squared Displacement")
+            plt.xlabel("$t$ (steps)" )
+            plt.ylabel("MSD$(t)$ (sigma^2)")
+        elif self.mode == 'exp':
+            if lindemann:
+                plt.title("Mean Squared Displacement")
+                plt.xlabel("$t$ (sec)")
+                plt.ylabel("MSD$(t)$ (sigma^2/A^2)")
+            elif sigma:
+                plt.title("Mean Squared Displacement")
+                plt.xlabel("$t$ (sec)")
+                plt.ylabel("MSD$(t)$ (sigma^2)")
+            elif um_sec:
+                plt.title("Mean Squared Displacement")
+                plt.xlabel("$t$ (sec)")
+                plt.ylabel("MSD$(t)$ (um^2)")
+        #png_filename = 'msd_chips_long_loglog_'+'index5208_9'+'.png'
         plt.savefig(png_filename)#png_filename
         plt.close()
         """
@@ -1435,70 +1807,72 @@ class msd:
         self.result_msd = numpy.zeros((self.sp[0]-1,1))
         self.result_msd = self.result_msd_xyz[:,0]+self.result_msd_xyz[:,1]+self.result_msd_xyz[:,2]        
         """
+    
+    def plot_lindemann_msd(self,m_msd,average_1st_bond_length,time_log=None,png_filename='lindemann_msds_loglog.png'):
+        R"""
+        input: 
+            m_msd: n rows of [interval m, msd(m)] . 
+            
+            time_log: at least n rows of [interval m], 
+                here m is real seconds, frames or others 
+                you want to set as time interval.
+
+        output: msd plot
+
+        introduction:
+            
+        """
+        import matplotlib.pyplot as plt 
+        a2 = average_1st_bond_length*average_1st_bond_length
+        plt.figure()
+        if time_log is None:
+            plt.loglog(m_msd[:,1],m_msd[:,1]/a2/2.0)
+        else:
+            time_msd=time_log[:m_msd.shape[0]]
+            plt.loglog(time_msd,m_msd[:,1]/a2/2.0)
+
+        plt.title("dynamic Lindemann Mean Squared Displacement")
+        plt.xlabel("$t$ (sec)")
+        plt.ylabel("gamma_L$(t)$ (1)")
+        #png_filename = 'msd_chips_long_loglog_'+'index5208_9'+'.png'
+        plt.savefig(png_filename)#png_filename
+        plt.close()
+
+    def plot_msd_particle_wise_X(self,m_msd,time_log=None,png_filename='msds_loglog.png'):
+        s = 0
+        self.plot_lindemann_msd()
+
+    def plot_trajectory(self,png_filename='trajectory_stable.png'):
+        list_stable_id = range(self.particles)#txyz_stable.shape[1]
+        plt.figure()
+        for index_particle in list_stable_id:
+            txyz_ith = self.txyz_stable[:,index_particle,:]
+            plt.plot(txyz_ith[:,0],txyz_ith[:,1])
+
+        unit = '(um)' #'(sigma)'
+        plt.xlabel("$x$ "+unit )
+        plt.ylabel("$y$ "+unit )
+        #png_filename = '/home/'+self.account+'/Downloads/'+'traj_stable.png'
+        plt.savefig(png_filename)
+        plt.close() 
+
+    def plot_trajectory_single_particle(self,prefix='/home/',unit = '(um)'):
+        R"""
+        EXP:
+            path_to_results = '/home/remote/xiaotian_file/data/20221129/video_5'
+            txyz_npy_filename = path_to_results+'/'+'txyz_stable.npy'
+            txyz_stable = np.load(txyz_npy_filename)
+            msds = pa.dynamic_points_analysis_2d(txyz_stable,mode='exp')
+            msds.plot_trajectory_single_particle(path_to_results+'/')
+        """
+        list_stable_id = range(self.particles)#txyz_stable.shape[1]
         
-class link_trajectory_x:#just a trial
-    R"""
-        given the existence of periodic boundary condition, before calculating MSD, 
-        I have to link chips of trajectories which spread across boundaries. 
-    """
-    def __init__(self,positions,box):
-        self.positions = positions
-        self.box = box
-        #self.trajectory_link
-        self.lambda_boundary = 0.5
-        #lambda_boundary is how far to believe that the particle has walked cross the boundary
-    
-    def link(self):
-        #boundary
-        R"""
-        positions: (N_frames,N_particles,3)
-        """
-        self.sp=numpy.shape(self.positions)
-        k = 0
-        disp_1 = self.positions[1:]-self.positions[:-1]
-        for i in range(3):
-            list_down = disp_1[:,:,i] > self.lambda_boundary*self.box[i]
-            list_up = disp_1[:,:,i] < -self.lambda_boundary*self.box[i]
-            self.positions[:,list_down,i] = self.positions[:,list_down,i] - self.box[i]
-            self.positions[:,list_up,i] = self.positions[:,list_up,i] + self.box[i]
-        return self.positions
-            
-class select_particle_in_box:
-    R"""
-        given the existence of periodic boundary condition, before calculating MSD, 
-        I have to cut the IDs of particles walking across boundaries. 
-    """
-    def __init__(self,positions):
-        self.positions = positions
-        self.max_disp_abs = 10.0
-        #lambda_boundary is how far to believe that the particle has walked cross the boundary
-    
-    def compute(self):
-        #boundary
-        R"""
-        positions: (N_frames,N_particles,3)
-        """
-        self.sp=numpy.shape(self.positions)
-
-        disp_1 = self.positions[1:]-self.positions[:-1]#the displacement per frame.
-        disp_1_abs = numpy.absolute(disp_1)
-        list_reasonable_element = disp_1_abs < self.max_disp_abs
-        list_reasonable_particle_frame = numpy.logical_and(list_reasonable_element[:,:,0], list_reasonable_element[:,:,1])
-        list_reasonable_particle = list_reasonable_particle_frame[0,:]
-        for i in range(self.sp[1]):
-            list_reasonable_particle[i]=numpy.amin(list_reasonable_particle_frame[:,i])
-            
-        return list_reasonable_particle
-    """
-    #That directly using 'and' has been banned, so 'logical_and' is necessary
-    list_xmin = self.points[:,0] > xmin
-    list_xmax = self.points[:,0] < xmax
-    list_ymin = self.points[:,1] > ymin
-    list_ymax = self.points[:,1] < ymax
-    list_x = numpy.logical_and(list_xmin,list_xmax)
-    list_y = numpy.logical_and(list_ymin,list_ymax)
-    list_xy = numpy.logical_and(list_x,list_y)
-
-    self.edge_cut_positions_list = numpy.where(list_xy)
-    self.edge_cut_positions_bool = list_xy # T for body, F for edge
-    """
+        for particle_id in list_stable_id:
+            txyz_ith = self.txyz_stable[:,particle_id,:]
+            plt.figure()
+            plt.plot(txyz_ith[:,0],txyz_ith[:,1])
+            plt.xlabel("$x$ "+unit )#'(sigma)'
+            plt.ylabel("$y$ "+unit )
+            png_filename = 'traj_stable_'+str(int(particle_id))+'.png'
+            plt.savefig(prefix+png_filename)
+            plt.close()    

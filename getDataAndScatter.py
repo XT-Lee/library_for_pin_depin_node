@@ -4,7 +4,7 @@ import numpy as np
 from numpy.core.fromnumeric import mean, var
 from numpy.lib import average
 import opertateOnMysql as sql
-from points_analysis_2D import PointsAnalysis2D
+from points_analysis_2D import static_points_analysis_2d
 import freud
 
 def workflow_mysql_to_data_pin_hex_to_honeycomb():
@@ -2961,7 +2961,7 @@ def get_neighbour_cloud2():
     prefix="/home/tplab/hoomd-examples_0/"
     filename = prefix +'testhex3-16-8'#index2572~cairo
     points = np.loadtxt(filename)
-    set = pa.PointsAnalysis2D(points = points[:,0:2])
+    set = pa.static_points_analysis_2d(points = points[:,0:2])
     print(set.delaunay.neighbors)#why only triangles are listed?
     #set.delaunay.vertex_neighbor_vertices
 
@@ -2969,7 +2969,7 @@ def test_get_neighbor_cloud_bond_minima(index=1369):
     import points_analysis_2D
     prefix='/home/tplab/Downloads/'
     data_filename=prefix+'index'+str(index)
-    a_frame = points_analysis_2D.PointsAnalysis2D(filename=data_filename,hide_figure=False)
+    a_frame = points_analysis_2D.static_points_analysis_2d(filename=data_filename,hide_figure=False)
     #a_frame.draw_bond_length_distribution_and_first_minima()
     png_filename = prefix +'neighbor_cloud_'+'index'+str(index)+'.png'
     a_frame.get_neighbor_cloud_method_1st_minima_bond(png_filename=png_filename)
@@ -2991,7 +2991,7 @@ def get_dual_lattice():
     filename = point_prefix + "testkagome3-9-6"
     #"testkagome_part3-11-6" "testhoneycomb3-8-12-part1"
     #"testhoneycomb3-8-12" "testkagome3-9-6" "testhex3-16-8"
-    test = PointsAnalysis2D(filename=filename,hide_figure=False)
+    test = static_points_analysis_2d(filename=filename,hide_figure=False)
     
     pt = test.voronoi.vertices
     plt.figure()
