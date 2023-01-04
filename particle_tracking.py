@@ -7,6 +7,74 @@ import pandas as pd
 import os#pims
 import trackpy as tp
 
+class save_points_from_exp:
+    R"""
+    Introduction:
+        This class provides a routine to follow, which shows the steps to recognize images,
+        to transform videos into positions & trjectories.
+
+        Personally, my raw images are stored in
+        path_to_raw_data = 'home/tplab/xiaotian_file/from_hard_disc_20221209/
+        Xiaotian_file_20200514/1各期工作汇总/20190909项目(油相晶体)（ing）/20221129（测过冷度；24h不漏）'
+    
+    """
+    def __init__(self):
+        pass
+    
+    #step 1: set worksapce
+    def set_worksapce(self):
+        #caution: ensure that path_to_images stores only images(.jpg)!
+        self.path_to_images = '/home/remote/xiaotian_file/data/20221129/DefaultVideo_5'
+        #for path_to_results, any type of file is ok
+        self.path_to_results = '/home/remote/xiaotian_file/data/20221129/video_5'
+    
+    #step2: find suitable parameters to recognize particles
+    #check if (Diameter,minmass) suit for the first and the last frames
+    def check_first_last_frame(self,filename_image_first=None,filename_image_last=None):
+        R"""
+        return:
+            Diameter: minimum diameter(pixel) of particle
+            minmass: minimum lightness of particle
+        """
+        import particle_tracking as ptt
+        import os
+
+        for root, dirs, files in os.walk(self.path_to_images):#
+            files.sort()
+            filename_image_first = self.path_to_images+'/'+files[0]
+            filename_image_last = self.path_to_images+'/'+files[-1]#num_iamges = len(files)
+            break
+        ana = ptt.particle_track()
+        ana.single_frame_particle_tracking(filename_image_first,calibration=True)
+        ana.single_frame_particle_tracking(filename_image_last,calibration=True)
+
+        return ana.Diameter,ana.minmass
+    
+    #step3: recognize particles on all the images
+    #'txy_um.csv' records particle positions for each frame
+    def recognize_all_frames(self,Diameter,minmass,pixel_to_um=3.0/32.0,save_txy=False):
+        import particle_tracking as ptt
+        ana = ptt.particle_track()
+        feature_filename = self.path_to_results+'/'+'feature.csv'
+        ana.folder_frames_particle_tracking(self.path_to_images,Diameter,minmass,feature_filename) 
+        if save_txy:
+            txy_um_filename = self.path_to_results+'/'+'txy_um.csv'
+            ana.get_positions_from_features(feature_filename,pixel_to_um,txy_um_filename)
+    
+    #step4: get stable trajectories of particlesg
+    #'txyz_stable' is a list of trajectories contain only those particles
+    # which are always in field of view in video 
+    def get_stable_trajectory(self,pixel_to_um=3.0/32.0):
+        import particle_tracking as ptt
+        ana = ptt.particle_track()
+        feature_filename = self.path_to_results+'/'+'feature.csv'
+        track_filename = self.path_to_results+'/'+'track_memory0.csv'
+        ana.link_features_to_trajectories(feature_filename=feature_filename,track_filename=track_filename)
+        txyz_filename = self.path_to_results+'/'+'txyz.csv'
+        ana.save_trajectories(track_filename,txyz_filename)
+        txyz_npy_filename = self.path_to_results+'/'+'txyz_stable'
+        ana.select_stable_trajectory(txyz_filename,txyz_npy_filename=txyz_npy_filename,pixel_to_um=pixel_to_um)
+
 class particle_track:
     R"""
         algorithm from Eric Weeks
@@ -44,7 +112,7 @@ class particle_track:
         f0 = plt.imread(filename)
         f0 = f0[:,:,0]#3 channel to 1 channel
         sz=np.shape(f0)
-        print(sz)
+        #print(sz)
         #plt.imshow(frames[0])
         #diameter of particles should includes dark ring!
         self.f = tp.locate(f0, D, minmass= minmass,invert=False,separation=0.9*D)#diameter must be odd in pixels
@@ -128,6 +196,7 @@ class particle_track:
             #invert y-axis
             ##the direction of y-axis for image is different from which for coordination
             features['y'] = image_size[0]-1 - features['y']
+
             pd.DataFrame.to_csv(features,feature_filename)
             break
     

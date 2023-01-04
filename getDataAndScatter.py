@@ -6,6 +6,23 @@ from numpy.lib import average
 import opertateOnMysql as sql
 from points_analysis_2D import static_points_analysis_2d
 import freud
+R"""
+#NEW plot standard:
+#https://matplotlib.org/3.6.2/tutorials/introductory/quick_start.html#sphx-glr-tutorials-introductory-quick-start-py
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    points = np.random.random((100,2))#random.random () ()
+    
+    fig,ax = plt.subplots()
+    ax.plot(points[:,0],points[:,1])
+    ax.scatter(points[:,0],points[:,1],c=points[:,1])
+    ax.set_xlabel('x label')  # Add an x-label to the axes.
+    ax.set_ylabel('y label')  # Add a y-label to the axes.
+    ax.set_title("Simple Plot")  # Add a title to the axes
+    plt.show()
+
+"""
 
 def workflow_mysql_to_data_pin_hex_to_honeycomb():
     R"""
