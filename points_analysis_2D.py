@@ -1565,19 +1565,6 @@ class dynamic_points_analysis_2d:#old_class_name: msd
         fig,ax = plt.subplots()
         ax.plot(count_nb_change_event_rate)
 
-    def plot_trajectory(self,png_filename='trajectory_stable.png'):
-        list_stable_id = range(self.txyz_stable.shape[1])
-        plt.figure()
-        for index_particle in list_stable_id:
-            txyz_ith = self.txyz_stable[:,index_particle,:]
-            plt.plot(txyz_ith[:,0],txyz_ith[:,1])
-
-        plt.xlabel("$x$ (sigma)")
-        plt.ylabel("$y$ (sigma)")
-        #png_filename = '/home/'+self.account+'/Downloads/'+'traj_stable.png'
-        plt.savefig(png_filename)
-        plt.close()    
-
     def bond_plot(self,data_name='default_exp',final_cut=False,nb_change=None,
                 show_traps=False,trap_filename=None,trap_lcr=None,
                     account='tplab'):
