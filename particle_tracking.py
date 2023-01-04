@@ -175,6 +175,7 @@ class particle_track:
                     full_file = dir_path+'/'+file
                     f0 = plt.imread(full_file)
                     f0 = f0[:,:,0]
+                    image_size=np.shape(f0)
                     feature = tp.locate(f0, Diameter, minmass,invert=False)#,separation=0.9*D
                     #feature has 8 columns [y 	x 	mass 	size 	ecc 	signal 	raw_mass 	ep]
                     feature['frame']= frame
@@ -192,7 +193,10 @@ class particle_track:
                     frame = frame + 1
                 else:
                     print(file+' is not a jpg file!\n')
-            
+            #invert y-axis
+            ##the direction of y-axis for image is different from which for coordination
+            features['y'] = image_size[0]-1 - features['y']
+
             pd.DataFrame.to_csv(features,feature_filename)
             break
     

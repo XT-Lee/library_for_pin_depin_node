@@ -1,15 +1,11 @@
-from curses import noecho
-from turtle import position, shape
 import numpy 
 import matplotlib.pyplot as plt
-from pyparsing import counted_array
 from scipy.spatial import Voronoi, voronoi_plot_2d
 from scipy.spatial import  Delaunay
 from scipy.spatial import  distance
 import matplotlib 
 import os
 import freud
-import threading
 
 from particle_tracking import particle_track
 
@@ -1384,6 +1380,41 @@ class dynamic_points_analysis_2d:#old_class_name: msd
             self.txyz_stable = self.txyz[:,list_stable_id,:]
             self.particles = list_stable_id.shape[0]
 
+    def plot_trajectory(self,png_prefix='',unit = '(um)'):
+        frames,particles,dimensions=self.txyz_stable.shape
+        list_stable_id = range(particles)#txyz_stable.shape[1]
+        plt.figure()
+        for index_particle in list_stable_id:
+            txyz_ith = self.txyz_stable[:,index_particle,:]
+            plt.plot(txyz_ith[:,0],txyz_ith[:,1])
+        plt.xlabel("$x$ "+unit )
+        plt.ylabel("$y$ "+unit )
+        #png_filename = '/home/'+self.account+'/Downloads/'+'traj_stable.png'
+        png_filename=png_prefix+'trajectory_stable.png'
+        plt.savefig(png_filename)
+        plt.close() 
+
+    def plot_trajectory_single_particle(self,png_prefix='',unit = '(um)'):
+        R"""
+        EXP:
+            path_to_results = '/home/remote/xiaotian_file/data/20221129/video_5'
+            txyz_npy_filename = path_to_results+'/'+'txyz_stable.npy'
+            txyz_stable = np.load(txyz_npy_filename)
+            msds = pa.dynamic_points_analysis_2d(txyz_stable,mode='exp')
+            msds.plot_trajectory_single_particle(path_to_results+'/')
+        """
+        frames,particles,dimensions=self.txyz_stable.shape
+        list_stable_id = range(self.particles)#txyz_stable.shape[1]
+        for particle_id in list_stable_id:
+            txyz_ith = self.txyz_stable[:,particle_id,:]
+            plt.figure()
+            plt.plot(txyz_ith[:,0],txyz_ith[:,1])
+            plt.xlabel("$x$ "+unit )#'(sigma)'
+            plt.ylabel("$y$ "+unit )
+            png_filename = 'traj_stable_'+str(int(particle_id))+'.png'
+            plt.savefig(png_prefix+png_filename)
+            plt.close()   
+
     def msd_module(self):
         self.msd = msd(self.txyz_stable)
 
@@ -1533,9 +1564,6 @@ class dynamic_points_analysis_2d:#old_class_name: msd
         count_nb_change_event_rate = count_nb_change_event/n_particle_nb_stable
         fig,ax = plt.subplots()
         ax.plot(count_nb_change_event_rate)
-        plt.show()
-
-    
 
     def plot_trajectory(self,png_filename='trajectory_stable.png'):
         list_stable_id = range(self.txyz_stable.shape[1])
