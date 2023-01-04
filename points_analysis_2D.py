@@ -1872,11 +1872,15 @@ class msd:
             if lindemann:
                 plt.title("Mean Squared Displacement")
                 plt.xlabel("$t$ (sec)")
-                plt.ylabel("MSD$(t)$ (sigma/A)")
-            elif um_sec:
+                plt.ylabel("MSD$(t)$ (sigma^2/A^2)")
+            elif sigma:
                 plt.title("Mean Squared Displacement")
                 plt.xlabel("$t$ (sec)")
                 plt.ylabel("MSD$(t)$ (sigma^2)")
+            elif um_sec:
+                plt.title("Mean Squared Displacement")
+                plt.xlabel("$t$ (sec)")
+                plt.ylabel("MSD$(t)$ (um^2)")
         #png_filename = 'msd_chips_long_loglog_'+'index5208_9'+'.png'
         plt.savefig(png_filename)#png_filename
         plt.close()
