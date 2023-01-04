@@ -1,8 +1,7 @@
 #import threading
 import time
-
-
 tm1=time.localtime(time.time())
+
 
 import pandas as pd
 path_to_results = '/home/remote/xiaotian_file/data/20221129/video_7'
@@ -31,6 +30,7 @@ png_filename=path_to_results+'/'+'msd_scantchips_loglog_um_95%.png'
 msds.plot_msd(time_log,png_filename)
 """
 
+
 import points_analysis_2D as pa
 import numpy
 import pandas as pd
@@ -58,6 +58,8 @@ time_log = path_to_folder+'DefaultVideo_5.txt'
 png_filename = path_to_folder+'particle_'+str(id)+'_'+'msds_loglog.png'
 pa.plot_msd_uniform(m_msd=1,time_log=time_log,png_filename=png_filename)
 """
+
+
 
 #time.sleep(1)
 tm2=time.localtime(time.time())
