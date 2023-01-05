@@ -3,7 +3,11 @@
 - this is just a library for me to record the codes used to finish my Ph.D project.
 
 ## log:
+- 20230105 fix bug of saving txyz as txyz_stable into 'txyz_stable.npy'
+	   update get_displacement_field_xy.given txyz_stable, cut_edge is not necessary anymore.
+	   move displacement_field_xy from proceed_gsd_file to dynamic_points_analysis_2d in points_analysis_2d
 - 20230104 reorganize structure of points_analysis_2D.dynamic_points_analysis_2d
+	   edit proceed_gsd_file, dynamic_points_analysis_2d in points_analysis_2D
 - 20230103 add monitor_neighbor_change_event(), bond_plot(), hist_neighbor_change_event() in points_analysis_2D.dynamic_points_analysis_2d
 - 20230102 add sum_id_neighbors in static_points_analysis_2d.get_nearest_neighbor_dispalcement(), to check if neighbors of a center particle have changed over time.
 - 20230101 set new standard of getDataAndScatter

@@ -1001,7 +1001,7 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
             
     
     if trajectory:
-        gsd_data.get_trajectory()
+        gsd_data.plot_trajectory()
     
     for i in range(gsd_data.num_of_frames):
         if final_cut:
