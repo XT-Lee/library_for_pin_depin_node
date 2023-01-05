@@ -1,5 +1,4 @@
 import numpy as np
-from numpy.lib.function_base import select
 import pymysql
 def introduction():
     R"""
@@ -49,7 +48,8 @@ def getDataFromMysql(path_to_save_file=None,table_name='',search_condition='',):
     Examples:
         data = operateOnMysql.getDataFromMysql(
                 path_to_save_file='/home/tplab/Downloads/91-192kl'
-                table_name='honeycomb')
+                table_name='honeycomb',
+                search_condition='where HarmonicK > 100')
     """
     
     mysql_conn = connectToMysql()

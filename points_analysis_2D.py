@@ -1,13 +1,11 @@
 import numpy 
 import matplotlib.pyplot as plt
-from scipy.spatial import Voronoi, voronoi_plot_2d
+from scipy.spatial import Voronoi
 from scipy.spatial import  Delaunay
 from scipy.spatial import  distance
 import matplotlib 
 import os
 import freud
-
-from particle_tracking import particle_track
 
 R"""
 CLASS list:
@@ -82,10 +80,10 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
                 #filename='/home/tplab/Downloads/index93.0'
                 self.points = numpy.loadtxt(filename)
                 self.points = self.points[:,0:2]
-                self.points_analysis()
+                self.basic_points_analysis()
         else :
             self.points = points[:,:2]
-            self.points_analysis()
+            self.basic_points_analysis()
 
         #not show figures
         if hide_figure:
@@ -93,14 +91,13 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
         #set basic parameters
         #self.prefix='/home/tplab/Downloads/'
             
-    def points_analysis(self):
+    def basic_points_analysis(self):
         self.voronoi = Voronoi(self.points)
         self.delaunay = Delaunay(self.points)
         self.get_ridge_length()
         self.get_bond_length()
         #cut the edge of positions
         self.__cut_edge_of_positions()#effective lattice constant is given 3 defaultly
-    #def bonds_analysis(self):
 
     def get_ridge_length(self):
         #where the ridge length of vertex-i & vertex-j is ridge_length[i,j]
@@ -660,7 +657,6 @@ index 10 is out of bounds for axis 0 with size 10
         sp_all=numpy.shape(pk)
         self.Psi_k_rate=sp_3[0]/sp_all[0]
 
-
     def draw_bonds(self,fignum=1,show=False):
         #draw a figure with bonds
         plt.figure(fignum)
@@ -904,101 +900,101 @@ index 10 is out of bounds for axis 0 with size 10
         # while twisted polygons whose vertices are farther from each other 
         # than from different vertices clusters.
         # so an algorithm with more precision is needed 
-            
-'''
-def count_honeycomb(self):
-    #check whether cutted_bonds exist
-    if not ('self.cutted_bonds' in dir()):
-        self.draw_bonds_conditional_ridge()
-    #get linked triangles pair   
-    shp=numpy.shape(self.cutted_bonds)
-    self.linked_triangles = numpy.zeros(shp)
-    for i in range(shp[0]):
-        #1st round search
-        index1=numpy.where(self.delaunay.simplices[:]==self.cutted_bonds[i,0])
-        #2nd round search
-        index2=numpy.where(self.delaunay.simplices[index1[0]]==self.cutted_bonds[i,1])
-        temp=index1[0]
-        self.linked_triangles[i]=temp[index2[0]]
-    del temp
-    #get linked triangles chain
-    chain=numpy.zeros((shp[0],8))#up to 10-polygon
-    chain[:]=-1
-    all_chain_count=numpy.zeros((shp[0],1))
-    chain_num=1#now we are proceeding the chain_num-th chain [x]unfinished
-    tri_count_max=shp[0]#at most the triangle pairs should be linked
-    lt_temp=self.linked_triangles[:]#numpy.zeros((shp[0],2))
+    def count_honeycomb(self):   
+        '''
 
-    i=0#if all the triangle pairs are read, break the loop
-    while sum(all_chain_count)<tri_count_max:
-        if lt_temp[i,0]==-1:
-            #this triangle pair has been linked
-            i=i+1
-            continue
-        else:
-            #init a new chain
-            this_chain_count=1
-            lt_temp[i,:]=-1#delete the head triangle pair to avoid being searched
-            chain[chain_num,this_chain_count-1]=self.linked_triangles[i,0]
-            chain[chain_num,this_chain_count]=self.linked_triangles[i,1]
-            #search linked triangles
-            index1=numpy.where((lt_temp[:,0]==self.linked_triangles[i,1])|(lt_temp[:,1]==self.linked_triangles[i,1]))#rightward
-            index_check1=numpy.shape(index1[0])
-            if index_check1[0]==0:
-                print('error,the triangle pair rightward not found') 
-            elif index_check1[0]==1:
-                #find triangles
-                if index1[1]==0:
-                    self.linked_triangles[index1[0],1]
-                    lt_temp[index1[0],:]=-1
-                    this_chain_count=this_chain_count+1
+            #check whether cutted_bonds exist
+            if not ('self.cutted_bonds' in dir()):
+                self.draw_bonds_conditional_ridge()
+            #get linked triangles pair   
+            shp=numpy.shape(self.cutted_bonds)
+            self.linked_triangles = numpy.zeros(shp)
+            for i in range(shp[0]):
+                #1st round search
+                index1=numpy.where(self.delaunay.simplices[:]==self.cutted_bonds[i,0])
+                #2nd round search
+                index2=numpy.where(self.delaunay.simplices[index1[0]]==self.cutted_bonds[i,1])
+                temp=index1[0]
+                self.linked_triangles[i]=temp[index2[0]]
+            del temp
+            #get linked triangles chain
+            chain=numpy.zeros((shp[0],8))#up to 10-polygon
+            chain[:]=-1
+            all_chain_count=numpy.zeros((shp[0],1))
+            chain_num=1#now we are proceeding the chain_num-th chain [x]unfinished
+            tri_count_max=shp[0]#at most the triangle pairs should be linked
+            lt_temp=self.linked_triangles[:]#numpy.zeros((shp[0],2))
 
-                elif index1[1]==1:#
-                    self.linked_triangles[index1[0],0]
-                    lt_temp[index1[0],:]=-1
-                    this_chain_count=this_chain_count+1
-
+            i=0#if all the triangle pairs are read, break the loop
+            while sum(all_chain_count)<tri_count_max:
+                if lt_temp[i,0]==-1:
+                    #this triangle pair has been linked
+                    i=i+1
+                    continue
                 else:
-                    print('error')
+                    #init a new chain
+                    this_chain_count=1
+                    lt_temp[i,:]=-1#delete the head triangle pair to avoid being searched
+                    chain[chain_num,this_chain_count-1]=self.linked_triangles[i,0]
+                    chain[chain_num,this_chain_count]=self.linked_triangles[i,1]
+                    #search linked triangles
+                    index1=numpy.where((lt_temp[:,0]==self.linked_triangles[i,1])|(lt_temp[:,1]==self.linked_triangles[i,1]))#rightward
+                    index_check1=numpy.shape(index1[0])
+                    if index_check1[0]==0:
+                        print('error,the triangle pair rightward not found') 
+                    elif index_check1[0]==1:
+                        #find triangles
+                        if index1[1]==0:
+                            self.linked_triangles[index1[0],1]
+                            lt_temp[index1[0],:]=-1
+                            this_chain_count=this_chain_count+1
+
+                        elif index1[1]==1:#
+                            self.linked_triangles[index1[0],0]
+                            lt_temp[index1[0],:]=-1
+                            this_chain_count=this_chain_count+1
+
+                        else:
+                            print('error')
+                                
+                    elif index_check1[0]==2:
+                        #two braches
+                        for j in index1[0]:
+                            if lt_temp[j,0]== self.linked_triangles[i,1]:
+                                pass 
+
+                    else:
+                        print('error')
                         
-            elif index_check1[0]==2:
-                #two braches
-                for j in index1[0]:
-                    if lt_temp[j,0]== self.linked_triangles[i,1]:
-                        pass 
-
+                    #leftward
+                if i==tri_count_max:
+                    #if all the triangle pairs are read, break the loop
+                    break
+        '''
+        '''
+        for i in range(shp[0]):
+            if i==0:
+                chain[0,0:2]=lt_temp[i]
+                lt_temp[i]=[-1,-1]#clear the i-th triangle to avoid being found
+                chain_count[count]=chain_count[count]+1#the count of chain-0 is added one
+                count=count+1#now there is one more chain
             else:
-                print('error')
-                
-            #leftward
-        if i==tri_count_max:
-            #if all the triangle pairs are read, break the loop
-            break
-'''
+                index1=numpy.where((chain[:]==lt_temp[i,0])|(chain[:]==lt_temp[i,1]))
+                temp=index1[0]#row-index of linked triangles
+                for j in temp:
+                    if chain_count[j,0]:
+                    lt_temp[j,1]
+                #that chain[0] and chain[5] should be linked may exist
+
+        del lt_temp,temp
+        
+        #https://blog.csdn.net/u013378642/article/details/81775131
+        self.linked_triangles_sorted=sorted(self.linked_triangles,key=lambda x:x[0])
+        print('t1\n',self.linked_triangles,'\nt2\n',self.linked_triangles_sorted)
+        #a chain of triangle could be like [1,162] [162,4] [4,88.]
+        '''
+        pass
                       
-'''
-for i in range(shp[0]):
-    if i==0:
-        chain[0,0:2]=lt_temp[i]
-        lt_temp[i]=[-1,-1]#clear the i-th triangle to avoid being found
-        chain_count[count]=chain_count[count]+1#the count of chain-0 is added one
-        count=count+1#now there is one more chain
-    else:
-        index1=numpy.where((chain[:]==lt_temp[i,0])|(chain[:]==lt_temp[i,1]))
-        temp=index1[0]#row-index of linked triangles
-        for j in temp:
-            if chain_count[j,0]:
-            lt_temp[j,1]
-        #that chain[0] and chain[5] should be linked may exist
-
-del lt_temp,temp
- 
-#https://blog.csdn.net/u013378642/article/details/81775131
-self.linked_triangles_sorted=sorted(self.linked_triangles,key=lambda x:x[0])
-print('t1\n',self.linked_triangles,'\nt2\n',self.linked_triangles_sorted)
-#a chain of triangle could be like [1,162] [162,4] [4,88.]
-'''
-
 class proceed_gsd_file:
     R"""
     Introduction:
@@ -1034,18 +1030,16 @@ class proceed_gsd_file:
                 simu_index = filename_gsd_seed.strip(prefix_gsd)
                 id=simu_index.index('_')
                 self.simu_index = simu_index[0:id]
-
         else :
             self.simu_index = simu_index
             if not seed is None:
-                simu_index = str(simu_index)+'_'+str(seed)
+                simu_index = str(int(simu_index))+'_'+str(int(seed))
             prefix_gsd = '/home/'+account+'/hoomd-examples_0/trajectory_auto'
             postfix_gsd = '.gsd'
             self.filename_gsd = prefix_gsd+str(simu_index)+postfix_gsd
             self.__open_gsd()
         
         self.box = self.trajectory.read_frame(-1).configuration.box
-        self.__cut_edge_of_positions()
 
     def __open_gsd(self):
         import gsd.hoomd
@@ -1055,166 +1049,78 @@ class proceed_gsd_file:
     def read_a_frame(self,frame_num):
         snap=self.trajectory.read_frame(frame_num)#take a snapshot of the N-th frame
         positions=snap.particles.position[:,0:2]#just record [x,y] ignoring z
-        return positions
         #self.N = self.snap.particles.N
-    
-    def get_displacement_field_xy(self,frame_index,plot=False,png_filename=None):
-        R"""
-        Introduction:
-            The function draws a displacement vector field from init state to final state 
-            with positions at edge removed  to clean abnormal displacement vector. 
-        Example:
-            import points_analysis_2D as pa
-            gsd = pa.proceed_gsd_file(simu_index=1382)
-            gsd.get_displacement_field(plot=True)
-        """
-        self.get_displacements(frame_index)
-
-        #cut the edge of positions
-        self.__cut_edge_of_positions()#effective lattice constant is given 3 defaultly
-        list = self.edge_cut_positions_list
-        xy = self.init_positions[list]
-        uv = self.displacements[list]
-
-        if plot:
-            plt.figure()
-            #plt.scatter(self.init_positions[:,0],self.init_positions[:,1])#init_state
-            #plt.scatter(self.final_positions[:,0],self.final_positions[:,1])#final_state
-            plt.quiver(xy[:,0],xy[:,1],uv[:,0],uv[:,1],angles='xy', scale_units='xy', scale=1)
-            plt.title('displacement field '+'index:'+str(self.simu_index))
-            plt.xlabel('x(sigma)')
-            plt.ylabel('y(sigma)')
-            if not png_filename is None:
-                plt.savefig(png_filename)
-            plt.close()
-
-    def get_displacement_field_distribution(self,frame_index,log_mode=False,png_filename=None):
-        R"""
-        Introduction:
-            The function draws a displacement vector field from init state to final state 
-            with positions at edge removed  to clean abnormal displacement vector. 
-        Example:
-            import points_analysis_2D as pa
-            gsd = pa.proceed_gsd_file(simu_index=1382)
-            gsd.get_displacement_field(plot=True)
-        """
-        self.get_displacements(frame_index)
-
-        #cut the edge of positions
-        self.__cut_edge_of_positions()#effective lattice constant is given 3 defaultly
-        list = self.edge_cut_positions_list
-        xy = self.init_positions[list]
-        uv = self.displacements[list]
-        uv2 = uv*uv#let each element  i be i^2
-        square_displacement = uv2[:,0]+uv2[:,1]
-        rsd = numpy.sqrt(square_displacement)
-
-        if log_mode:
-            rsd = numpy.log10(square_displacement)
-            plt.figure()
-            count_bins=plt.hist(rsd,bins=20,range=[-2,2])#
-            plt.xlabel('log(displacement)/um')
-        else:
-            plt.figure()
-            count_bins=plt.hist(rsd,bins=20)#,range=[0,2]
+        return positions
         
-        """
-        prefix_old="/home/tplab/hoomd-examples_0"
-        folder_name=self.filename_gsd.strip(prefix_old)
-        folder_name=folder_name.strip(".gsd")#folder_name=prefix+png_filename_as_folder
-        folder_name="t"+folder_name#"t" is necessary in case of "/t" deleted before
-        prefix='/home/tplab/Downloads/'
-        png_filename=prefix+folder_name+"/"+folder_name+"_"+str(frame_index)+'_'+str(int(i))+'Displacement_Field_hist'+'.png'
-        #check if the folder exists
-        isExists=os.path.exists(prefix+folder_name)
-        if isExists:
-            plt.savefig(png_filename)
-        else:
-            os.makedirs(prefix+folder_name)
-            plt.savefig(png_filename)
-        """
-        plt.savefig(png_filename)
-        plt.close()
-        #plt.show()
-        """
-        #check code
-        import numpy as np
-        uv = np.zeros((4,2))
-        i=0
-        while i<4:
-            uv[i]=[i,i+1]
-            i+=1
-        print(uv)
-        uv2=uv*uv
-        print(uv2)
-        square_displacement = uv2[:,0]+uv2[:,1]
-        print(square_displacement)
-        rsd = np.sqrt(square_displacement)
-        print(rsd)
-        """ 
-        #square_displacement = uv2[:,0]+uv2[:,1]
-    def get_displacements(self,frame_index):
-        self.init_positions = numpy.array(self.read_a_frame(0)) 
-        final_positions = numpy.array(self.read_a_frame(frame_index)) 
-        self.displacements =  final_positions - self.init_positions
-        #return displacements
-
-    def __cut_edge_of_positions(self,effective_lattice_constant = 3):
-        R"""
-        Variables:
-            effective_lattice_constant： the distance between a particle and its neighbor
-            edge_cut_positions_list: list the rows of particles' positions at given snapshot.
-        """
-        self.init_positions = numpy.array(self.read_a_frame(0)) 
-        a = effective_lattice_constant
-        #sz = len(self.init_positions)#numpy.size
-        #xy = self.init_positions
-        xmax = max(self.init_positions[:,0])
-        ymax = max(self.init_positions[:,1])
-        xmin = min(self.init_positions[:,0]) 
-        ymin = min(self.init_positions[:,1])
-        xmax = xmax - a
-        ymax = ymax - a
-        xmin = xmin + a
-        ymin = ymin + a
-        
-        #That directly using 'and' has been banned, so 'logical_and' is necessary
-        list_xmin = self.init_positions[:,0] > xmin
-        list_xmax = self.init_positions[:,0] < xmax
-        list_ymin = self.init_positions[:,1] > ymin
-        list_ymax = self.init_positions[:,1] < ymax
-        list_x = numpy.logical_and(list_xmin,list_xmax)
-        list_y = numpy.logical_and(list_ymin,list_ymax)
-        list_xy = numpy.logical_and(list_x,list_y)
-
-        self.edge_cut_positions_list = numpy.where(list_xy)
-
-    def get_coordination_number(self):#[x]
-        """
-        import points_analysis_2D
-        obj_of_simu_index = points_analysis_2D.PointsAnalysis2D(filename=data_filename)
-        obj_of_simu_index.get_coordination_number_conditional()
-        ccn=obj_of_simu_index.count_coordination_ratio
-        """
-        pass
-    
-    def get_trajectory_data(self):
+    def get_trajectory_data(self,save_prefix = None):
         R"""
         introduction:
-            transform gsd file into an array [N frames,N particles,3],
+            transform gsd file into an array [Nframes,Nparticles,3],
             recording the trajectory of particles.
+        input:
+            gsd_file
+        return:
+            txyz [Nframes,Nparticles,3] or
+            (npy file)[Nframes,Nparticles,3]
         """
-        iframe = 0
-        snapi = self.trajectory.read_frame(iframe)
+        frame = 0
+        snapi = self.trajectory.read_frame(frame)
         pos_list = numpy.zeros([self.num_of_frames,snapi.particles.N,3])#gsd_data.trajectory[0].particles.N,
-        while iframe < self.num_of_frames:
-            pos_list[iframe] = self.trajectory.read_frame(iframe).particles.position
+        while frame < self.num_of_frames:
+            pos_list[frame] = self.trajectory.read_frame(frame).particles.position
             #print(self.trajectory.read_frame(iframe).configuration.box)
-            iframe = iframe + 1
+            frame = frame + 1
         
         self.txyz = pos_list
+
+        if not save_prefix is None:
+            file_txyz_npy = save_prefix+'txyz'
+            numpy.save(file = file_txyz_npy,arr = self.txyz)
+        
+    def get_trajectory_stable_data(self,save_prefix = None):
+        R"""
+        introduction:
+            transform trajectory data from simulation with periodic boundary condition 
+            into trajectories of which particles never move across boundary(box).
+        return:
+            txyz_stable: (N_frames,N_particles,3)
+
+        """
+        #dedrift?
+        frames,particles,dimensions=self.txyz.shape
+        if hasattr(self,'box'):
+            #print(locals())#local variable not of class
+            self.dtxyz = self.txyz[1:,:,:] - self.txyz[:frames-1,:,:]
+            #cross is true
+            list_crossleft = self.dtxyz[:,:,0] > 0.9*self.box[0]
+            list_crossbottom = self.dtxyz[:,:,1] > 0.9*self.box[1]
+            list_crossright = self.dtxyz[:,:,0] < -0.9*self.box[0]
+            list_crosstop = self.dtxyz[:,:,1] < -0.9*self.box[1]
+            #mark all the frames where cross event occur as True
+            list_crossx = numpy.logical_or(list_crossleft,list_crossright)
+            list_crossy = numpy.logical_or(list_crossbottom,list_crosstop)
+            list_cross = numpy.logical_or(list_crossx,list_crossy)
+            #mark all the particles who have experienced cross event as True
+            list_cross_true = list_cross[0,:]
+            list_cross_true[:] = True
+            #list_cross_true = list_cross_true[0]#remove empty extra dimension
+            #print(list_cross_true.shape)
+            i=0
+            while i<particles:
+                list_cross_true[i] = numpy.max(list_cross[:,i])
+                i = i + 1
+            list_stable_id = numpy.where(list_cross_true[:]==False)
+            list_stable_id = list_stable_id[0]#remove empty extra dimension
+            #print(list_stable_id.shape)
+            
+            self.txyz_stable = self.txyz[:,list_stable_id,:]
+            self.particles = list_stable_id.shape[0]
+
+            if not save_prefix is None:
+                file_txyz_npy = save_prefix+'txyz_stable'
+                numpy.save(file = file_txyz_npy,arr = self.txyz_stable)
     
-    def get_trajectory(self,length_cut_edge=0):#checked right
+    def plot_trajectory(self,length_cut_edge=0):#checked right
         R"""
         Example:
             import getDataAndScatter as scatt
@@ -1292,6 +1198,32 @@ class proceed_gsd_file:
 
         return folder_name
     
+    def get_displacement_field_xy(self,frame_index,plot=False,png_filename=None):
+        R"""
+        Introduction:
+            The function draws a displacement vector field from init state to final state 
+            with positions at edge removed  to clean abnormal displacement vector. 
+        Example:
+            import points_analysis_2D as pa
+            gsd = pa.proceed_gsd_file(simu_index=1382)
+            gsd.get_displacement_field(plot=True)
+        """
+        self.gdf_xy = dynamic_points_analysis_2d(self.txyz_stable)
+        self.gdf_xy.displacement_field_module()
+        self.gdf_xy.displacemnt_field.get_displacement_field_xy(frame_index,plot,png_filename)
+
+    def get_displacement_field_distribution(self,frame_index,log_mode=False,png_filename=None):
+        R"""
+        Introduction:
+            The function draws a displacement vector field from init state to final state 
+            with positions at edge removed  to clean abnormal displacement vector. 
+        Example:
+            import points_analysis_2D as pa
+            gsd = pa.proceed_gsd_file(simu_index=1382)
+            gsd.get_displacement_field(plot=True)
+        """
+        self.gdf_xy.displacemnt_field.get_displacement_field_distribution(frame_index,log_mode,png_filename)
+
     def get_gr(self,frame_num):
         rdf = freud.density.RDF(bins=200, r_max=20.0,)#
 
@@ -1306,6 +1238,9 @@ class proceed_gsd_file:
         plt.close()
 
 class proceed_exp_file:
+    R"""
+    see particle_tracking.py to get trajectories of particles from a video.
+    """
     pass
 
 class dynamic_points_analysis_2d:#old_class_name: msd
@@ -1315,86 +1250,52 @@ class dynamic_points_analysis_2d:#old_class_name: msd
     
     Methods:
         msd_module: mean square displacements.
-
+        displacement_field_module: displacement field.
     """
-    def __init__(self,txyz,box=None,plot_trajectory=False,mode='simu'):#,account='tplab'
+    def __init__(self,txyz_stable,mode='simu'):#,txyz,box=None,account='tplab'
         R"""
         parameters:
-            TXYZ:array[Nframes,Nparticles,xyz],
-                for exp data, unit of xyz must be um!
-            BOX: [lx,ly,lz,xy,xz,yz]
+            txyz_stable:array[Nframes,Nparticles,xyz],
+                for simu data, 
+                    ensure that particles never move across the boundary(box)!
+                for exp data, 
+                    unit of xyz must be um! 
+                    ensure that particles are always in the vision field!
+            #BOX: [lx,ly,lz,xy,xz,yz]
             account: 'remote' or 'tplab'
             mode: 'simu' or 'exp'. 'simu' to select particles in box; 'exp' to direct compute msd
         """
-        self.txyz = txyz
+        #self.txyz = txyz
             
         if mode == 'simu':
-            self.box = box
-            self.__select_stable_trajectories_simu(plot_trajectory)
+            #self.box = box
+            #self.__select_stable_trajectories_simu(plot_trajectory)
+            self.txyz_stable = txyz_stable
+            self.x_unit = '(1)'
+            self.t_unit = '(step)'
         elif mode == 'exp':
-            self.txyz_stable = txyz
+            self.txyz_stable = txyz_stable
+            self.x_unit = '(um)'
+            self.t_unit = '(s)'
 
         #self.account = account
         self.mode = mode
 
-    def __select_stable_trajectories_simu(self):
-        R"""
-        introduction:
-            transform trajectory data from simulation with periodic boundary condition 
-            into trajectories of which particles never move across boundary(box).
-        parameters:
-            positions: (N_frames,N_particles,3)
-
-        exp:
-            import points_analysis_2D as pa
-            msd_class = pa.msd(gsd_data.txyz,gsd_data.box,account='remote')#pa.msd(txyz,box,account='remote')
-            msd_class.compute_t_chips()
-            msd_class.plot()
-        """
-        #dedrift?
-        frames,particles,dimensions=self.txyz.shape
-        if hasattr(self,'box'):
-            #print(locals())#local variable not of class
-            self.dtxyz = self.txyz[1:,:,:] - self.txyz[:frames-1,:,:]
-            #cross is true
-            list_crossleft = self.dtxyz[:,:,0] > 0.9*self.box[0]
-            list_crossbottom = self.dtxyz[:,:,1] > 0.9*self.box[1]
-            list_crossright = self.dtxyz[:,:,0] < -0.9*self.box[0]
-            list_crosstop = self.dtxyz[:,:,1] < -0.9*self.box[1]
-            #mark all the frames where cross event occur as True
-            list_crossx = numpy.logical_or(list_crossleft,list_crossright)
-            list_crossy = numpy.logical_or(list_crossbottom,list_crosstop)
-            list_cross = numpy.logical_or(list_crossx,list_crossy)
-            #mark all the particles who have experienced cross event as True
-            list_cross_true = list_cross[0,:]
-            #list_cross_true = list_cross_true[0]#remove empty extra dimension
-            #print(list_cross_true.shape)
-            i=0
-            while i<particles:
-                list_cross_true[i] = numpy.max(list_cross[:,i])
-                i = i + 1
-            list_stable_id = numpy.where(list_cross_true[:]==False)
-            list_stable_id = list_stable_id[0]#remove empty extra dimension
-            #print(list_stable_id.shape)
-            
-            self.txyz_stable = self.txyz[:,list_stable_id,:]
-            self.particles = list_stable_id.shape[0]
-
-    def plot_trajectory(self,png_prefix='',unit = '(um)'):
+    def plot_trajectory(self,png_prefix=''):
         frames,particles,dimensions=self.txyz_stable.shape
         list_stable_id = range(particles)#txyz_stable.shape[1]
         plt.figure()
         for index_particle in list_stable_id:
             txyz_ith = self.txyz_stable[:,index_particle,:]
             plt.plot(txyz_ith[:,0],txyz_ith[:,1])
-        plt.xlabel("$x$ "+unit )
-        plt.ylabel("$y$ "+unit )
+        plt.xlabel("$x$ "+self.x_unit )
+        plt.ylabel("$y$ "+self.x_unit )
         #png_filename = '/home/'+self.account+'/Downloads/'+'traj_stable.png'
         png_filename=png_prefix+'trajectory_stable.png'
         plt.savefig(png_filename)
         plt.close() 
 
-    def plot_trajectory_single_particle(self,png_prefix='',unit = '(um)'):
+    def plot_trajectory_single_particle(self,png_prefix=''):
         R"""
         EXP:
             path_to_results = '/home/remote/xiaotian_file/data/20221129/video_5'
@@ -1409,15 +1310,26 @@ class dynamic_points_analysis_2d:#old_class_name: msd
             txyz_ith = self.txyz_stable[:,particle_id,:]
             plt.figure()
             plt.plot(txyz_ith[:,0],txyz_ith[:,1])
-            plt.xlabel("$x$ "+unit )#'(sigma)'
-            plt.ylabel("$y$ "+unit )
+            plt.xlabel("$x$ "+self.x_unit )#'(sigma)'
+            plt.ylabel("$y$ "+self.x_unit )
             png_filename = 'traj_stable_'+str(int(particle_id))+'.png'
             plt.savefig(png_prefix+png_filename)
             plt.close()   
 
     def msd_module(self):
-        self.msd = msd(self.txyz_stable)
-
+        R"""
+        return:
+            (class)self.msd
+        """
+        self.msd = mean_square_displacement(self.txyz_stable)
+    
+    def displacement_field_module(self):
+        R"""
+        return:
+            (class)self.displacemnt_field
+        """
+        self.displacemnt_field = displacemnt_field_2D(self.txyz_stable)
+    
     def compute_nearest_neighbor_displacements(self,unit='um',csv_prefix=''):
         R"""
         parameters:
@@ -1514,6 +1426,9 @@ class dynamic_points_analysis_2d:#old_class_name: msd
         return:
             list_sum_id_nb_stable:
                 (csv file)["frame", "particle_id", "sum_id_neighbors", 'if_nb_change'].
+            if_nb_change_int:
+                (ndarray)[Nframe_nb_stable,Nparticle_nb_stable]. 0 nb stable, 1 nb change.
+            n_particle_nb_stable:(int)
         consideration:
             given edge cut in each frame, some of the particles are removed,
             check each particle_id if contains Nframes.
@@ -1557,6 +1472,7 @@ class dynamic_points_analysis_2d:#old_class_name: msd
         list_sum_id_nb_stable['if_nb_change'] = numpy.reshape(if_nb_change,n_frame_nb_stable*n_particle_nb_stable)
         file_list_sum_id_nb_stable = csv_prefix + 'list_sum_id_nb_stable.csv'
         pd.DataFrame.to_csv(list_sum_id_nb_stable,file_list_sum_id_nb_stable)
+        return if_nb_change_int,n_particle_nb_stable
         
     def hist_neighbor_change_event(self,if_nb_change_int,n_particle_nb_stable):
         # histogram: frame VS count change_neighbor_events
@@ -1565,18 +1481,11 @@ class dynamic_points_analysis_2d:#old_class_name: msd
         fig,ax = plt.subplots()
         ax.plot(count_nb_change_event_rate)
 
-    def bond_plot(self,data_name='default_exp',final_cut=False,nb_change=None,
+    def dynamic_coordination_bond_plot(self,data_name='default_exp',final_cut=False,nb_change=None,
                 show_traps=False,trap_filename=None,trap_lcr=None,
                     account='tplab'):
         R"""
         Introduction:
-            Read a gsd file and save a series of analyzed results as follow.
-            trajectory: 
-            displacement_field:
-            psik: global psi_k vs time. 
-            neighbor_cloud:
-            coordination_number:
-            coordination_number3_plot:
             final_cut: true to proceed the last frame only.
             
         """
@@ -1626,8 +1535,8 @@ class dynamic_points_analysis_2d:#old_class_name: msd
         
             if final_cut:
                 break
-
-class msd:
+        
+class mean_square_displacement:
     R"""
     Introduction:
         defined by wikipedia(https://en.wikipedia.org/wiki/Mean_squared_displacement)
@@ -1837,7 +1746,7 @@ class msd:
         ts_id_dxy_stable = ts_id_dxy[:,id_check,:,:]
         #particle_tracking.select_stable_trajectory()is great!
 
-    def plot_msd_t_chips(self,time_log=None,png_filename='msd_chips_long_loglog.png',um_sec=True,lindemann=False):
+    def plot_msd_t_chips(self,time_log=None,png_filename='msd_chips_long_loglog.png',sigma=False,um_sec=True,lindemann=False):
         R"""
         introduction:
             input: 'txyz_stable.csv' 
@@ -1939,3 +1848,69 @@ class msd:
     def plot_msd_particle_wise_X(self,m_msd,time_log=None,png_filename='msds_loglog.png'):
         s = 0
         self.plot_lindemann_msd()
+
+class displacemnt_field_2D:
+    def __init__(self,txyz_stable):
+        self.txyz_stable = txyz_stable
+
+    def get_displacement_field_xy(self,frame_index,plot=False,png_filename=None):
+        R"""
+        Introduction:
+            The function draws a displacement vector field from init state to final state 
+            with positions at edge removed  to clean abnormal displacement vector. 
+        Example:
+            import points_analysis_2D as pa
+            gsd = pa.proceed_gsd_file(simu_index=1382)
+            gsd.get_displacement_field(plot=True)
+        """
+        self.get_displacements(frame_index)
+
+        xy = self.txyz_stable[0]#init_positions
+        uv = self.displacements
+
+        if plot:
+            plt.figure()
+            #plt.scatter(self.init_positions[:,0],self.init_positions[:,1])#init_state
+            #plt.scatter(self.final_positions[:,0],self.final_positions[:,1])#final_state
+            plt.quiver(xy[:,0],xy[:,1],uv[:,0],uv[:,1],angles='xy', scale_units='xy', scale=1)
+            plt.title('displacement field '+'index:'+str(self.simu_index))
+            plt.xlabel('x(sigma)')
+            plt.ylabel('y(sigma)')
+            if not png_filename is None:
+                plt.savefig(png_filename)
+            plt.close()
+
+    def get_displacement_field_distribution(self,frame_index,log_mode=False,png_filename=None):
+        R"""
+        Introduction:
+            The function draws a displacement vector field from init state to final state 
+            with positions at edge removed  to clean abnormal displacement vector. 
+        Example:
+            import points_analysis_2D as pa
+            gsd = pa.proceed_gsd_file(simu_index=1382)
+            gsd.get_displacement_field(plot=True)
+        """
+        self.get_displacements(frame_index)
+
+        xy = self.txyz_stable[0]#init_positions
+        uv = self.displacements
+        uv2 = uv*uv#let each element  i be i^2
+        square_displacement = uv2[:,0]+uv2[:,1]
+        rsd = numpy.sqrt(square_displacement)
+
+        if log_mode:
+            rsd = numpy.log10(square_displacement)
+            plt.figure()
+            count_bins=plt.hist(rsd,bins=20,range=[-2,2])#
+            plt.xlabel('log(displacement)/um')
+        else:
+            plt.figure()
+            count_bins=plt.hist(rsd,bins=20)#,range=[0,2]
+
+        plt.savefig(png_filename)
+        plt.close()
+       
+    def get_displacements(self,frame_index):
+        init_positions = self.txyz_stable[0]
+        final_positions = self.txyz_stable[frame_index]
+        self.displacements =  final_positions - init_positions
