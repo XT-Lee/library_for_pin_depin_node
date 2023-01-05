@@ -2,7 +2,7 @@
 ## description:
 - this is just a library for me to record the codes used to finish my Ph.D project.
 - the repository has a series of workflows to operate hoomd-blue; 
-- and has a library to to proceed trajectories of particles in 2D and get their structural or dynamic properties
+- and has a library to proceed trajectories of particles in 2D and get their structural or dynamic properties.
 
 ## log:
 - 20230105 fix bug of saving txyz as txyz_stable into 'txyz_stable.npy'
