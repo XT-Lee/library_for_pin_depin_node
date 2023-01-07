@@ -1,7 +1,6 @@
-from genericpath import exists
+import points_analysis_2D as pa
 import numpy 
 import matplotlib.pyplot as plt
-import points_analysis_2D
 import os
 
 def saveIndexPsi3Psi6(start_index,end_index,k1,step,linear_compression_ratio):
@@ -18,7 +17,7 @@ def saveIndexPsi3Psi6(start_index,end_index,k1,step,linear_compression_ratio):
     for index in numpy.linspace(start_index,end_index,diference_index):
         #index=index0+(i-1.0)
         data_filename=prefix+'index'+str(index.astype(int))
-        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
+        obj_of_simu_index = pa.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -57,7 +56,7 @@ def saveIndexPsi4Psi6(start_index,end_index,k1,step,linear_compression_ratio):
     for index in numpy.linspace(start_index,end_index,diference_index):
         #index=index0+(i-1.0)
         data_filename=prefix+'index'+str(index.astype(int))
-        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
+        obj_of_simu_index = pa.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -93,7 +92,7 @@ def saveIndexPsi3Ratio(start_index,end_index,k1,step,linear_compression_ratio):#
     for index in numpy.linspace(start_index,end_index,diference_index):
         #index=index0+(i-1.0)
         data_filename=prefix+'index'+str(index.astype(int))
-        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
+        obj_of_simu_index = pa.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -129,7 +128,7 @@ def saveIndexCairoCN3456(start_index,end_index,k1,step,linear_compression_ratio,
 
     for index in numpy.linspace(start_index,end_index,diference_index):
         data_filename=prefix+'index'+str(index.astype(int))
-        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
+        obj_of_simu_index = pa.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -179,7 +178,7 @@ def saveIndexCairoPsi345(start_index,end_index,k1,step,linear_compression_ratio)
     for index in numpy.linspace(start_index,end_index,diference_index):
         #index=index0+(i-1.0)
         data_filename=prefix+'index'+str(index.astype(int))
-        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
+        obj_of_simu_index = pa.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -220,7 +219,7 @@ def saveIndexCN346Seed(start_index,end_index,k1,step,linear_compression_ratio,ra
 
     for index in numpy.linspace(start_index,end_index,diference_index):
         data_filename=prefix+'index'+str(index.astype(int))
-        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
+        obj_of_simu_index = pa.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -261,7 +260,7 @@ def saveIndexCN4CN6SeedPsi6(start_index,end_index,k1,step,linear_compression_rat
 
     for index in numpy.linspace(start_index,end_index,diference_index):
         data_filename=prefix+'index'+str(index.astype(int))
-        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
+        obj_of_simu_index = pa.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -303,7 +302,7 @@ def saveIndexCN4CN6SeedPsi6Seed(start_index,end_index,k1,step,linear_compression
 
     for index in numpy.linspace(start_index,end_index,diference_index):
         data_filename=prefix+'index'+str(index.astype(int))+"_"+str(randomseed)
-        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
+        obj_of_simu_index = pa.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -354,7 +353,7 @@ def saveIndexCN4CN3SeedPsi6(start_index,end_index,k1,step,linear_compression_rat
 
     for index in numpy.linspace(start_index,end_index,diference_index):
         data_filename=prefix+'index'+str(index.astype(int))+"_"+str(randomseed)
-        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
+        obj_of_simu_index = pa.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -404,7 +403,7 @@ def saveIndexklTCN3CN4Seed(start_index,end_index,k1,step,linear_compression_rati
 
     for index in numpy.linspace(start_index,end_index,diference_index):
         data_filename=prefix+'index'+str(index.astype(int))+"_"+str(randomseed)
-        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
+        obj_of_simu_index = pa.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -442,7 +441,7 @@ def saveIndexklTPsi36Seed(start_index,end_index,k1,step,linear_compression_ratio
 
     for index in numpy.linspace(start_index,end_index,diference_index):
         data_filename=prefix+'index'+str(index.astype(int))+"_"+str(randomseed)
-        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
+        obj_of_simu_index = pa.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -479,7 +478,7 @@ def saveIndexkTCN4CN3SeedPsi6(start_index,end_index,kt1,step,linear_compression_
 
     for index in numpy.linspace(start_index,end_index,diference_index):
         data_filename=prefix+'index'+str(index.astype(int))+"_"+str(randomseed)
-        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
+        obj_of_simu_index = pa.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -529,7 +528,7 @@ def saveIndexkTCN4CN3SeedPsi6_cool(start_index,end_index,kt1,linear_compression_
 
     for index in numpy.linspace(start_index,end_index,diference_index):
         data_filename=prefix+'index'+str(index.astype(int))+"_"+str(randomseed)
-        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
+        obj_of_simu_index = pa.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -578,7 +577,7 @@ def saveIndexkTPsi36Seed(account,start_index,end_index,kt1,step,linear_compressi
 
     for index in numpy.linspace(start_index,end_index,diference_index):
         data_filename=prefix+'index'+str(index.astype(int))+"_"+str(randomseed)
-        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
+        obj_of_simu_index = pa.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -617,7 +616,7 @@ def saveIndexPsi3Psi6R(account,start_index,end_index,k1,step,linear_compression_
     for index in numpy.linspace(start_index,end_index,diference_index):
         #index=index0+(i-1.0)
         data_filename=prefix+'index'+str(index.astype(int))+'_'+str(randomseed)
-        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
+        obj_of_simu_index = pa.static_points_analysis_2d(filename=data_filename)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -680,7 +679,7 @@ def saveIndexPressure(start_index,end_index,k1,step,linear_compression_ratio,see
         
 
         data_filename=prefix+'index'+str_index
-        obj_of_simu_index = points_analysis_2D.static_points_analysis_2d(filename=data_filename)
+        obj_of_simu_index = pa.static_points_analysis_2d(filename=data_filename)
 
         record[(index-start_index).astype(int),0]=index
 
@@ -928,11 +927,11 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
     #load time steps
     if seed is None:
         str_index=str(int(simu_index))
-        gsd_data = points_analysis_2D.proceed_gsd_file(simu_index=simu_index)
+        gsd_data = pa.proceed_gsd_file(simu_index=simu_index)
     else:
         str_index=str(int(simu_index))+'_'+str(seed)
         file_gsd = log_prefix+'trajectory_auto'+str_index+'.gsd'#+'_'+str(seed)
-        gsd_data = points_analysis_2D.proceed_gsd_file(filename_gsd_seed=file_gsd,account=account)
+        gsd_data = pa.proceed_gsd_file(filename_gsd_seed=file_gsd,account=account)
         
     file_log=log_prefix+'log-output_auto'+str_index+'.log'#+'_'+str(seed)
     log_data = numpy.genfromtxt(fname=file_log, skip_header=True)
@@ -956,7 +955,7 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
             pos_list[iframes] = af.particles.position[gsd_data.edge_cut_positions_list]
             iframes = iframes + 1
         #select particles never walking across boundaries.
-        cut = points_analysis_2D.select_particle_in_box(pos_list)
+        cut = pa.select_particle_in_box(pos_list)
         particles_reasonable=cut.compute()
         msds = freud.msd.MSD(af.configuration.box)#the class is fault,,'direct'
         msds.compute(positions=pos_list[:,particles_reasonable,:])#,images=pos_list
@@ -1007,7 +1006,7 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
         if final_cut:
             i = gsd_data.num_of_frames-1#i=9#!!! 23
         
-        a_frame = points_analysis_2D.static_points_analysis_2d(points=gsd_data.read_a_frame(i))#hide_figure=False
+        a_frame = pa.static_points_analysis_2d(points=gsd_data.read_a_frame(i))#hide_figure=False
         snap = gsd_data.trajectory.read_frame(i)
         
         if save_result_txt:
@@ -1232,29 +1231,90 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
         plt.close()
 
 
-class analyze:
+class data_analysis:
+    R"""
+    select * from pin_hex_to_honeycomb_part_klt_2m where HarmonicK = 700;
+    | SimuIndex | HarmonicK | LinearCompressionRatio | kT   | Psi3     | Psi6     | RandomSeed |
+    |      4302 |       700 |                   0.81 |    1 | 0.927068 | 0.123686 |          9 |
+
+    select * from pin_hex_to_honeycomb_klt_2m where HarmonicK = 900;
+    +-----------+-----------+------------------------+------+----------+----------+------------+
+    | SimuIndex | HarmonicK | LinearCompressionRatio | kT   | Psi3     | Psi6     | RandomSeed |
+    |      4634 |       900 |                   0.79 |    1 | 0.862018 | 0.159095 |          9 |
+    """
     def __init__(self):
         pass
     
+    def gsd_to_txyz(self,account='remote',simu_index=0,seed=9):
+        R"""
+        input:
+            account: (string);
+            simu_index: (int)index;
+            seed: (int)0-9
+        return:
+            directory: (str)directory with '/';
+            data_name: (str)'index_seed' for example.
+        """
+        str_simu_index = str(simu_index)+'_'+str(seed)
+        directory = '/home/'+account+'/Downloads/'+str_simu_index#+'/'
+
+        #check if the folder exists
+        isExists=os.path.exists(directory)
+        if not isExists:
+            os.makedirs(directory)
+
+        directory = directory+'/'
+        gsd = pa.proceed_gsd_file(account=account,simu_index=simu_index,seed=seed)
+        gsd.get_trajectory_data(directory)
+        gsd.get_trajectory_stable_data(directory)
+        return directory,str_simu_index
+
+    def txyz_to_bond_plot(self,directory,data_name=None):
+        R"""
+        input:
+            directory from self.gsd_to_txyz
+        return:
+            a series of figures with particles(mark neighbor changes), bonds, traps
+        example:
+            import data_analysis_cycle as da
+            get_traj = da.data_analysis()
+            directory,data_name = get_traj.gsd_to_txyz('remote',5238,9)
+            get_traj.txyz_to_bond_plot(directory,data_name)
+        """
+        #write a routine class
+        import pandas as pd
+        file_txyz_stable = directory + 'txyz_stable.npy'
+        txyz_stable = numpy.load(file_txyz_stable)
+        dpa = pa.dynamic_points_analysis_2d(txyz_stable,mode='simu')
+        #particle id should be set as what in txyz_stable!
+        bond_cut_off = 6
+        #dpa.compute_nearest_neighbor_displacements(csv_prefix=directory,bond_cut_off=bond_cut_off)
+        file_ts_id_dxy = directory + 'ts_id_dxy.csv'
+        ts_id_dxy = pd.read_csv(file_ts_id_dxy)
+        dpa.monitor_neighbor_change_event(ts_id_dxy=ts_id_dxy,csv_prefix=directory)
+
+        if not data_name is None:
+            file_list_sum_id_nb_stable = directory + 'list_sum_id_nb_stable.csv'
+            list_sum_id_nb_stable = pd.read_csv(file_list_sum_id_nb_stable)
+            dpa.dynamic_coordination_bond_plot(nb_change=list_sum_id_nb_stable,data_name=data_name,prefix=directory,bond_cut_off=bond_cut_off,
+                                                show_traps=True,trap_filename='/home/remote/hoomd-examples_0/testhoneycomb3-8-12',trap_lcr=0.79)
+    
     def get_msd(self,pixel_to_um=3.0/32.0,um_to_sigma=1.0/2.0):
-        from points_analysis_2D import dynamic_points_analysis_2d
-        import numpy 
         txyz_npy_filename = self.path_to_results+'/'+'txyz_stable'
         traj = numpy.load(txyz_npy_filename)
         traj_um = traj*pixel_to_um# pixel to um
         traj_sigma = traj_um*um_to_sigma# um to sigma
-        pa = dynamic_points_analysis_2d(traj_sigma,mode='exp')
-        ts_id_dxy, average_1st_bond_length = pa.compute_nearest_neighbor_displacements(unit='sigma')
+        dpa = pa.dynamic_points_analysis_2d(traj_sigma,mode='exp')
+        ts_id_dxy, average_1st_bond_length = dpa.compute_nearest_neighbor_displacements(unit='sigma')
         import pandas as pd
         ts_id_dxy = pd.read_csv('ts_id_dxy.csv')
         ts_id_dxy['z'] = 0
-        pa = dynamic_points_analysis_2d(ts_id_dxy,mode='exp')
-        txyz_ids_stable = pa.compute_nearest_neighbor_displacements_stable(pa.txyz_stable)
-        pa = dynamic_points_analysis_2d(txyz_ids_stable,mode='exp')
-        pa.compute_atmsd_t_chips(0.9)
+        dpa = pa.dynamic_points_analysis_2d(ts_id_dxy,mode='exp')
+        txyz_ids_stable = dpa.compute_nearest_neighbor_displacements_stable(dpa.txyz_stable)
+        dpa = pa.dynamic_points_analysis_2d(txyz_ids_stable,mode='exp')
+        dpa.compute_atmsd_t_chips(0.9)
         time_log = self.path_to_results+'DefaultVideo_5.txt'
         time_log = numpy.loadtxt(time_log)
-        pa.plot_lindemann_msd(pa.record_msd,average_1st_bond_length,time_log)
+        dpa.plot_lindemann_msd(dpa.record_msd,average_1st_bond_length,time_log)
         print('average_1st_bond_length\n',average_1st_bond_length)
-        
     
