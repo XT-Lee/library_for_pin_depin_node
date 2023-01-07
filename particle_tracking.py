@@ -11,7 +11,7 @@ class save_points_from_exp:
     R"""
     Introduction:
         This class provides a routine to follow, which shows the steps to recognize images,
-        to transform videos into positions & trjectories.
+        to transform videos into positions & trajectories.
 
         Personally, my raw images are stored in
         path_to_raw_data = 'home/tplab/xiaotian_file/from_hard_disc_20221209/

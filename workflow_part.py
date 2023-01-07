@@ -209,8 +209,9 @@ def workflow_simu_to_mysql_pin_hex_to_honeycomb_oop_klt_2m(index1,lcr,kT=1.0,see
     #get simulation results
     import symmetry_transformation.pin_seed_oop as pin
     
-    wk = pin.workflow_uniform(index1,account,k1,stp,kend,lcr,kT,seed,trap_name,mode="--mode=cpu")
-    end_index = wk.workflow()#end_index = index1 +9#
+    #wk = pin.workflow_uniform(index1,account,k1,stp,kend,lcr,kT,seed,trap_name,mode="--mode=cpu")
+    #end_index = wk.workflow()#
+    end_index = index1 +9#
   
     #end_index =3565
     #end_index=sa_k.workflow(index1=index1,k1=k1,step=stp,k_end=kend,linear_compression_ratio=lcr,seed_set=seed)
@@ -218,11 +219,11 @@ def workflow_simu_to_mysql_pin_hex_to_honeycomb_oop_klt_2m(index1,lcr,kT=1.0,see
 
     #step3
     #get analyzed data
-    """
+    
     import data_analysis_cycle as da
     filename_klp=da.saveIndexklTPsi36Seed(start_index=index1,end_index=end_index,k1=k1,step=stp,linear_compression_ratio=lcr,kT=kT,randomseed=seed,account=account)   	    	#filename_kl=da.saveIndexPsi(start_index=206,end_index=215,k1=k1,step=stp,linear_compression_ratio=0.79)
     print('\n'+filename_klp)
-    """
+    
     'get file named index1 index2 kl'
 
     #step4
@@ -232,11 +233,9 @@ def workflow_simu_to_mysql_pin_hex_to_honeycomb_oop_klt_2m(index1,lcr,kT=1.0,see
         |simu_index | HarmonicK | LinearCompressionRatio | kT |
       Psi3Global | Psi6Global | RandomSeed | 
     """
-    """
+    
     import opertateOnMysql as osql
     osql.loadDataToMysql(path_to_file_name=filename_klp,table_name="pin_hex_to_honeycomb_klt_2m")#"/home/tplab/Downloads/193-205kl"
-
-    """
     
     #step5
     #watch kT limitation while melting

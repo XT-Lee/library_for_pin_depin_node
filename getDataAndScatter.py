@@ -195,11 +195,11 @@ def workflow_mysql_to_data_pin_hex_to_honeycomb_klt_2m(account='tplab'):
     import opertateOnMysql as osql
     U_interaction=300*np.exp(-0.25)
 
-    con='where HarmonicK > 99'
+    con='where HarmonicK < 61'
     data=osql.getDataFromMysql(table_name='pin_hex_to_honeycomb_klt_2m',search_condition=con)
     data=np.array(data)
     prefix='/home/'+account+'/Downloads/'
-    postfix = '_pin_hex_to_honeycomb_klt_2m.png'
+    postfix = '_pin_hex_to_honeycomb_klt_2m_weak.png'
 
     plt.figure()
     #plot lcr VS k, Psi3 as value

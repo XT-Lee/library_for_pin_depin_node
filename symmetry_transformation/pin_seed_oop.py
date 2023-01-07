@@ -1,10 +1,8 @@
 import hoomd
 import hoomd.md
-from hoomd import azplugins
 import numpy
 import hoomd.azplugins.multi_positions as mp
 import hoomd.azplugins.sequence_generator as sg
-from matplotlib import pyplot
 
 class workflow_uniform:
     R"""
@@ -130,7 +128,6 @@ class workflow_uniform:
         if self.depin_from_honeycomb:    
             self.__init_state_depin_from_honeycomb()
 
-    
     def __init_state_pin(self):
         self.sys=hoomd.init.create_lattice(unitcell=hoomd.lattice.hex(a=self.a), n=[self.nx,self.ny]);
 

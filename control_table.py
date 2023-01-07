@@ -3,14 +3,30 @@ import time
 tm1=time.localtime(time.time())
 
 
-import pandas as pd
-path_to_results = '/home/remote/xiaotian_file/data/20221129/video_7'
-features_file = path_to_results+'/'+'feature.csv'
-features = pd.read_csv(features_file)
-print(features['y'].head())
-features['y'] = 1420-1 - features['y']
-print(features['y'].head())
+R"""
+select * from pin_hex_to_honeycomb_part_klt_2m where HarmonicK = 700;
+| SimuIndex | HarmonicK | LinearCompressionRatio | kT   | Psi3     | Psi6     | RandomSeed |
+|      4302 |       700 |                   0.81 |    1 | 0.927068 | 0.123686 |          9 |
 
+select * from pin_hex_to_honeycomb_klt_2m where HarmonicK = 900;
++-----------+-----------+------------------------+------+----------+----------+------------+
+| SimuIndex | HarmonicK | LinearCompressionRatio | kT   | Psi3     | Psi6     | RandomSeed |
+|      4634 |       900 |                   0.79 |    1 | 0.862018 | 0.159095 |          9 |
+
+select * from pin_hex_to_honeycomb_klt_2m where SimuIndex = 5238;
++-----------+-----------+------------------------+------+----------+----------+------------+
+| SimuIndex | HarmonicK | LinearCompressionRatio | kT   | Psi3     | Psi6     | RandomSeed |
++-----------+-----------+------------------------+------+----------+----------+------------+
+|      5238 |        60 |                   0.79 |    1 | 0.885731 | 0.196146 |          9 |
++-----------+-----------+------------------------+------+----------+----------+------------+
+"""
+#import getDataAndScatter as scatt
+#scatt.workflow_mysql_to_data_pin_hex_to_honeycomb_klt_2m(account='remote')
+
+import data_analysis_cycle as da
+get_traj = da.data_analysis()
+directory,data_name = get_traj.gsd_to_txyz('remote',5238,9)
+get_traj.txyz_to_bond_plot(directory,data_name)
 """
 import data_analysis_cycle as da
 import points_analysis_2D as pa
@@ -31,23 +47,7 @@ msds.plot_msd(time_log,png_filename)
 """
 
 
-import points_analysis_2D as pa
-import numpy
-import pandas as pd
-directory = "/home/remote/xiaotian_file/data/20221129/video_5/"
-file_traj_stable = directory + "txyz_stable.npy"#difference of hex_txyz & txyz_stable?
-#particle id should be set as what in txyz_stable!
-txyz_stable = numpy.load(file_traj_stable)#um
-dpa = pa.dynamic_points_analysis_2d(txyz_stable,mode='exp')
-dpa.compute_nearest_neighbor_displacements(unit='um',csv_prefix=directory)
-file_ts_id_dxy = directory + 'ts_id_dxy.csv'
-ts_id_dxy = pd.read_csv(file_ts_id_dxy)
-dpa.monitor_neighbor_change_event(ts_id_dxy=ts_id_dxy,csv_prefix=directory)
-file_list_sum_id_nb_stable = directory + 'list_sum_id_nb_stable.csv'
-list_sum_id_nb_stable = pd.read_csv(file_list_sum_id_nb_stable)
-dpa.bond_plot(nb_change=list_sum_id_nb_stable,data_name='video_5',account='remote')
-#a0 = {('A'+unit):result.bond_length_median*lc}
-#record_msd_id = pa.compute_atmsd_t_chips(0.9,True)
+
 
 
 """
@@ -58,7 +58,6 @@ time_log = path_to_folder+'DefaultVideo_5.txt'
 png_filename = path_to_folder+'particle_'+str(id)+'_'+'msds_loglog.png'
 pa.plot_msd_uniform(m_msd=1,time_log=time_log,png_filename=png_filename)
 """
-
 
 
 #time.sleep(1)
