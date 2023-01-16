@@ -5,6 +5,10 @@
 - and has a library to proceed trajectories of particles in 2D and get their structural or dynamic properties.
 
 ## log:
+- 20230116 edit data_analysis.txyz_to_bond_plot,
+	   dynamic_points_analysis_2d.plot_bond_neighbor_change_oop,
+	   static_points_analysis_2d.draw_bonds_conditional_bond_oop,
+	   create class bond_plot_module in points_analysis_2D
 - 20230107 simplify pin_seed_oop
 	   edit data_analysis_cycle.data_analysis
 	   edit workflow_part.workflow_simu_to_mysql_pin_hex_to_honeycomb_oop_klt_2m.
