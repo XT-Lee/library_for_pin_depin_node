@@ -763,6 +763,21 @@ index 10 is out of bounds for axis 0 with size 10
         if not png_filename is None:
             plt.savefig(png_filename)
         plt.close()
+    
+    def draw_bonds_conditional_bond_oop(self,check,png_filename=None,xy_stable=None,nb_change=None,x_unit='(um)',
+                                    LinearCompressionRatio=0.79,
+                                    trap_filename="/home/tplab/hoomd-examples_0/testhoneycomb3-8-12-part1"):
+        R"""
+        xy(self.points) must be a frame of txyz( not txyz_stable)!
+        xy_stable: a frame of txyz_stable
+        """
+        self.draw_bonds = bond_plot_module()
+        self.draw_bonds.draw_bonds_conditional_bond(self.points,self.bond_length,bond_length_limmit=check,x_unit=x_unit)
+        self.draw_bonds.plot_traps(trap_filename=trap_filename,LinearCompressionRatio=LinearCompressionRatio)
+        if not png_filename is None:
+            self.draw_bonds.plot_neighbor_change(xy_stable,nb_change)
+        if not png_filename is None:
+            self.draw_bonds.save_figure(png_filename)
 
     def draw_bonds_conditional_ridge(self,fignum=1,check=[0.2,5.0]):
         #record cutted bond
@@ -897,12 +912,15 @@ index 10 is out of bounds for axis 0 with size 10
             cluster_count[count]=cluster_count[count]+1
             if count==(n_polygon-2):
                 plt.annotate(cluster_count[count].astype(int), (cv_temp[i,0], cv_temp[i,1]))
-        print('Tetragon,Pentagon,Hexagon...')
-        print(cluster_count[2:10])
+        """
         #some great polygons whose vertices linked closely(small dis),
         # while twisted polygons whose vertices are farther from each other 
         # than from different vertices clusters.
         # so an algorithm with more precision is needed 
+        """
+        print('Tetragon,Pentagon,Hexagon...')
+        print(cluster_count[2:10])
+        
     def count_honeycomb(self):   
         '''
 
@@ -1468,14 +1486,19 @@ class dynamic_points_analysis_2d:#old_class_name: msd
         pd.DataFrame.to_csv(list_sum_id_nb_stable,file_list_sum_id_nb_stable)
         return if_nb_change_int,n_particle_nb_stable
         
-    def hist_neighbor_change_event(self,if_nb_change_int,n_particle_nb_stable):
+    def plot_hist_neighbor_change_event(self,if_nb_change_int,n_particle_nb_stable,prefix=None):
         # histogram: frame VS count change_neighbor_events
         count_nb_change_event = np.sum(if_nb_change_int,axis=1)
         count_nb_change_event_rate = count_nb_change_event/n_particle_nb_stable
         fig,ax = plt.subplots()
         ax.plot(count_nb_change_event_rate)
+        ax.set_xlabel('time steps(1)')
+        ax.set_ylabel('nb_change_particles(%)')
+        if not prefix is None:
+            png_filename = 'hist_nb_change.png'
+            fig.savefig(prefix+png_filename)
 
-    def dynamic_coordination_bond_plot(self,data_name='default_exp',prefix='',
+    def plot_bond_neighbor_change(self,data_name='default_exp',prefix='',
                                     final_cut=False,nb_change=None,bond_cut_off=6,
                                     show_traps=False,trap_filename=None,trap_lcr=None):
         R"""
@@ -1524,6 +1547,62 @@ class dynamic_points_analysis_2d:#old_class_name: msd
                                             show_traps=show_traps,LinearCompressionRatio=trap_lcr,trap_filename=trap_filename,
                                             nb_change=ids,x_unit=self.x_unit)
         
+            if final_cut:
+                break
+    
+    def plot_bond_neighbor_change_oop(self,data_name='default_exp',prefix='',
+                                    final_cut=False,nb_change=None,bond_cut_off=6,
+                                    trap_filename=None,trap_lcr=None):#show_traps=False,
+        R"""
+        Introduction:
+            final_cut: true to proceed the last frame only.
+            bond_cut_off: should always be set the same condition in a data_set!
+        return:
+            
+        """
+        #prefix='/home/'+account+'/Downloads/'#'/home/tplab/Downloads/'
+        #log_prefix='/home/'+account+'/hoomd-examples_0/'#'/home/tplab/hoomd-examples_0/'
+        #load time steps
+        str_index=data_name
+        num_of_frames = self.txyz_stable.shape[0]
+        txyz = np.load(prefix+'txyz.npy')
+        for i in range(num_of_frames):
+            if final_cut:
+                i = num_of_frames-1#i=9#!!! 23
+            
+            a_frame = static_points_analysis_2d(points=txyz[i])#hide_figure=False
+
+            if not nb_change is None:
+                #num_frames = list_sum_id_nb_stable['frame'].values.max()+1
+                #frames = range(num_frames)
+                #for frame in frames:
+                list_sum_id_nb_stable = nb_change
+                snap = list_sum_id_nb_stable[list_sum_id_nb_stable['frame']==i]
+                snap_part = snap[snap['if_nb_change'] == True]
+                ids = snap_part["particle_id"].values
+                #points_nb_chg = txyz_stable[frame,ids,:2]
+
+            if final_cut:
+                #bond_plot+trap_plot
+                png_filename1 = prefix +'bond_hist_index'+str_index+'_'+str(int(i))+'.png'
+                png_filename2 = prefix +'bond_plot_1st_minima_index'+str_index+'_'+str(int(i))+'.png'
+            else:
+                folder_name=prefix+"record_"+str_index#+"/"
+                #check if the folder exists
+                isExists=os.path.exists(folder_name)
+                if not isExists:
+                    os.makedirs(folder_name)
+                #bond_plot+trap_plot
+                png_filename1 = folder_name+"/" +'bond_hist_index'+str_index+'_'+str(int(i))+'.png'
+                png_filename2 = folder_name+"/" +'bond_plot_1st_minima_index'+str_index+'_'+str(int(i))+'.png'
+            
+            a_frame.get_first_minima_bond_length_distribution(lattice_constant=1,hist_cutoff=bond_cut_off,png_filename=png_filename1)#,png_filename=png_filename1
+            #a_frame.draw_bonds_conditional_bond(check=[0.4, a_frame.bond_first_minima_left], png_filename=png_filename2,
+            #                               show_traps=show_traps,LinearCompressionRatio=trap_lcr,trap_filename=trap_filename,
+            #                                nb_change=ids,x_unit=self.x_unit)
+            a_frame.draw_bonds_conditional_bond_oop(check=[0.4, a_frame.bond_first_minima_left], png_filename=png_filename2,
+                                                    xy_stable=self.txyz_stable[i],nb_change=ids,x_unit=self.x_unit,
+                            LinearCompressionRatio=trap_lcr, trap_filename=trap_filename)
             if final_cut:
                 break
         
@@ -1905,3 +1984,199 @@ class displacemnt_field_2D:
         init_positions = self.txyz_stable[0]
         final_positions = self.txyz_stable[frame_index]
         self.displacements =  final_positions - init_positions
+
+class bond_plot_module:
+    def __init__(self):
+        self.fig,self.ax = plt.subplots()
+    
+    def draw_bonds_conditional_bond_ref(self,check=[0.9,2.0],png_filename=None,nb_change=None,x_unit='(um)',
+                                    show_traps=False,LinearCompressionRatio=0.79,
+                                    trap_filename="/home/tplab/hoomd-examples_0/testhoneycomb3-8-12-part1"):
+        R"""
+        Parameters:
+            check: limit the shortest and longest bond to draw.
+            png_filename: "prefix/bond_plot_index1513"
+            nb_change: particle ids( in txyz_stable) which change neighbors.
+        Examples:
+            import points_analysis_2D as pa
+            s = "/home/tplab/Downloads/"
+            index_num = 1387
+            index_name = "index"+str(index_num)
+            fname = s+index_name
+            bb = pa.PointsAnalysis2D(filename=fname)
+            oname1 = s+"bond_hist_"+index_name
+            bb.draw_bond_length_distribution_and_first_minima(png_filename=oname1)
+            oname2 = s+"bond_plot_"+index_name
+            bb.draw_bonds_conditional_bond(check=[0.9, bb.bond_first_minima_left], png_filename=oname2)
+        """
+        bond_check= [check[0],check[1]]
+        
+        #if dis is None:
+        xmax = max(self.points[:,0]) #- 3
+        ymax = max(self.points[:,1]) #- 3
+        xmin = min(self.points[:,0]) #+ 3
+        ymin = min(self.points[:,1]) #+ 3
+        dis = min(xmax-xmin,ymax-ymin)/2.0#half of the length of the system.
+        dis = dis - 0 #cut the edge if necessary(eg. size & scale of images not match)
+
+        center = [(xmax+xmin)*0.5,(ymax+ymin)*0.5]
+        center_origin_distance = np.abs(np.dot(center,center))
+        if  center_origin_distance < 1.0:# center is really close to origin
+            center = [0,0]
+
+        #draw a figure with edges
+        plt.figure()
+        plt.axis('equal')
+        plt.xlabel('x'+x_unit)
+        plt.ylabel('y'+x_unit)
+        plt.title("bond_length:"+str(np.around(check,2))+x_unit)
+        """
+        the displayed image size will be the smaller one 
+        between axis limitation for xlim/ylim or data itself. 
+        Hence the effective xlim/ylim should be set smaller than data.
+
+        To ensure that xlim/ylim < data region, 
+        we add physically meaningless points.
+        """
+        #restrict ticks to show
+        """
+        #(let all the images share the same size)
+        new_ticks = np.linspace(-dis,dis,int(2*dis+1))
+        new_ticks = new_ticks.astype(int)
+        #print(new_ticks.astype(str))
+        #print((new_ticks))
+        plt.xticks(new_ticks,new_ticks.astype(str))
+        plt.yticks(new_ticks,new_ticks.astype(str))
+        """
+        #restrict data region to show
+        plt.xlim(-dis+center[0],dis+center[0])
+        plt.ylim(-dis+center[1],dis+center[1])
+        
+        #add lines for edges
+        for i in range(np.shape(self.bond_length)[0]):
+            if (self.bond_length[i,2] > bond_check[0])&(self.bond_length[i,2] < bond_check[1]) :
+                edge = tuple(self.bond_length[i,0:2].astype(int))
+                pt1,pt2 = [self.points[edge[0]],self.points[edge[1]]]
+                line = plt.Polygon([pt1,pt2], closed=None, fill=None, edgecolor='b')
+                plt.gca().add_line(line)
+
+        plt.scatter(self.points[:,0],self.points[:,1],color='k')
+        """
+        particle_ids = np.linspace(0,self.points.shape[0]-1,self.points.shape[0],dtype=int)
+        particle_ids_str = particle_ids.astype(str)
+        for j in particle_ids:
+            plt.annotate(particle_ids_str[j],self.points[j])
+        """
+        if not nb_change is None:
+            plt.scatter(self.points[nb_change,0],self.points[nb_change,1],color='orange')
+        
+        if show_traps:
+            traps=np.loadtxt(trap_filename)
+            traps=np.multiply(traps,LinearCompressionRatio)
+            plt.scatter(traps[:,0], 
+                   traps[:,1],
+                   c='r',marker = 'x')
+
+        if not png_filename is None:
+            plt.savefig(png_filename)
+        plt.close()
+
+    def draw_bonds_conditional_bond(self,xy,bond_length,bond_length_limmit=[0.9,2.0],x_unit='(um)'):#x_unit=self.unit to tune unit freely.
+        R"""
+        Parameters:
+            txyz: all the particle positions, no one removed.
+            bond_length: [particle_id1,particle_id2, bond_length] for txyz.
+            check: limit the shortest and longest bond( in bond_length) to draw.
+            png_filename: "prefix/bond_plot_index1513.png"
+
+        Examples:
+            import points_analysis_2D as pa
+            s = "/home/tplab/Downloads/"
+            index_num = 1387
+            index_name = "index"+str(index_num)
+            fname = s+index_name
+            bb = pa.PointsAnalysis2D(filename=fname)
+            oname1 = s+"bond_hist_"+index_name
+            bb.draw_bond_length_distribution_and_first_minima(png_filename=oname1)
+            oname2 = s+"bond_plot_"+index_name
+            bb.draw_bonds_conditional_bond(check=[0.9, bb.bond_first_minima_left], png_filename=oname2)
+        """
+        bond_check= tuple([bond_length_limmit[0],bond_length_limmit[1]])
+        
+        #if dis is None:
+        self.points = xy
+        xmax = max(self.points[:,0]) #- 3
+        ymax = max(self.points[:,1]) #- 3
+        xmin = min(self.points[:,0]) #+ 3
+        ymin = min(self.points[:,1]) #+ 3
+        dis = min(xmax-xmin,ymax-ymin)/2.0#half of the length of the system.
+        dis = dis - 0 #cut the edge if necessary(eg. size & scale of images not match)
+
+        center = [(xmax+xmin)*0.5,(ymax+ymin)*0.5]
+        center_origin_distance = np.abs(np.dot(center,center))
+        if  center_origin_distance < 1.0:# center is really close to origin
+            center = [0,0]
+
+        #draw a figure with edges
+        self.ax.set_aspect('equal','box')#plt.axis('equal')
+        self.ax.set_xlabel('x'+x_unit)  # Add an x-label to the axes.
+        self.ax.set_ylabel('y'+x_unit)  # Add a y-label to the axes.
+        self.ax.set_title("bond_length:"+str(np.around(bond_length_limmit,2))+x_unit)  # Add a title to the axes
+        """
+        the displayed image size will be the smaller one 
+        between axis limitation for xlim/ylim or data itself. 
+        Hence the effective xlim/ylim should be set smaller than data.
+
+        To ensure that xlim/ylim < data region, 
+        we add physically meaningless points.
+        """
+        #restrict ticks to show
+        """
+        #(let all the images share the same size)
+        new_ticks = np.linspace(-dis,dis,int(2*dis+1))
+        new_ticks = new_ticks.astype(int)
+        #print(new_ticks.astype(str))
+        #print((new_ticks))
+        plt.xticks(new_ticks,new_ticks.astype(str))
+        plt.yticks(new_ticks,new_ticks.astype(str))
+        """
+        #restrict data region to show
+        self.ax.set_xlim(-dis+center[0],dis+center[0])#plt.xlim(-dis+center[0],dis+center[0])
+        self.ax.set_ylim(-dis+center[1],dis+center[1])#plt.ylim(-dis+center[1],dis+center[1])
+        
+        #add lines for edges
+        for i in range(np.shape(bond_length)[0]):
+            if (bond_length[i,2] > bond_check[0])&(bond_length[i,2] < bond_check[1]) :
+                edge = tuple(bond_length[i,0:2].astype(int))
+                pt1,pt2 = [self.points[edge[0]],self.points[edge[1]]]
+                line = plt.Polygon([pt1,pt2], closed=None, fill=None, edgecolor='b')
+                self.ax.add_line(line)
+        """
+        particle_ids = np.linspace(0,self.points.shape[0]-1,self.points.shape[0],dtype=int)
+        particle_ids_str = particle_ids.astype(str)
+        for j in particle_ids:
+            plt.annotate(particle_ids_str[j],self.points[j])
+        """
+        self.ax.scatter(xy[:,0],xy[:,1],color='k')
+        
+
+    def plot_neighbor_change(self,xy_stable,nb_change):
+        R"""
+        txyz_stable:array[Nframes,Nparticles,xyz]
+                for simu data, 
+                    ensure that particles never move across the boundary(box)!
+                for exp data, 
+                    unit of xyz must be um! 
+                    ensure that particles are always in the vision field!
+        nb_change: particle ids( in txyz_stable) which change neighbors.
+        """
+        self.ax.scatter(xy_stable[nb_change,0],xy_stable[nb_change,1],color='orange')
+            
+    def plot_traps(self,trap_filename="/home/tplab/hoomd-examples_0/testhoneycomb3-8-12-part1",LinearCompressionRatio=0.79):
+        traps=np.loadtxt(trap_filename)
+        traps=np.multiply(traps,LinearCompressionRatio)
+        self.ax.scatter(traps[:,0], traps[:,1],c='r',marker = 'x')
+
+    def save_figure(self,png_filename):
+        self.fig.savefig(png_filename)#plt.savefig(png_filename)
+        del self.ax,self.fig

@@ -1241,16 +1241,38 @@ class data_analysis:
     +-----------+-----------+------------------------+------+----------+----------+------------+
     | SimuIndex | HarmonicK | LinearCompressionRatio | kT   | Psi3     | Psi6     | RandomSeed |
     |      4634 |       900 |                   0.79 |    1 | 0.862018 | 0.159095 |          9 |
+
+    select * from pin_hex_to_honeycomb_klt_2m where SimuIndex = 5238;
+    +-----------+-----------+------------------------+------+----------+----------+------------+
+    | SimuIndex | HarmonicK | LinearCompressionRatio | kT   | Psi3     | Psi6     | RandomSeed |
+    +-----------+-----------+------------------------+------+----------+----------+------------+
+    |      5238 |        60 |                   0.79 |    1 | 0.885731 | 0.196146 |          9 |
+    +-----------+-----------+------------------------+------+----------+----------+------------+
+    select * from pin_hex_to_kagome_part_klt_2m where CoordinationNum4Rate > 0.8;
+    +-----------+-----------+------------------------+------+----------------------+----------------------+------------+
+    | SimuIndex | HarmonicK | LinearCompressionRatio | kT   | CoordinationNum3Rate | CoordinationNum4Rate | RandomSeed |
+    +-----------+-----------+------------------------+------+----------------------+----------------------+------------+
+    |      4428 |       300 |                   0.87 |    1 |                    0 |             0.821229 |          9 |
+    |      4435 |      1000 |                   0.87 |    1 |             0.039548 |             0.824859 |          9 |
+    |      4439 |       400 |                   0.88 |    1 |                    0 |             0.852273 |          9 |
+    |      4440 |       500 |                   0.88 |    1 |            0.0224719 |             0.848315 |          9 |
+    |      4445 |      1000 |                   0.88 |    1 |            0.0168539 |             0.837079 |          9 |
+    |      4447 |       200 |                   0.89 |    1 |            0.0449438 |             0.825843 |          9 |
+    |      4448 |       300 |                   0.89 |    1 |            0.0167598 |             0.865922 |          9 |
+    |      4449 |       400 |                   0.89 |    1 |            0.0224719 |             0.820225 |          9 |
+    |      4454 |       900 |                   0.89 |    1 |            0.0225989 |             0.858757 |          9 |
+    +-----------+-----------+------------------------+------+----------------------+----------------------+------------+
     """
     def __init__(self):
         pass
     
-    def gsd_to_txyz(self,account='remote',simu_index=0,seed=9):
+    def gsd_to_txyz(self,account='remote',simu_index=0,seed=9,io_only=False):
         R"""
         input:
             account: (string);
             simu_index: (int)index;
             seed: (int)0-9
+            io_only: just return results, not proceeding data.
         return:
             directory: (str)directory with '/';
             data_name: (str)'index_seed' for example.
@@ -1264,22 +1286,31 @@ class data_analysis:
             os.makedirs(directory)
 
         directory = directory+'/'
-        gsd = pa.proceed_gsd_file(account=account,simu_index=simu_index,seed=seed)
-        gsd.get_trajectory_data(directory)
-        gsd.get_trajectory_stable_data(directory)
+        if not io_only:
+            gsd = pa.proceed_gsd_file(account=account,simu_index=simu_index,seed=seed)
+            gsd.get_trajectory_data(directory)
+            gsd.get_trajectory_stable_data(directory)
         return directory,str_simu_index
 
-    def txyz_to_bond_plot(self,directory,data_name=None):
+    def txyz_to_bond_plot(self,directory,data_name=None,trap_filename=None,trap_lcr=None,io_only=False):
         R"""
         input:
             directory from self.gsd_to_txyz
+            trap_filename:
+                '/home/remote/hoomd-examples_0/testhoneycomb3-8-12'
+                '/home/remote/hoomd-examples_0/testhoneycomb3-8-12-part1'
+                '/home/remote/hoomd-examples_0/testkagome3-11-6'
+                '/home/remote/hoomd-examples_0/testkagome_part3-11-6'
+            io_only: just return results, not proceeding data.
         return:
             a series of figures with particles(mark neighbor changes), bonds, traps
         example:
             import data_analysis_cycle as da
             get_traj = da.data_analysis()
-            directory,data_name = get_traj.gsd_to_txyz('remote',5238,9)
-            get_traj.txyz_to_bond_plot(directory,data_name)
+            directory,data_name = get_traj.gsd_to_txyz('remote',4448,9,io_only=True)
+            get_traj.txyz_to_bond_plot(directory,data_name,
+                trap_filename='/home/remote/hoomd-examples_0/testkagome_part3-11-6',trap_lcr=0.89,
+                    io_only=True)
         """
         #write a routine class
         import pandas as pd
@@ -1288,17 +1319,33 @@ class data_analysis:
         dpa = pa.dynamic_points_analysis_2d(txyz_stable,mode='simu')
         #particle id should be set as what in txyz_stable!
         bond_cut_off = 6
-        #dpa.compute_nearest_neighbor_displacements(csv_prefix=directory,bond_cut_off=bond_cut_off)
-        file_ts_id_dxy = directory + 'ts_id_dxy.csv'
-        ts_id_dxy = pd.read_csv(file_ts_id_dxy)
-        dpa.monitor_neighbor_change_event(ts_id_dxy=ts_id_dxy,csv_prefix=directory)
-
+        if not io_only:
+            dpa.compute_nearest_neighbor_displacements(csv_prefix=directory,bond_cut_off=bond_cut_off)
+            file_ts_id_dxy = directory + 'ts_id_dxy.csv'
+            ts_id_dxy = pd.read_csv(file_ts_id_dxy)
+            if_nb_change_int,n_particle_nb_stable = dpa.monitor_neighbor_change_event(ts_id_dxy=ts_id_dxy,csv_prefix=directory)
+            dpa.plot_hist_neighbor_change_event(if_nb_change_int,n_particle_nb_stable,directory)
+        """
+        if_nb_change_int, n_particle_nb_stable, png_filename==dpa.monitor_neighbor_change_event(ts_id_dxy=ts_id_dxy,csv_prefix=directory)
+        dpa.plot_hist_neighbor_change_event(if_nb_change_int, n_particle_nb_stable, png_filename=)
+        """
         if not data_name is None:
             file_list_sum_id_nb_stable = directory + 'list_sum_id_nb_stable.csv'
             list_sum_id_nb_stable = pd.read_csv(file_list_sum_id_nb_stable)
-            dpa.dynamic_coordination_bond_plot(nb_change=list_sum_id_nb_stable,data_name=data_name,prefix=directory,bond_cut_off=bond_cut_off,
-                                                show_traps=True,trap_filename='/home/remote/hoomd-examples_0/testhoneycomb3-8-12',trap_lcr=0.79)
-    
+            #dpa.plot_bond_neighbor_change(nb_change=list_sum_id_nb_stable,data_name=data_name,prefix=directory,bond_cut_off=bond_cut_off,
+            #                                    show_traps=True,trap_filename='/home/remote/hoomd-examples_0/testhoneycomb3-8-12',trap_lcr=0.79)
+            dpa.plot_bond_neighbor_change_oop(data_name=data_name,prefix=directory,nb_change=list_sum_id_nb_stable,bond_cut_off=bond_cut_off,
+                                               trap_filename=trap_filename,trap_lcr=trap_lcr)
+            """
+            
+            """
+            """
+            dpa.plot_bond_neighbor_change_oop()
+            dpa.draw_bonds.draw_bonds_conditional_bond()
+            dpa.draw_bonds.plot_neighbor_change(txyz_stable,nb_change)
+            dpa.draw_bonds.plot_traps(trap_filename,LinearCompressionRatio)
+            """
+            
     def get_msd(self,pixel_to_um=3.0/32.0,um_to_sigma=1.0/2.0):
         txyz_npy_filename = self.path_to_results+'/'+'txyz_stable'
         traj = numpy.load(txyz_npy_filename)
