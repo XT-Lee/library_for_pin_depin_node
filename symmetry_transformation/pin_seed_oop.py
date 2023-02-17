@@ -8,7 +8,7 @@ class workflow_uniform:
     R"""
         Introduction
     """
-    def __init__(self,index1,account='tplab',k1=100.0,step=100.0,k_end=1000.0,linear_compression_ratio=1.0,kT=1.0,seed_set=9,trap_name="testkagome_cycle3-4-6",mode=""):
+    def __init__(self,index1,account='tplab',k1=100.0,step=100.0,k_end=1000.0,linear_compression_ratio=1.0,kT=1.0,seed_set=9,trap_name="testkagome_cycle3-4-6",mode="--mode=cpu"):
         #set parameters
         self.account = account
         self.index_start = index1
@@ -21,7 +21,7 @@ class workflow_uniform:
         self.trap_name = trap_name
         self.mode=mode
         #this should be set independently!
-        self.set_init_state_parameters(pin=True)
+        self.set_init_state_parameters(pin_from_hex=True)
 
     def workflow(self):
         R"""
@@ -111,25 +111,38 @@ class workflow_uniform:
         points=snap.particles.position[:]
         numpy.savetxt(result_filename,points)
 
-    def set_init_state_parameters(self,a=3,nx=16,ny=8,pin=False,depin_from_kagome=False,depin_from_honeycomb=False):
+    def set_init_state_parameters(self,a=3,nx=16,ny=8,pin_from_hex=False,init_gsd=None,depin_from_kagome=False,depin_from_honeycomb=False):
+        R"""
+            init_gsd: .gsd filename
+        """
         self.a = a
         self.nx= nx
         self.ny = ny
         #choose one init state to launch(pin by default)
-        self.pin = pin
+        self.pin_from_hex = pin_from_hex
         self.depin_from_kagome = depin_from_kagome
         self.depin_from_honeycomb = depin_from_honeycomb
+        if init_gsd is None:
+            self.pin_from_gsd = False
+        else:
+            self.pin_from_gsd = True
+            self.init_gsd = init_gsd
 
     def __init_state_launch(self):
-        if self.pin:
-            self.__init_state_pin()
+        if self.pin_from_hex:
+            self.__init_state_pin_from_hex()
+        if self.pin_from_gsd:
+            self.__init_state_pin_from_gsd()
         if self.depin_from_kagome:
             self.__init_state_depin_from_kagome()
         if self.depin_from_honeycomb:    
             self.__init_state_depin_from_honeycomb()
 
-    def __init_state_pin(self):
+    def __init_state_pin_from_hex(self):
         self.sys=hoomd.init.create_lattice(unitcell=hoomd.lattice.hex(a=self.a), n=[self.nx,self.ny]);
+
+    def __init_state_pin_from_gsd(self):
+        self.sys = hoomd.init.read_gsd(filename=self.init_gsd,frame=-1)
 
     def __init_state_depin_from_kagome(self):
         a_set=3*self.linear_compression_ratio

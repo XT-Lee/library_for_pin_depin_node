@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt#, matplotlib.image as imread
 import numpy as np
 import pandas as pd
 #from pandas import DataFrame, Series  # for convenience
-import os#pims
+import os
 import trackpy as tp
 
 class save_points_from_exp:
@@ -16,21 +16,35 @@ class save_points_from_exp:
         Personally, my raw images are stored in
         path_to_raw_data = 'home/tplab/xiaotian_file/from_hard_disc_20221209/
         Xiaotian_file_20200514/1各期工作汇总/20190909项目(油相晶体)（ing）/20221129（测过冷度；24h不漏）'
-    
+    exp:
+        import particle_tracking as  pa
+        spf = pa.save_points_from_exp()
+        path_to_folder = '/home/remote/xiaotian_file/data/20230113'
+        video_name = 'DefaultVideo_8'
+        spf.set_worksapce(path_to_folder,video_name)
+        Diameter, minmass = spf.check_first_last_frame()
+
+        spf.recognize_all_frames(Diameter, minmass)
+        spf.get_stable_trajectory()
     """
     def __init__(self):
         pass
     
     #step 1: set worksapce
-    def set_worksapce(self):
+    def set_worksapce(self,path_to_folder,video_name):
+        R"""
+        input:
+            path_to_folder = '/home/remote/xiaotian_file/data/20230113'
+            video_name = 'DefaultVideo_1'
+        """
         #caution: ensure that path_to_images stores only images(.jpg)!
-        self.path_to_images = '/home/remote/xiaotian_file/data/20221129/DefaultVideo_5'
+        self.path_to_images = path_to_folder+'/'+video_name
         #for path_to_results, any type of file is ok
-        self.path_to_results = '/home/remote/xiaotian_file/data/20221129/video_5'
+        self.path_to_results = path_to_folder+'/'+video_name+'_result'
     
     #step2: find suitable parameters to recognize particles
     #check if (Diameter,minmass) suit for the first and the last frames
-    def check_first_last_frame(self,filename_image_first=None,filename_image_last=None):
+    def check_first_last_frame(self):#,filename_image_first=None,filename_image_last=None
         R"""
         return:
             Diameter: minimum diameter(pixel) of particle
@@ -47,20 +61,22 @@ class save_points_from_exp:
         ana = ptt.particle_track()
         ana.single_frame_particle_tracking(filename_image_first,calibration=True)
         ana.single_frame_particle_tracking(filename_image_last,calibration=True)
-
+        print(ana.Diameter,ana.minmass)
         return ana.Diameter,ana.minmass
     
     #step3: recognize particles on all the images
     #'txy_um.csv' records particle positions for each frame
-    def recognize_all_frames(self,Diameter,minmass,pixel_to_um=3.0/32.0,save_txy=False):
+    def recognize_all_frames(self,Diameter,minmass):#,pixel_to_um=3.0/32.0,save_txy=False
         import particle_tracking as ptt
         ana = ptt.particle_track()
         feature_filename = self.path_to_results+'/'+'feature.csv'
         ana.folder_frames_particle_tracking(self.path_to_images,Diameter,minmass,feature_filename) 
+        """
         if save_txy:
             txy_um_filename = self.path_to_results+'/'+'txy_um.csv'
             ana.get_positions_from_features(feature_filename,pixel_to_um,txy_um_filename)
-    
+        """
+        
     #step4: get stable trajectories of particlesg
     #'txyz_stable' is a list of trajectories contain only those particles
     # which are always in field of view in video 
@@ -75,6 +91,44 @@ class save_points_from_exp:
         txyz_npy_filename = self.path_to_results+'/'+'txyz_stable'
         ana.select_stable_trajectory(txyz_filename,txyz_npy_filename=txyz_npy_filename,pixel_to_um=pixel_to_um)
 
+    def get_trap_positions(self,tsf_filename,xy_adjust=[0,0],scale_adjust=1.0,rotate_adjust=0):
+        R"""
+        input:
+            tsf_filename,
+            xy_adjust=[0,0],
+            scale_adjust=1.0,
+            rotate=0
+        output:
+            trap_positions: n rows of array [x,y]
+            trap_filename: self.path_to_results+'/'+'trap_positions'
+        """
+        tsf_filename = self.path_to_results+'/'+tsf_filename
+        trap_positions = np.loadtxt(tsf_filename)
+        trap_positions = trap_positions[:,:2]
+
+        theta = rotate_adjust/180.0*np.pi
+        rotate = np.zeros((2,2))
+        #rotate operator is on the right side, 
+        # so rotational direction is inverted.
+        #to let rotation match intuition, 
+        # I inverted rotation operator too.
+        cc=np.cos(theta)
+        ss=np.sin(theta)
+        rotate[0,0] = cc
+        rotate[1,1] = cc
+        rotate[1,0] = -ss
+        rotate[0,1] = ss
+        trap_positions = np.matmul(trap_positions,rotate)
+
+        trap_positions = trap_positions*scale_adjust
+
+        trap_positions[:,0] = trap_positions[:,0]+xy_adjust[0]
+        trap_positions[:,1] = trap_positions[:,1]+xy_adjust[1]
+
+        trap_filename = self.path_to_results+'/'+'trap_positions'
+        np.savetxt(trap_filename,trap_positions)
+        return trap_positions,trap_filename
+
 class particle_track:
     R"""
         algorithm from Eric Weeks
@@ -87,7 +141,7 @@ class particle_track:
     def __init__(self):
         pass
     
-    def single_frame_particle_tracking(self,filename,D=19,minmass=1000,calibration=False):
+    def single_frame_particle_tracking(self,filename,D=11,minmass=500,calibration=False):
         R"""
         instruction:
             D should be the the diameter of dark ring of the smallest particle in image.

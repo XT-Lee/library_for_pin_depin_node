@@ -1,4 +1,5 @@
 import matplotlib
+from matplotlib.colors import LinearSegmentedColormap, ListedColormap
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.core.fromnumeric import mean, var
@@ -510,18 +511,22 @@ def workflow_mysql_to_data_pin_hex_to_honeycomb_part_klt(account='tplab'):
 
 def workflow_mysql_to_data_pin_hex_to_honeycomb_part_klt_2m(account='tplab'):
     R"""
-
     Note: the format of table_name='pin_hex_to_honeycomb_part_klt_2m'
     | SimuIndex | HarmonicK | LinearCompressionRatio | kT | 
     Psi3 | Psi6 | RandomSeed | 
     
     FIGURE scatter  HarmonicK vs KBT, Psi6 as value 
 
-    import getDataAndScatter as scatt
-    scatt.workflow_mysql_to_data_pin_hex_to_honeycomb_part_klt_2m()
+    example:
+        import getDataAndScatter as scatt
+        scatt.workflow_mysql_to_data_pin_hex_to_honeycomb_part_klt_2m(account='remote')
+    example:
+        # lcr=0.77-0.78,seed=0-9
+        $ select * from pin_hex_to_honeycomb_part_klt_2m where SimuIndex >4335 and SimuIndex <4356;
+        #"where SimuIndex > 5298" 
 
-    import getDataAndScatter as scatt
-    scatt.workflow_mysql_to_data_pin_hex_to_honeycomb_part_klt_2m(account='remote')
+        # lcr=0.79-0.8165-0.84,seed=0-9
+        $ select * from pin_hex_to_honeycomb_part_klt_2m where SimuIndex >4265 and SimuIndex <4336;
     """
     import matplotlib.pyplot as plt
     import numpy as np
@@ -529,11 +534,11 @@ def workflow_mysql_to_data_pin_hex_to_honeycomb_part_klt_2m(account='tplab'):
     import opertateOnMysql as osql
     U_interaction=300*np.exp(-0.25)
 
-    condition="where kT < 0.15"
+    condition="where SimuIndex > 4265 and SimuIndex<4336"
     data=osql.getDataFromMysql(table_name='pin_hex_to_honeycomb_part_klt_2m',search_condition=condition)
     data=np.array(data)
     prefix='/home/'+account+'/Downloads/'
-    postfix = '_pin_hex_to_honeycomb_part_klt_2m_T01.png'
+    postfix = '_pin_hex_to_honeycomb_part_klt_2m_random.png'
     #print(data[:,4])
     plt.figure()
     #plot k VS T, Psi3 as value
@@ -541,7 +546,7 @@ def workflow_mysql_to_data_pin_hex_to_honeycomb_part_klt_2m(account='tplab'):
     #plt.show()
     plt.title('k VS T, Psi3 as value, Uparticle='+str(int(U_interaction)) )
     plt.xlabel('Linear Compression Ratio (1)')
-    plt.ylabel('U trap (kBTm)[Honeycomb part]')
+    plt.ylabel('U trap ($k_BT_m$)[Honeycomb part]')
     plt.colorbar()
     png_filename=prefix+'K_VS_T_Psi3_as_value'+postfix
     plt.savefig(png_filename)
@@ -558,6 +563,116 @@ def workflow_mysql_to_data_pin_hex_to_honeycomb_part_klt_2m(account='tplab'):
     png_filename=prefix+'K_VS_T_Psi6_as_value'+postfix
     plt.savefig(png_filename)
     plt.close()
+
+def workflow_mysql_to_data_pin_hex_to_honeycomb_part_klt_2m_random_oop(account='tplab'):
+    R"""
+    Note: the format of table_name='pin_hex_to_honeycomb_part_klt_2m'
+    | SimuIndex | HarmonicK | LinearCompressionRatio | kT | 
+    Psi3 | Psi6 | RandomSeed | 
+    
+    FIGURE scatter  HarmonicK vs KBT, Psi6 as value 
+
+    example:
+        import getDataAndScatter as scatt
+        scatt.workflow_mysql_to_data_pin_hex_to_honeycomb_part_klt_2m_random_oop(account='remote')
+
+    example:
+        # lcr=0.77-0.78,seed=0-9
+        $ select * from pin_hex_to_honeycomb_part_klt_2m where SimuIndex >4335 and SimuIndex <4356;
+        #"where SimuIndex > 5298" 
+
+        # lcr=0.79-0.8165-0.84,seed=0-9
+        $ select * from pin_hex_to_honeycomb_part_klt_2m where SimuIndex >4265 and SimuIndex <4336;
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+    #getDataToMysql
+    import opertateOnMysql as osql
+    pr = mysql_data_processor()
+    U_interaction=300*np.exp(-0.25)
+
+    condition="where SimuIndex > 4265 and SimuIndex<4336"
+    data=osql.getDataFromMysql(table_name='pin_hex_to_honeycomb_part_klt_2m',search_condition=condition)
+    data=np.array(data)
+
+    prefix='/home/'+account+'/Downloads/'
+    postfix = '_pin_hex_to_honeycomb_part_klt_2m_random.png'
+
+    list_k,k_num = pr.unique_param(data[:,1])
+    list_lcr,lcr_num = pr.unique_param(data[:,2])
+
+    record=np.zeros((lcr_num*k_num,6))
+    row = 0
+    for k in list_k:
+         for lcr in list_lcr:
+            list_row = (data[:,1]==k)&(data[:,2]==lcr)
+            random_point = data[list_row,4:5+1]
+            record[row, 0] = k*0.5
+            record[row, 1] = lcr
+            record[row, 2],record[row, 3] = pr.average_std(random_point[:,0])#psi3
+            record[row, 4],record[row, 5] = pr.average_std(random_point[:,1])#psi6
+            row = row+1
+
+    xlabel_name = 'Linear Compression Ratio (1)'
+    ylabel_name = 'U trap ($k_BT_m$)[Honeycomb part]'
+    
+    title_name = 'lcr_VS_K_Psi3_as_value'
+    results = pr.record_to_results_for_scatter(record,1,0,2)
+    pr.draw_diagram_scatter(results,title_name,xlabel_name,ylabel_name,prefix,postfix)
+
+    title_name = 'lcr_VS_K_Psi3std_as_value'
+    results = pr.record_to_results_for_scatter(record,1,0,3)
+    pr.draw_diagram_scatter(results,title_name,xlabel_name,ylabel_name,prefix,postfix)
+
+    title_name = 'lcr_VS_K_Psi6_as_value'
+    results = pr.record_to_results_for_scatter(record,1,0,4)
+    pr.draw_diagram_scatter(results,title_name,xlabel_name,ylabel_name,prefix,postfix)
+
+    title_name = 'lcr_VS_K_Psi6std_as_value'
+    results = pr.record_to_results_for_scatter(record,1,0,5)
+    pr.draw_diagram_scatter(results,title_name,xlabel_name,ylabel_name,prefix,postfix)
+
+class mysql_data_processor:
+    def __init__(self):
+        pass
+    def unique_param(self,data):
+        R"""
+        return list_data, list_num
+        """
+        list_data = np.unique(data)
+        list_num = np.shape(list_data)[0]
+        return list_data,list_num
+
+    def average_std(self,data):
+        R"""
+        return avg, std
+        """
+        avg = np.mean(data)
+        std = np.std(data)
+        return avg,std
+    
+    def record_to_results_for_scatter(self,data,column_x,column_y,column_value):
+        R"""
+        return:
+            results: array[x,y,values]
+        """
+        results = np.zeros((np.shape(data)[0],3))
+        results[:,0] = data[:,column_x]
+        results[:,1] = data[:,column_y]
+        results[:,2] = data[:,column_value]
+        return results
+
+    def draw_diagram_scatter(self,data,title_name,xlabel_name,ylabel_name,prefix,postfix):
+        plt.figure()
+        plt.scatter(data[:,0],data[:,1],c=data[:,2])
+        #plt.show()
+        plt.title(title_name)
+        plt.xlabel(xlabel_name)
+        plt.ylabel(ylabel_name)
+        plt.colorbar()
+        png_filename=prefix+title_name+postfix
+        plt.savefig(png_filename)
+        plt.close()
 
 def workflow_mysql_to_data_pin_hex_to_honeycomb_part1_random():
     R"""
@@ -1798,7 +1913,11 @@ def workflow_mysql_to_data_pin_hex_to_kagome_part_klt_2m(account='tplab'):
     FIGURE scatter  HarmonicK vs KBT, Psi6 as value 
 
     import getDataAndScatter as scatt
-    scatt.workflow_mysql_to_data_pin_hex_to_kagome_part_klt_2m()
+    scatt.workflow_mysql_to_data_pin_hex_to_kagome_part_klt_2m('remote')
+
+    EXAMPLE:
+        # low-T trap
+        $select * from pin_hex_to_kagome_part_klt_2m where kT < 0.2;
     """
     import matplotlib.pyplot as plt
     import numpy as np
@@ -1806,11 +1925,13 @@ def workflow_mysql_to_data_pin_hex_to_kagome_part_klt_2m(account='tplab'):
     import opertateOnMysql as osql
     U_interaction=300*np.exp(-0.25)
 
-    data=osql.getDataFromMysql(table_name='pin_hex_to_kagome_part_klt_2m')
+    table_name='pin_hex_to_kagome_part_klt_2m'
+    condition = 'where kT < 0.2'
+    data=osql.getDataFromMysql(table_name=table_name,search_condition=condition)
     data=np.array(data)
     prefix='/home/'+account+'/Downloads/'
-    postfix = '_pin_hex_to_kagome_part_klt_2m.png'
-
+    postfix = '_'+table_name+'_low_T'+'.png'
+    
     plt.figure()
     #plot k VS T, CN4 as value
     plt.scatter(data[:,2],data[:,1]*0.5,c=data[:,5])# LCR VS K, CN4 as value
@@ -2500,16 +2621,32 @@ def draw_points_and_traps_result(simu_index,table_name,):
 def showTrapsMap(account):
     import hoomd.azplugins.sequence_generator as sg
     #get points
-    rcut=1.0
+    N = 256
+    vals = np.ones((N, 4))
+    vals[:, 0] = np.linspace(1, 1, N)
+    vals[:, 1] = np.linspace(1, 128/256, N)
+    vals[:, 2] = np.linspace(1, 128/256, N)
+    newcmp = ListedColormap(vals)#LinearSegmentedColormap(vals)#ListedColormap(vals)
     
-    trap_prefix='/home/'+account+'/hoomd-examples_0/'
-    trap_filename=trap_prefix+"testhoneycomb3-32-48-part1"#data of trap position
+    #import matplotlib as mpl
+    """
+    cmp = plt.get_cmap('autumn')
+    cmp.reversed('autumn_r')
+    """
+    cmp = plt.get_cmap('Reds')
+    rcut=1.0
+    cmap_name = 'Reds'#'autumn_r'#'autumn'#newcmp#'binary'#
+    transparency = 0.5#0.3
+    particle_size = 100
 
-    new1 = True#False#
+    trap_prefix='/home/'+account+'/hoomd-examples_0/'
+    trap_filename=trap_prefix+"testhoneycomb3-8-12-part1"#data of trap position
+
+    new1 = False#True#
     if new1:
         #generate a trap sequence
         pp = sg.sequence()
-        pp.generate_honeycomb_part1(a=3,n=[32,48])
+        pp.generate_honeycomb_part1(a=3,n=[8,12])
         pp.save(trap_filename)
     
     #set traps
@@ -2537,8 +2674,8 @@ def showTrapsMap(account):
     #origin = np.zeros((1,2))
     sz = np.shape(traps_pos)
     i = 0
-    Z = (0.50*HarmonicK*rcut*rcut-0.50*HarmonicK*((X-traps_pos[i,0])**2 + (Y-traps_pos[i,1])**2))\
-        *(((X-traps_pos[i,0])**2 + (Y-traps_pos[i,1])**2) < rcut*rcut)
+    Z = ( (0.50*HarmonicK*rcut*rcut-0.50*HarmonicK*((X-traps_pos[i,0])**2 + (Y-traps_pos[i,1])**2))\
+        *(((X-traps_pos[i,0])**2 + (Y-traps_pos[i,1])**2) < rcut*rcut) )
     i = i+1
     while i<sz[0]:#sz[0]
         Zi = (0.50*HarmonicK*rcut*rcut-0.50*HarmonicK*((X-traps_pos[i,0])**2 + (Y-traps_pos[i,1])**2))\
@@ -2552,7 +2689,7 @@ def showTrapsMap(account):
     #plt.imshow(Z,cmap="plasma",origin="lower",extent= axis_value)
     #ax = plt.axes(projection='3d')
     fig,ax = plt.subplots()
-    ax.pcolormesh(X, Y, Z,cmap="plasma",)
+    ax.pcolormesh(X, Y, Z,cmap=cmap_name,zorder = 1,alpha=transparency)
     #ax.plot_surface(X,Y,Z,cmap="plasma")
     #fig.colorbar(, ax=ax)
 
@@ -2573,21 +2710,21 @@ def showTrapsMap(account):
     """
     particles = True#False
     depin = False#True#
-    new2 = True#False#True
+    new2 = False#True
     if particles:
         #points
-        filename = trap_prefix + "testhex3-64-32"#"testhoneycomb3-6-12"#"testhex3-16-8"
+        filename = trap_prefix + "testhex3-16-8"#"testhoneycomb3-6-12"#"testhex3-16-8"
         if new2:
             pp = sg.sequence()
-            pp.generate_hex(a=3,n=[64,32])#pp.generate_hex(a=3,n=[16,8])
+            pp.generate_hex(a=3,n=[16,8])#pp.generate_hex(a=3,n=[16,8])
             pp.save(filename)
             #filename of simulated results, containing n rows of [x,y,0]
         data=np.loadtxt(filename)
 
         if depin:
             data=np.dot(linear_compression_ratio,data)#init depin
-        plt.scatter(data[:,0], data[:,1])#,c='k'
-
+        ax.scatter(data[:,0], data[:,1],color='k',zorder = 2,s=particle_size)#s=size
+    ax.set_aspect('equal','box')#plt.axis('equal')
     #plt.xlim((-30,30))
     #plt.ylim((-30,30))
     #plt.title(result_index+parameter)

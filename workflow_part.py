@@ -495,7 +495,141 @@ def workflow_simu_to_mysql_depin_from_honeycomb_part_oop_kT(index1,lcr,kT=1.0,se
     
     return end_index
 
-def workflow_simu_to_mysql_pin_hex_to_honeycomb_part_oop_klt_2m(index1,lcr,kT=1.0,seed=9,account='tplab'):
+def workflow_simu_to_mysql_from_honeycomb_to_liquid(index1,lcr,kT=1.0,seed=9,account='tplab',check=False):#[x]
+    R"""
+    INTRODUCTION:
+    example4 :
+        import workflow_part as tt
+        import numpy as np
+        seed=9
+        index1=5390
+        lcr_list = np.linspace(0.82,1,10)
+        kT=1.0
+        for lcr1 in lcr_list:
+            tt.workflow_simu_to_mysql_from_honeycomb_to_liquid(index1=index1,lcr=lcr1,kT=kT,seed=seed,account='remote')#,check=True
+            print(index1,lcr1)
+            index1 = index1 + 1
+    """
+    #step1
+    #pin check
+    R"""
+    import getDataAndScatter as scatt
+    scatt.showTrapsMap()
+
+    #traps:"testhoneycomb3-8-12"lcr=0.71
+    #particle:"testhoneycomb3-8-12"
+    """
+    #step2
+    #set parameters
+    #trap_name = "testhoneycomb3-8-12-part1"
+    #get simulation results
+    import symmetry_transformation.simple_simulation as ss
+    wk = ss.workflow_uniform(index1,account,lcr,kT,seed)
+    wk.set_init_state_parameters(a=3,nx=8,ny=12,depin_from_honeycomb=True)
+    #wk.__init_state_launch()
+    if not check:#index1>5399:#
+        pass#end_index = wk.workflow()
+    else:
+        end_index = index1
+    #end_index = index1 + 9
+    'get file index123'
+
+    #step3
+    #get analyzed data
+    if not check:#False:#
+        import data_analysis_cycle as da
+        filename_kl=da.saveIndexklTPsi36Seed(start_index=index1,end_index=index1+9,k1=0,step=0,linear_compression_ratio=lcr,kT=kT,randomseed=seed,account=account)
+        print('\n'+filename_kl)
+        'get file named index1 index2 klt'
+
+    #step4
+    #loadDataToMysql
+    R"""
+    Note: the format of table_name='depin_from_honeycomb_part_klt'
+        |simu_index|HarmonicK|LinearCompressionRatio|kT|
+        Psi3Global|Psi6Global|RandomSeed|
+    """
+    """
+    import opertateOnMysql as osql
+    osql.loadDataToMysql\
+    (path_to_file_name=filename_kl,
+    table_name='depin_from_honeycomb_part_klt')
+    """
+    
+    #step5
+    #watch kT limitation while cooling
+    """
+    import data_analysis_cycle as da
+    i=index1
+    while i<end_index+1:
+        da.save_from_gsd(simu_index=i,seed=seed,
+        coordination_number=True,
+        account=account)
+        i+=1
+    
+    """
+    
+    return end_index
+
+def workflow_simu_to_mysql_pin_liquid_to_honeycomb_part(init_gsd_file,index1,lcr,kT=1.0,seed=9,account='tplab',check=False):#[x]
+    R"""
+    INTRODUCTION:
+    example:
+        import workflow_part as tt
+        init_gsd_file='/home/remote/hoomd-examples_0/trajectory_auto5409_9.gsd'
+        seed=9
+        index1=5410
+        lcr_list=list([0.79*7.44/3,0.8*7.44/3])
+        #lcr_list=lcr_list
+        kT=1.0
+        for lcr1 in lcr_list:
+            index_end=tt.workflow_simu_to_mysql_pin_liquid_to_honeycomb_part(init_gsd_file,index1=index1,lcr=lcr1,kT=kT,seed=seed,account='remote')#,check=True
+            #print(index1,lcr1)
+            index1 = index_end + 1
+    """
+    #step1
+    #pin check
+    R"""
+    import getDataAndScatter as scatt
+    scatt.showTrapsMap()
+
+    #traps:"testhoneycomb3-8-12"lcr=0.71
+    #particle:"testhoneycomb3-8-12"
+    """
+    #step2
+    #set parameters
+    k1=100.0
+    stp=100.0
+    kend=1000.0
+    trap_name = "testhoneycomb3-8-12-part1"
+    #get simulation results
+
+    import symmetry_transformation.pin_seed_oop as pin
+    wk = pin.workflow_uniform(index1,account,k1,stp,kend,lcr,kT,seed,trap_name,"--mode=gpu")
+    wk.set_init_state_parameters(init_gsd=init_gsd_file)
+    if not check:#index1>5399:#
+        end_index = wk.workflow()
+    else:
+        end_index = index1 + 9
+    'get file index123'
+
+    #step3
+    #get analyzed data
+    if not check:#False:#
+        import data_analysis_cycle as da
+        filename_kl=da.saveIndexklTPsi36Seed(start_index=index1,end_index=end_index,k1=k1,step=stp,linear_compression_ratio=lcr,kT=kT,randomseed=seed,account=account)
+        print('\n'+filename_kl)
+        'get file named index1 index2 klt'
+
+    #step4
+    #loadDataToMysql
+    
+    #step5
+    #watch kT limitation while cooling
+    
+    return end_index
+
+def workflow_simu_to_mysql_pin_hex_to_honeycomb_part_oop_klt_2m(index1,lcr,kT=1.0,seed=9,account='tplab',check=False):
     R"""
     INTRODUCTION:
     example4 :
@@ -553,6 +687,31 @@ def workflow_simu_to_mysql_pin_hex_to_honeycomb_part_oop_klt_2m(index1,lcr,kT=1.
             end_index = tt.workflow_simu_to_mysql_pin_hex_to_honeycomb_part_oop_klt_2m(index1=index1,lcr=lcr1,account='remote')
             #print(index1,lcr1)
             index1=end_index+1 #index1=index1+10 #
+    exp scan seed:
+        #0.77-0.78
+        import workflow_part as tt
+        for seed in range(9):
+            index1=4336
+            lcr1=0.77
+            while lcr1<0.785:
+                index_end=tt.workflow_simu_to_mysql_pin_hex_to_honeycomb_part_oop_klt_2m(index1=index1,lcr=lcr1,seed=seed,account='remote',check=True)
+                print(lcr1,index1,seed)
+                index1 = index_end+1
+                lcr1 = lcr1+0.01
+        #0.79-0.84,0.8165
+        import numpy
+        lcr_list = numpy.linspace(0.78,0.84,7)
+        lcr_list[0] = 0.79
+        lcr_list[1] = 0.8165
+        #print(lcr_list)
+        import workflow_part as tt
+        for seed in range(9):
+            index1=4266
+            for lcr1 in lcr_list:
+                index_end=tt.workflow_simu_to_mysql_pin_hex_to_honeycomb_part_oop_klt_2m(index1=index1,lcr=lcr1,seed=seed,
+                                                                                        account='remote',check=True)
+                print(index1,lcr1,seed)
+                index1=index_end+1
     """
     #step1
     #pin check
@@ -569,23 +728,25 @@ def workflow_simu_to_mysql_pin_hex_to_honeycomb_part_oop_klt_2m(index1,lcr,kT=1.
 
     #step2
     #set parameters
-    k1=66.0
-    stp=6.0
-    kend=120.0
+    k1=100.0
+    stp=100.0
+    kend=1000.0
     trap_name = "testhoneycomb3-8-12-part1"
     #get simulation results
-    import symmetry_transformation.pin_seed_oop as pin
-    wk = pin.workflow_uniform(index1,account,k1,stp,kend,lcr,kT,seed,trap_name,mode="--mode=gpu")
-    end_index = wk.workflow()#period=1000;steps=2e6+1
-    #end_index = index1 + 9
-    'get file index123'
+    if not check:
+        import symmetry_transformation.pin_seed_oop as pin
+        wk = pin.workflow_uniform(index1,account,k1,stp,kend,lcr,kT,seed,trap_name,mode="--mode=gpu")
+        end_index = wk.workflow()#period=1000;steps=2e6+1
+    else:
+        end_index = index1 + 9
+        'get file index123'
 
     #step3
     #get analyzed data
-    
-    import data_analysis_cycle as da
-    filename_kl=da.saveIndexklTPsi36Seed(start_index=index1,end_index=end_index,k1=k1,step=stp,linear_compression_ratio=lcr,kT=kT,randomseed=seed,account=account)
-    print('\n'+filename_kl)
+    if not check:
+        import data_analysis_cycle as da
+        filename_kl=da.saveIndexklTPsi36Seed(start_index=index1,end_index=end_index,k1=k1,step=stp,linear_compression_ratio=lcr,kT=kT,randomseed=seed,account=account)
+        print('\n'+filename_kl)
     
     'get file named index1 index2 klt'
 
@@ -596,11 +757,11 @@ def workflow_simu_to_mysql_pin_hex_to_honeycomb_part_oop_klt_2m(index1,lcr,kT=1.
         |SimuIndex|HarmonicK|LinearCompressionRatio|kT|
         Psi3|Psi6|RandomSeed|
     """
-    
-    import opertateOnMysql as osql
-    osql.loadDataToMysql\
-    (path_to_file_name=filename_kl,
-    table_name='pin_hex_to_honeycomb_part_klt_2m')
+    if not check:
+        import opertateOnMysql as osql
+        osql.loadDataToMysql\
+        (path_to_file_name=filename_kl,
+        table_name='pin_hex_to_honeycomb_part_klt_2m')
     
     
     
