@@ -2,10 +2,31 @@
 ## description:
 - this is just a library for me to record the codes used to finish my Ph.D project.
 - the repository has a series of workflows to operate hoomd-blue; 
-- and has a library to proceed trajectories of particles in 2D and get their structural or dynamic properties.
+- and has a library to proceed trajectories of particles in 2D and get their structural or dynamic properties
 
 ## log:
-- 20230116 edit data_analysis.txyz_to_bond_plot,
+- 20230216 add workflow_mysql_to_data_pin_hex_to_honeycomb_part_klt_2m_random_oop
+	   add mysql_data_processor in getDataAndScatter
+	   add get_string_like_motion_rank in data_analysis_workflow, 
+	   add plot_string_like_motion_rank in dynamic_points_analysis_2d
+	   add get_displacement_field_xy_rank in displacemnt_field_2D
+- 20230206 seperate draw_bonds_conditional_bond() into two parts( listed as follows) in bond_plot_module in points_analysis_2D
+	   part1, restrict_axis_property()
+	   part2, draw_points_with_conditional_bond()
+- 20230131 add workflow_liquid in workflow_part
+	   add init_cut in dynamic_points_analysis_2d.plot_bond_neighbor_change_oop
+	   add __init_state_pin_from_gsd etc in pin_seed_oop
+	   add lattice_constant in coordination_number module in save_from_gsd 
+- 20230129 edit example in workflow_mysql_to_data_pin_hex_to_honeycomb_part_klt_2m()
+	   pip install latex, code added in bond_plot_module in points_analysis_2D
+- 20230119 edit workflow_part.workflow_simu_to_mysql_pin_hex_to_honeycomb_part_oop_klt_2m()
+	   edit particle_tracking
+- 20230118 edit data_analysis_cycle.data_analysis_workflow.get_displacment_field() 
+	   generalize displacment_field_2D.get_displacement_field_xy() to any two frames.
+	   add savetxt function in plot_hist_neighbor_change_event() in points_analysis_2D.dynamic_points_analysis_2d
+	   add check mode in workflow_part.workflow_simu_to_mysql_pin_hex_to_honeycomb_part_oop_klt_2m()
+	   add zorder to rank plot object in figure, in 
+- 20230116 edit data_analysis.txyz_to_bond_plot,bond_plot_module
 	   dynamic_points_analysis_2d.plot_bond_neighbor_change_oop,
 	   static_points_analysis_2d.draw_bonds_conditional_bond_oop,
 	   create class bond_plot_module in points_analysis_2D

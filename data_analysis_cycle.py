@@ -704,6 +704,122 @@ def saveIndexPressure(start_index,end_index,k1,step,linear_compression_ratio,see
     return save_file_name
 
 
+def save_exp_20230113_6(i,stable=True):
+    R"""
+    import data_analysis_cycle as dac
+    dac.save_exp_20230113_6()
+    """
+    import pandas as pd
+    import particle_tracking as pt 
+    spe = pt.save_points_from_exp()
+    path_to_folder = '/home/remote/xiaotian_file/data/20230113'
+    video_name = 'DefaultVideo_6'
+    spe.set_worksapce(path_to_folder,video_name)
+    tsf_filename = 'trap_honeycomb_part.txt'
+    
+    #image size
+    pixel_size = numpy.array([1008,1014])
+    pixel_to_um=3.0/32.0
+    um_size = pixel_size*pixel_to_um
+
+    #trap location
+    #adjust coordinations to match particle and traps
+    #standard_tune, precise_tune
+    center = numpy.array([48,48])+[10,10]
+    trap_locate = numpy.array([38.53,-40.92])+numpy.array([13,-11])
+    xy_adjust = center+trap_locate
+    pos,trap_filename = spe.get_trap_positions(tsf_filename,xy_adjust,1,90)#
+
+    import points_analysis_2D as pa  
+    directory = spe.path_to_results+'/'
+    dataname = video_name
+    if stable:
+        txyz = numpy.load(directory+'txyz_stable.npy')
+        xyi = txyz[i]
+        
+    else:
+        txyz = pd.read_csv(directory+'txyz.csv')
+        frame_num = txyz['frame'].values.max()+1
+        if i<0:
+            i = frame_num+i
+        txyz_ith=txyz[txyz['frame']==i]
+        xyi = txyz_ith[['x','y','z']].values
+        xyi = xyi*pixel_to_um
+    a_frame = pa.static_points_analysis_2d(xyi)
+    
+
+    data_name=dataname
+    prefix=directory
+    trap_filename=trap_filename
+    bond_cut_off=8
+    trap_lcr=0.8
+    str_index=data_name
+    png_filename1 = prefix +'bond_hist_index'+str_index+'_'+str(int(i))+'.png'
+    png_filename2 = prefix +'bond_plot_1st_minima_index'+str_index+'_'+str(int(i))+'.png'
+    a_frame.get_first_minima_bond_length_distribution(lattice_constant=1,hist_cutoff=bond_cut_off,png_filename=png_filename1)#,png_filename=png_filename1
+    a_frame.draw_bonds_conditional_bond_oop(check=[0.4, a_frame.bond_first_minima_left], png_filename=png_filename2,
+                                           x_unit='(um)',
+                                            LinearCompressionRatio=trap_lcr, trap_filename=trap_filename,axis_limit=um_size)
+    #dpa = pa.dynamic_points_analysis_2d(txyz,'exp')
+    #dpa.plot_bond_neighbor_change_oop(data_name=dataname,prefix=directory,final_cut=True,#init_cut=True,#final_cut=True,
+    #                    trap_filename=trap_filename,bond_cut_off=10,
+    #                    trap_lcr=0.8)
+def save_exp_20230113_8(i,stable=True):
+    R"""
+    import data_analysis_cycle as dac
+    dac.save_exp_20230113_6()
+    """
+    import pandas as pd
+    import particle_tracking as pt 
+    spe = pt.save_points_from_exp()
+    path_to_folder = '/home/remote/xiaotian_file/data/20230113'
+    video_name = 'DefaultVideo_8'
+    spe.set_worksapce(path_to_folder,video_name)
+    tsf_filename = 'trap_kagome_part.txt'
+    
+    #image size
+    pixel_size = numpy.array([1024,1024])
+    pixel_to_um=3.0/32.0
+    um_size = pixel_size*pixel_to_um
+
+    #trap location
+    #adjust coordinations to match particle and traps
+    #standard_tune, precise_tune
+    center = numpy.array([48,48])+[10,10]
+    trap_locate = numpy.array([30.55,-38.26])+numpy.array([0.5,-9])
+    xy_adjust = center+trap_locate
+    pos,trap_filename = spe.get_trap_positions(tsf_filename,xy_adjust,1,90)#
+
+    import points_analysis_2D as pa  
+    directory = spe.path_to_results+'/'
+    dataname = video_name
+    if stable:
+        txyz = numpy.load(directory+'txyz_stable.npy')
+        xyi = txyz[i]
+        
+    else:
+        txyz = pd.read_csv(directory+'txyz.csv')
+        frame_num = txyz['frame'].values.max()+1
+        if i<0:
+            i = frame_num+i
+        txyz_ith=txyz[txyz['frame']==i]
+        xyi = txyz_ith[['x','y','z']].values
+        xyi = xyi*pixel_to_um
+    a_frame = pa.static_points_analysis_2d(xyi)
+    
+
+    data_name=dataname
+    prefix=directory
+    trap_filename=trap_filename
+    bond_cut_off=8
+    trap_lcr=0.88+0.012
+    str_index=data_name
+    png_filename1 = prefix +'bond_hist_index'+str_index+'_'+str(int(i))+'.png'
+    png_filename2 = prefix +'bond_plot_1st_minima_index'+str_index+'_'+str(int(i))+'.png'
+    a_frame.get_first_minima_bond_length_distribution(lattice_constant=1,hist_cutoff=bond_cut_off,png_filename=png_filename1)#,png_filename=png_filename1
+    a_frame.draw_bonds_conditional_bond_oop(check=[0.4, a_frame.bond_first_minima_left], png_filename=png_filename2,
+                                           x_unit='(um)',
+                                            LinearCompressionRatio=trap_lcr, trap_filename=trap_filename,axis_limit=um_size)
 
 def get_KBT_pressure(file_log):
     data = numpy.genfromtxt(fname=file_log, skip_header=True)
@@ -776,9 +892,6 @@ def rearrange_data():
     data_ex[0:sp1[0],2]=lcr_list
     data_ex[0:sp1[0],3:5]=data1[:,1:3]
     '''
-
-    
-
 
 def readdata(fn):
     data=numpy.loadtxt(fn)
@@ -872,7 +985,7 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
                     psik=False,
                     psik_plot=None,
                     neighbor_cloud=False,
-                    coordination_number=False,
+                    coordination_number=False,lattice_constant=3,
                     coordination_number3_plot=False,
                     bond_plot=False,bond_plot_gr=False,show_traps=False,trap_filename=None,trap_lcr=None,
                     gr=False,
@@ -1061,7 +1174,7 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
             """
             #print('index '+str(i))
             #print(snap.particles.position[137])
-            a_frame.get_coordination_number_conditional()#cut edge to remove CN012
+            a_frame.get_coordination_number_conditional(lattice_constant=lattice_constant)#cut edge to remove CN012
             ccn = a_frame.count_coordination_ratio#[time_steps,psi3,psi6]
             ccn = numpy.transpose(ccn)
             if not "record_cn" in locals():#check if the variable exists
@@ -1215,7 +1328,7 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
             plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,4],label='CN_3')
             plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,5],label='CN_4')
             plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,6],label='CN_5')
-            #plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,7],label='CN_6')
+            plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,7],label='CN_6')
             plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,8],label='CN_7')
             #plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,9],label='CN_8')
             #plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,-1],label='CN_9')
@@ -1231,11 +1344,18 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
         plt.close()
 
 
-class data_analysis:
+class data_analysis_workflow:
     R"""
+    simu:
     select * from pin_hex_to_honeycomb_part_klt_2m where HarmonicK = 700;
     | SimuIndex | HarmonicK | LinearCompressionRatio | kT   | Psi3     | Psi6     | RandomSeed |
     |      4302 |       700 |                   0.81 |    1 | 0.927068 | 0.123686 |          9 |
+    daw = dac.data_analysis_workflow()
+    directory,str_simu_index = daw.gsd_to_txyz(simu_index=4302,seed=9,io_only=True)
+    trap_filename='/home/remote/hoomd-examples_0/testhoneycomb3-8-12-part1'
+    trap_lcr=0.81
+    daw.get_defect_motion(directory,str_simu_index,trap_filename,trap_lcr)
+
 
     select * from pin_hex_to_honeycomb_klt_2m where HarmonicK = 900;
     +-----------+-----------+------------------------+------+----------+----------+------------+
@@ -1262,8 +1382,54 @@ class data_analysis:
     |      4449 |       400 |                   0.89 |    1 |            0.0224719 |             0.820225 |          9 |
     |      4454 |       900 |                   0.89 |    1 |            0.0225989 |             0.858757 |          9 |
     +-----------+-----------+------------------------+------+----------------------+----------------------+------------+
+
+    Honeycomb part pin precise index5346,5387
+    mysql> select * from pin_hex_to_honeycomb_part_klt_2m where SimuIndex =5387;
+    +-----------+-----------+------------------------+------+----------+----------+------------+
+    | SimuIndex | HarmonicK | LinearCompressionRatio | kT   | Psi3     | Psi6     | RandomSeed |
+    +-----------+-----------+------------------------+------+----------+----------+------------+
+    |      5387 |       114 |                  0.816 |    1 | 0.860764 | 0.191895 |          9 |
+    |      5346 |       108 |                   0.81 |    1 | 0.90035  | 0.170656 |          9 |
+    +-----------+-----------+------------------------+------+----------+----------+------------+
     """
     def __init__(self):
+        R"""
+        example:
+            import numpy as np
+            import data_analysis_cycle as dac
+            import points_analysis_2D as pa
+            seed=9
+            index_list=np.linspace(5390,5399,10)
+            lcr_list = np.linspace(0.82,1,10)
+            kT=1.0
+            #print(index_list,lcr_list)
+            daw = dac.data_analysis_workflow()
+            for i in range(10):
+            directory,str_simu_index =daw.gsd_to_txyz(simu_index=index_list[i],io_only=True)
+            txyz_stable = np.load('/home/remote/Downloads/'+str_simu_index+'/txyz_stable.npy')
+            dpa = pa.dynamic_points_analysis_2d(txyz_stable)
+            dpa.plot_trajectory(directory)
+            dpa.plot_bond_neighbor_change_oop(data_name=str_simu_index,prefix=directory,final_cut=True)
+        example2:
+            import numpy as np
+            seed=9
+            index_list=np.linspace(5400,5409,10)
+            lcr_list = np.linspace(1.1,2,10)
+            kT=1.0
+            #print(index_list,lcr_list)
+            import data_analysis_cycle as dac
+            import points_analysis_2D as pa
+            daw = dac.data_analysis_workflow()
+            for i in range(10):
+                directory,str_simu_index =daw.gsd_to_txyz(simu_index=index_list[i],io_only=True)#
+                txyz = np.load('/home/remote/Downloads/'+str_simu_index+'/txyz.npy')
+                txyz_stable = np.load('/home/remote/Downloads/'+str_simu_index+'/txyz_stable.npy')
+                #dpa = pa.dynamic_points_analysis_2d(txyz_stable)
+                #dpa.plot_trajectory(directory)
+                dpa = pa.dynamic_points_analysis_2d(txyz)
+                dpa.plot_bond_neighbor_change_oop(data_name=str_simu_index,prefix=directory,final_cut=True,bond_cut_off=6*lcr_list[i])
+
+        """
         pass
     
     def gsd_to_txyz(self,account='remote',simu_index=0,seed=9,io_only=False):
@@ -1277,7 +1443,7 @@ class data_analysis:
             directory: (str)directory with '/';
             data_name: (str)'index_seed' for example.
         """
-        str_simu_index = str(simu_index)+'_'+str(seed)
+        str_simu_index = str(int(simu_index))+'_'+str(seed)
         directory = '/home/'+account+'/Downloads/'+str_simu_index#+'/'
 
         #check if the folder exists
@@ -1292,7 +1458,7 @@ class data_analysis:
             gsd.get_trajectory_stable_data(directory)
         return directory,str_simu_index
 
-    def txyz_to_bond_plot(self,directory,data_name=None,trap_filename=None,trap_lcr=None,io_only=False):
+    def get_bond_plot(self,directory,data_name=None,trap_filename=None,trap_lcr=None,io_only=False):
         R"""
         input:
             directory from self.gsd_to_txyz
@@ -1324,7 +1490,9 @@ class data_analysis:
             file_ts_id_dxy = directory + 'ts_id_dxy.csv'
             ts_id_dxy = pd.read_csv(file_ts_id_dxy)
             if_nb_change_int,n_particle_nb_stable = dpa.monitor_neighbor_change_event(ts_id_dxy=ts_id_dxy,csv_prefix=directory)
-            dpa.plot_hist_neighbor_change_event(if_nb_change_int,n_particle_nb_stable,directory)
+            dpa.get_hist_neighbor_change_event(if_nb_change_int,n_particle_nb_stable,directory)
+        count_nb_change_event_rate = numpy.load(directory+'count_nb_change_event_rate.npy')
+        dpa.plot_hist_neighbor_change_event(count_nb_change_event_rate,directory)
         """
         if_nb_change_int, n_particle_nb_stable, png_filename==dpa.monitor_neighbor_change_event(ts_id_dxy=ts_id_dxy,csv_prefix=directory)
         dpa.plot_hist_neighbor_change_event(if_nb_change_int, n_particle_nb_stable, png_filename=)
@@ -1337,15 +1505,65 @@ class data_analysis:
             dpa.plot_bond_neighbor_change_oop(data_name=data_name,prefix=directory,nb_change=list_sum_id_nb_stable,bond_cut_off=bond_cut_off,
                                                trap_filename=trap_filename,trap_lcr=trap_lcr)
             """
-            
-            """
-            """
             dpa.plot_bond_neighbor_change_oop()
             dpa.draw_bonds.draw_bonds_conditional_bond()
             dpa.draw_bonds.plot_neighbor_change(txyz_stable,nb_change)
             dpa.draw_bonds.plot_traps(trap_filename,LinearCompressionRatio)
             """
-            
+    def get_defect_motion(self,directory,data_name=None,trap_filename=None,trap_lcr=None):
+        file_txyz_stable = directory + 'txyz_stable.npy'
+        txyz_stable = numpy.load(file_txyz_stable)
+        dpa = pa.dynamic_points_analysis_2d(txyz_stable,mode='simu')
+
+        file_list_sum_id_nb_stable = directory + 'list_sum_id_nb_stable.csv'
+        import pandas as pd
+        list_sum_id_nb_stable = pd.read_csv(file_list_sum_id_nb_stable)
+        ids = dpa.plot_neighbor_change_evolution(1173,1174,directory,data_name=data_name,
+                nb_change=list_sum_id_nb_stable,arrow='annotate',bond_cut_off=6,trap_filename=trap_filename,trap_lcr=trap_lcr)#'4302_9'
+        dpa.plot_neighbor_change_evolution(1174,1174,directory,data_name=data_name,ids=ids,bond_cut_off=6,trap_filename=trap_filename,trap_lcr=trap_lcr)
+
+    def get_string_like_motion_rank(self,directory,data_name=None,trap_filename=None,trap_lcr=None):
+        R"""
+        EXP:
+            daw = dac.data_analysis_workflow()
+            directory,dataname= daw.gsd_to_txyz(simu_index=4302,seed=9,io_only=True)
+            daw.get_string_like_motion(directory,dataname,'/home/remote/hoomd-examples_0/testhoneycomb3-8-12-part1',0.81)
+            #daw.get_displacment_field(directory,89,106)
+        """
+        file_txyz_stable = directory + 'txyz_stable.npy'
+        txyz_stable = numpy.load(file_txyz_stable)
+        dpa = pa.dynamic_points_analysis_2d(txyz_stable,mode='simu')
+        file_list_sum_id_nb_stable = directory + 'list_sum_id_nb_stable.csv'
+        import pandas as pd
+        list_sum_id_nb_stable = pd.read_csv(file_list_sum_id_nb_stable)
+        init_frame =89
+        end_frame = 106
+        
+
+        ids = dpa.plot_string_like_motion_rank(init_frame,end_frame,directory,data_name=data_name,#89,106
+                nb_change=list_sum_id_nb_stable,bond_cut_off=6,trap_filename=trap_filename,trap_lcr=trap_lcr)#'4302_9'
+        #dpa.plot_string_like_motion(end_frame,end_frame,directory,data_name=data_name,ids=ids,
+        #        bond_cut_off=6,trap_filename=trap_filename,trap_lcr=trap_lcr)
+    
+    def get_string_like_motion(self,directory,data_name=None,trap_filename=None,trap_lcr=None):
+        R"""
+        EXP:
+            daw = dac.data_analysis_workflow()
+            directory,dataname= daw.gsd_to_txyz(simu_index=4302,seed=9,io_only=True)
+            daw.get_string_like_motion(directory,dataname,'/home/remote/hoomd-examples_0/testhoneycomb3-8-12-part1',0.81)
+            #daw.get_displacment_field(directory,89,106)
+        """
+        file_txyz_stable = directory + 'txyz_stable.npy'
+        txyz_stable = numpy.load(file_txyz_stable)
+        dpa = pa.dynamic_points_analysis_2d(txyz_stable,mode='simu')
+        init_frame =1
+        end_frame = 2000
+        ids = dpa.plot_string_like_motion(init_frame,end_frame,directory,data_name=data_name,#89,106
+                bond_cut_off=6,trap_filename=trap_filename,trap_lcr=trap_lcr)#'4302_9'
+        dpa.plot_string_like_motion(end_frame,end_frame,directory,data_name=data_name,ids=ids,
+                bond_cut_off=6,trap_filename=trap_filename,trap_lcr=trap_lcr)
+        
+
     def get_msd(self,pixel_to_um=3.0/32.0,um_to_sigma=1.0/2.0):
         txyz_npy_filename = self.path_to_results+'/'+'txyz_stable'
         traj = numpy.load(txyz_npy_filename)
@@ -1365,3 +1583,81 @@ class data_analysis:
         dpa.plot_lindemann_msd(dpa.record_msd,average_1st_bond_length,time_log)
         print('average_1st_bond_length\n',average_1st_bond_length)
     
+    def get_displacment_field(self,directory,frame_index_start=0,frame_index_end=-1,subplot=False):
+        #import numpy
+        #import points_analysis_2D as pa
+        file_txyz_stable = directory + 'txyz_stable.npy'
+        txyz_stable = numpy.load(file_txyz_stable)
+        dpa = pa.dynamic_points_analysis_2d(txyz_stable,mode='simu')
+        dpa.displacement_field_module()
+        png_filename = directory+'displacement_field_xy'+'_'+str(frame_index_start)+'_'+str(frame_index_end)+'.png'
+        dpa.displacemnt_field.get_displacement_field_xy(frame_index_start,frame_index_end,True,png_filename)
+    
+    def get_a_frame(self,directory,frame_index):
+        file_txyz_stable = directory + 'txyz_stable.npy'
+        txyz_stable = numpy.load(file_txyz_stable)
+        dpa = pa.dynamic_points_analysis_2d(txyz_stable,mode='simu')
+        dpa.plot_a_frame_of_points(frame_index,directory+str(frame_index)+'.png')
+
+class transfer_txt_to_array:
+    R"""
+    example:
+        import numpy as np
+        import data_analysis_cycle as dac
+        txt_file_name = '/home/remote/Downloads/5410-5419klt'
+        ta = dac.transfer_txt_to_array()
+        d1=ta.trans_txt_to_array(txt_file_name)
+        txt_file_name = '/home/remote/Downloads/5420-5429klt'
+        d2=ta.trans_txt_to_array(txt_file_name)
+        data = np.concatenate((d1,d2))
+        print(data[:,0])
+        print(data[:,1])
+        data[:,2] = data[:,2]*3/7.44
+        print(data[:,2])
+        ta.get_scatter('remote',data)
+    """
+    def __init__(self):
+        pass
+    def trans_txt_to_array(self,txt_file_name):
+        R"""
+        This function will save a txt file named 'start index - end index klt', which contains
+        n rows of data 
+        |simu_index | HarmonicK | LinearCompressionRatio | kT |
+        Psi3Global | Psi6Global | RandomSeed | 
+
+        CHECK: [v]
+        """
+        #txt_file_name = '/home/remote/Downloads/5410-5419klt'
+        data = numpy.loadtxt(txt_file_name)
+        return data
+
+    def get_scatter(self,account,data):
+        import matplotlib.pyplot as plt
+        import numpy as np
+        U_interaction=300*np.exp(-0.25)
+        prefix='/home/'+account+'/Downloads/'
+        postfix = '_pin_liquid_to_honeycomb_part_klt_2m.png'
+        #print(data[:,4])
+        plt.figure()
+        #plot k VS T, Psi3 as value
+        plt.scatter(data[:,2],data[:,1]*0.5,c=data[:,4])# LCR VS K, Psi3 as value
+        #plt.show()
+        plt.title('k VS T, Psi3 as value, Uparticle='+str(int(U_interaction)) )
+        plt.xlabel('Linear Compression Ratio (1)')
+        plt.ylabel('U trap ($k_BT_m$)[Honeycomb part]')
+        plt.colorbar()
+        png_filename=prefix+'K_VS_T_Psi3_as_value'+postfix
+        plt.savefig(png_filename)
+        plt.close()
+
+        plt.figure()
+        #plot k VS T, Psi6 as value
+        plt.scatter(data[:,2],data[:,1]*0.5,c=data[:,5])# LCR VS K, Psi6 as value
+        #plt.show()
+        plt.title('k VS T, Psi6 as value, Uparticle='+str(int(U_interaction)) )
+        plt.xlabel('Linear Compression Ratio (1)')
+        plt.ylabel('U trap ($k_BT_m$)[Honeycomb part]')
+        plt.colorbar()
+        png_filename=prefix+'K_VS_T_Psi6_as_value'+postfix
+        plt.savefig(png_filename)
+        plt.close()
