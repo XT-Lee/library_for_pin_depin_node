@@ -1,3 +1,4 @@
+from sys import prefix
 import points_analysis_2D as pa
 import numpy 
 import matplotlib.pyplot as plt
@@ -1308,6 +1309,8 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
         plt.savefig(png_filename)
         plt.close()
     if coordination_number:
+        txt_filename = prefix +'T_VS_CN_k_tcut'+'index'+str_index+'egcut'+'.txt'
+        numpy.savetxt(txt_filename)
         plt.figure()
         if frame_cut == 0:#frame_cut is set to abstract a part of the process to watch in detail
             #plt.plot(record_cn[:,0],record_cn[:,1],label='CN_0')
@@ -1510,6 +1513,7 @@ class data_analysis_workflow:
             dpa.draw_bonds.plot_neighbor_change(txyz_stable,nb_change)
             dpa.draw_bonds.plot_traps(trap_filename,LinearCompressionRatio)
             """
+    
     def get_defect_motion(self,directory,data_name=None,trap_filename=None,trap_lcr=None):
         file_txyz_stable = directory + 'txyz_stable.npy'
         txyz_stable = numpy.load(file_txyz_stable)
@@ -1599,8 +1603,84 @@ class data_analysis_workflow:
         dpa = pa.dynamic_points_analysis_2d(txyz_stable,mode='simu')
         dpa.plot_a_frame_of_points(frame_index,directory+str(frame_index)+'.png')
 
+    def get_displacement_1D(self,directory,data_name=None):#,id=0
+        R"""
+        example:
+            import data_analysis_cycle as dac
+            daw = dac.data_analysis_workflow()
+            directory,data_name = daw.gsd_to_txyz(simu_index=4302,io_only=True)
+            daw.get_displacement_1D(directory,data_name)
+        """
+        file_txyz_stable = directory + 'txyz_stable.npy'
+        txyz_stable = numpy.load(file_txyz_stable)
+        sz = numpy.shape(txyz_stable)
+        #print(sz)
+        """
+        prefix = directory
+        folder_name = ''
+        isExists=os.path.exists(prefix+folder_name)
+        if not isExists:
+            os.makedirs(prefix+folder_name)
+            prefix = prefix+folder_name
+        """
+        
+        #dpa = pa.dynamic_points_analysis_2d(txyz_stable,mode='simu')
+        #import points_analysis_2D as pa
+        #dp = pa.dynamic_points_analysis_2d(txyz_stable)
+        df = pa.dynamical_facilitation_module()
+        for id in range(sz[1]):
+            ax = df.plot_displacement_t(txyz_stable[:,id,:2])
+            png_filename = directory+data_name+'_'+str(int(id))+'.png'
+            ax.set_title(data_name+'_'+str(int(id)))
+            plt.savefig(png_filename)
+            plt.close()
+
+    def get_displacement_1D_overlap(self,directory,data_name=None):#,id=0
+        file_txyz_stable = directory + 'txyz_stable.npy'
+        txyz_stable = numpy.load(file_txyz_stable)
+        sz = numpy.shape(txyz_stable)
+        df = pa.dynamical_facilitation_module()
+        fig,ax = plt.subplots()
+        for id in range(sz[1]):#
+            df.plot_displacement_t(txyz_stable[:,id,:2],ax)
+        ax.set_xlabel('t (k steps)')
+        ax.set_ylabel('$\delta$r ($\sigma$)')
+        ax.set_title(data_name+'_'+str(int(id)))
+        png_filename = directory+data_name+'_dr_abs'+'.png'
+        plt.savefig(png_filename)
+        plt.close()
+
+    def scan_displacement_1D_overlap(self,directory,data_name=None):#,id=0
+        file_txyz_stable = directory + 'txyz_stable.npy'
+        txyz_stable = numpy.load(file_txyz_stable)
+        sz = numpy.shape(txyz_stable)
+        df = pa.dynamical_facilitation_module()
+        fig,ax = plt.subplots()
+        for id in range(sz[1]):#
+            df.plot_displacement_t(txyz_stable[:,id,:2],ax)
+            df.plot_scan_displacement_t(txyz_stable[:,id,:2],ax)
+        ax.set_xlabel('t (k steps)')
+        ax.set_ylabel('$\delta$r ($\sigma$)')
+        ax.set_title(data_name+'_'+str(int(id)))
+        png_filename = directory+data_name+'_dr_abs'+'.png'
+        plt.savefig(png_filename)
+        plt.close()
+
+    def get_displacement_1D_data(self,directory,data_name=None):
+        file_txyz_stable = directory + 'txyz_stable.npy'
+        txyz_stable = numpy.load(file_txyz_stable)
+        sz = numpy.shape(txyz_stable)
+        df = pa.dynamical_facilitation_module()
+
+        for id in range(sz[1]):#
+            df.plot_displacement_t(txyz_stable[:,id,:2])
+
 class transfer_txt_to_array:
     R"""
+    introduction:
+        to draw traps on bond_plot in exp, 
+        I have to transfer txt/tsf file into array
+
     example:
         import numpy as np
         import data_analysis_cycle as dac
@@ -1661,3 +1741,4 @@ class transfer_txt_to_array:
         png_filename=prefix+'K_VS_T_Psi6_as_value'+postfix
         plt.savefig(png_filename)
         plt.close()
+

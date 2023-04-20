@@ -5,6 +5,28 @@
 - and has a library to proceed trajectories of particles in 2D and get their structural or dynamic properties
 
 ## log:
+- 20230420 fix get_conditional_bonds_and_simplices, return count_polygon_relative
+- 20230410 edit get_conditional_bonds_and_simplices, return count_polygon_relative
+- 20230408 edit bond_plot_module init(ax=none)
+- 20230404 add points_analysis_2d.count_polygon_n
+- 20230329 add workflow_analysis.show_waiting_time_interstitial_motion
+	   add points_analysis_2d.dynamical_facilitation_module.scan_displacement_t
+- 20230328 add workflow_analysis.optimize_polyfit
+	   add workflow_analysis.show_waiting_time_brownian
+	   add workflow_analysis.show_waiting_time_dynamical_facilitation
+- 20230324 add workflow_analysis.show_tuned_image to add line over image.
+	   add bond_plot_module_for_image in points_analysis_2d
+- 20230320 add workflow_uniform_continue in symmetry_transformation.simple_simulation
+	   add workflow_analysis.get_msd_from_gsd()
+	   add workflow_analysis.get_displacement_field_normal()
+- 20230314 add workflow_analysis to record codes.
+- 20230306 plot scatter vacancy and occupation in dynamical_facilitation_module.plot_reference_occupation
+	   add dynamical_facilitation_module.plot_reference_positions_waiting_time_colored
+- 20230225 set honeycomb3-8-12 as facilitation reference, part1 as traps.
+- 20230223 add probability distribution of dynamical facilitation(ongoing)
+	   add get_displacement_1D_overlap in data_analysis_cycle
+	   add dynamical_facilitation_module in points_analysis_2d
+- 20230222 add function_plot including example_plot and unit_transform
 - 20230216 add workflow_mysql_to_data_pin_hex_to_honeycomb_part_klt_2m_random_oop
 	   add mysql_data_processor in getDataAndScatter
 	   add get_string_like_motion_rank in data_analysis_workflow, 
