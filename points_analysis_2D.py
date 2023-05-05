@@ -1,5 +1,3 @@
-from calendar import c
-from re import X
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial import Voronoi
@@ -13,8 +11,6 @@ import freud
 R"""
 CLASS list:
     static_points_analysis_2d: old_class_name: PointsAnalysis2D
-    proceed_gsd_file:
-    proceed_exp_file:
     dynamic_points_analysis_2d: old_class_name: msd
 """
 class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
@@ -79,8 +75,7 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
             if filename is None:
                 print("Error: input points or file please!\n")
             else:
-                self.filename = filename#[x]
-                #filename='/home/tplab/Downloads/index93.0'
+                self.filename = filename
                 self.points = np.loadtxt(filename)
                 self.points = self.points[:,0:2]
                 self.basic_points_analysis()
@@ -91,8 +86,6 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
         #not show figures
         if hide_figure:
             matplotlib.use(backend="agg")#Backend agg is non-interactive backend. Turning interactive mode off. 'QtAgg' is interactive mode
-        #set basic parameters
-        #self.prefix='/home/tplab/Downloads/'
             
     def basic_points_analysis(self):
         self.voronoi = Voronoi(self.points)
@@ -238,6 +231,287 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
         plt.close()
         #let bond_first_minima_left be a absolute length, not normalized one
         self.bond_first_minima_left=self.bond_first_minima_left*self.lattice_constant
+    
+    def get_first_minima_ridge_length_distribution(self,hist_cutoff=5,
+                                    method="median_minima_method", png_filename=None,x_unit='(1)'):
+        R"""  
+        Introduction:
+            It's likely that bonds whose voronoi ridges are extremely small are not bonded. 
+        Parameters:
+            lattice_constant: particle diameter or lattice constant is recommended(also the unit A in x-axis in hist)
+            
+            method:"local_compare_method" to get the 1st minima through comparing local minima,
+                suitable for continuous peak-valley hist; given here exit several local minima, the method has been given up.
+                "global_compare_method" to get the 1st minima through comparing all the peaks, 
+                selecting the 1st main peak(ignoring tiny peak before which), 
+                finding the 1st main minima just after the 1st main peak, 
+                suitable systems with powerful perturbation.
+            
+            hist_cutoff: plot hist of ridge_length till n times lattice_constant where n is hist_cutoff.
+            
+            png_filename="prefix/bond_hist_index1512"
+
+            bond_first_minima_left:the upper limit of 1st neighbour bonds comming from the first minima 
+                                    of bond length distribution, with sigma as lower limit.
+            
+        Warning:
+            [x]What if there is no minima found? 
+            count_1st_max / count_1st_minima > 10 used to check the effective of minima? 
+
+        Examples:
+            
+        """
+        #locate the 1st minima of bond-length distribution
+        plt.figure()
+        count_bins=plt.hist(self.voronoi.ridge_length[:],bins=20,range=[0,hist_cutoff])#
+        _count=count_bins[0]
+        _bins=count_bins[1]
+        ridge_sorted=np.sort(self.voronoi.ridge_length[:])
+        #find the minimum bin, then set the left side as bond_first_neighbour
+        i_max=_bins.size
+        i=0
+        """1st half minimum count"""
+        if method=="local_compare_method":
+            while i < i_max-3:#i start from 0, which have to -1;compares i,i+1 and i+2, which have to -2, hence -3
+                #np.where( self.bond_sorted[:]>res.bins[i] & self.bond_sorted[:]< res.bins[i+1] ) 
+                #print(self._count[i])
+                if _count[i] > _count[i+1]:
+                    if _count[i+1] <= _count[i+2]:
+                        i+=1
+                        break
+                i+=1 
+        elif method=="median_minima_method":
+            R"""
+            n_ridges_half: it is believed that extremely short ridges are rare, 
+            so the total number of short ridges should be less than half the num of ridges.
+            hence n_ridges_half is set as a limit.
+            """
+            n_ridges_half = int(sum(_count)/2) 
+            #i=1
+            count_ridges_half = _count[0]
+            count_min_i = 0
+            while i < i_max-3:
+                if count_ridges_half<n_ridges_half:
+                    count_ridges_half = count_ridges_half + _count[i+1]
+                else:
+                    i=count_min_i#+1
+                    break
+                if _count[count_min_i] > _count[i+1]:
+                    count_min_i = i+1
+                i+=1
+
+        elif method=="global_compare_method":
+            _count = np.array(_count)
+            count_sorted=np.sort(_count)
+            """
+            print(count_sorted)
+            print(count_sorted[-1])#max1
+            print(count_sorted[-2])#max2
+            """
+            i_bins_for_count_peak_1 = np.where(_count[:]==count_sorted[-1])
+            i_bins_for_count_peak_2 = np.where(_count[:]==count_sorted[-2])
+            i_bins_for_count_peak_1 = i_bins_for_count_peak_1[0]
+            i_bins_for_count_peak_2 = i_bins_for_count_peak_2[0]
+            #if there are more than one bins share the same count, select the smallest bin number.
+            if np.shape(i_bins_for_count_peak_1)[0]>1:
+                i_bins_for_count_peak_1 = min(i_bins_for_count_peak_1)
+            if np.shape(i_bins_for_count_peak_2)[0]>1:
+                i_bins_for_count_peak_2 = min(i_bins_for_count_peak_2)
+            i_bins_for_count_1st_peak = min(i_bins_for_count_peak_1,i_bins_for_count_peak_2)
+            i_bins_for_count_1st_peak = int(i_bins_for_count_1st_peak)#force i be a simple data_type(int)
+            """
+            print(i_bins_for_count_peak_1) 
+            print(i_bins_for_count_peak_2)
+            print(i_bins_for_count_1st_peak) 
+            """
+            #list_xy = np.logical_and(list_x,list_y)
+            #edge_cut_positions_list = np.where(==)
+            i = i_bins_for_count_1st_peak
+            while i < i_max-3:#i start from 0, which have to -1;compares i,i+1 and i+2, which have to -2, hence -3
+                if _count[i] > _count[i+1]:
+                    if _count[i+1] <= _count[i+2]:
+                        i+=1
+                        break
+                i+=1
+        else:
+            print("Err: input 'local_compare_method' or 'global_compare_method', please!")
+            print("x")
+        
+        #check the length of ridge
+        R"""
+        short_ridge_rate: the variable is set to ensure that the ridge_length is not popular. 
+        """
+        n_ridges = sum(_count)
+        short_ridge_rate = _count[i-1]/n_ridges
+        if short_ridge_rate<0.1:#short ridge must be rare
+            self.ridge_first_minima_left=_bins[i]
+        else:
+            self.ridge_first_minima_left=_bins[1]
+
+        if not png_filename  is None:
+            #plot divide line
+            plt.plot([self.ridge_first_minima_left,self.ridge_first_minima_left],[0,_count[i]],linestyle='--')
+            plt.title("1st minima:"+str( self.ridge_first_minima_left )+x_unit)
+            plt.xlabel("ridge length "+x_unit)
+            plt.ylabel("count (1)")
+            plt.savefig(png_filename)
+        plt.close()
+
+    def get_conditional_bonds_and_simplices(self,long_bond_cutoff=6):
+        R"""
+        return:
+            vertex_bonds_index: n rows of [start_point_index, end_point_index]
+            list_simplex_cluster: n_vertices rows of [simplex_id, cluster_id],
+                where delaunay.simplices[simplex_id], 
+                and cluster_id is the cluster the simplex belonging to
+        method:
+            vertices cluster method: find the shortest ridges and link the related vertices.
+        """
+
+        list_short_ridge_bool = self.voronoi.ridge_length[:] <= self.ridge_first_minima_left
+        list_short_bonds = self.voronoi.ridge_points[np.logical_not(list_short_ridge_bool)]#[start_point_index, end_point_index]
+        """
+        select_short_bonds_bool = self.bond_length[list_short_bonds[:,0],2] < long_bond_cutoff
+        #select_short_bonds_bool = self.bond_length[list_short_bonds_index,2] < long_bond_cutoff
+        list_short_bonds = list_short_bonds[select_short_bonds_bool]
+        """
+        list_ridge_vertices_index = self.voronoi.ridge_vertices[list_short_ridge_bool]
+        list_vertices_index = np.unique(list_ridge_vertices_index)
+        n_vertices = np.shape(list_vertices_index)[0]
+        '''
+        method2:
+        record_vertices_cluster = np.ones((n_vertices,10))
+        record_vertices_cluster[:]=-record_vertices_cluster[:]
+        '''
+        #record_vertices_cluster: n_vertices rows of [vertex_id, cluster_id],
+        #where vertex_id belongs to list_vertices
+        #when cluster_id=-1, the vertex has not been included by any cluster.
+        record_vertices_cluster = np.ones((n_vertices,2))
+        record_vertices_cluster[:]=-record_vertices_cluster[:]
+        record_vertices_cluster[:,0]=list_vertices_index
+        cluster_id = 0
+        for i in range(n_vertices):
+            vertex_id = list_vertices_index[i]
+            #print("cluster_id\n",cluster_id)
+            list_linked = np.where(list_ridge_vertices_index[:,:]==vertex_id)
+            list_linked_vertices_pair = list_ridge_vertices_index[list_linked[0]]
+            #print("vertices_pair\n",list_linked_vertices_pair)
+            list_vertex_id_of_cluster1 = np.unique(list_linked_vertices_pair)
+            for j in list_vertex_id_of_cluster1:
+                record_id = record_vertices_cluster[:,0]==j#find the row_index for vertex_id
+                if record_vertices_cluster[record_id,1]==-1:
+                    record_vertices_cluster[record_id,1]=cluster_id
+                elif record_vertices_cluster[record_id,1]==cluster_id:
+                    pass
+                else:
+                    #new cluster merge old one by refreshing a list of vertices in old cluster
+                    contradictory_cluster_id = record_vertices_cluster[record_id,1]
+                    list_bool_of_cluster_to_merge= (record_vertices_cluster[:,1]==contradictory_cluster_id)
+                    record_vertices_cluster[list_bool_of_cluster_to_merge,1]=cluster_id
+            cluster_id +=1
+        #statistics for clusters
+        list_cluster_id = np.unique(record_vertices_cluster[:,1])
+        count_polygon = np.zeros((20,2))#(10,2)
+        for i in list_cluster_id:
+            list_cluster_i = record_vertices_cluster[record_vertices_cluster[:,1]==i,0]
+            n_complex_i = np.shape(list_cluster_i)[0]
+            count_polygon[n_complex_i,0]=n_complex_i+2#[x]frame=1421,polygon=10;1609,12
+            count_polygon[n_complex_i,1]+=1
+        count_polygon[1,0]=3
+        count_polygon[1,1]=np.shape(list_short_bonds)[0]
+        #print("polygon_n, count\n",count_polygon)
+        #
+        count_polygon_relative = np.array(count_polygon)
+        count_polygon_relative[:,1] = count_polygon_relative[:,1]/sum(count_polygon_relative[:,1]) \
+                                        *(count_polygon_relative[:,0]-2)*100#see one simplex as one weight
+        #print("polygon_n, count%\n",count_polygon_relative)
+        """
+        nm = np.maximum(count_polygon[:,1])
+        np.shape(list_cluster_id)
+        list_polygon_simplex = -np.ones((10,nm))
+        for i in list_cluster_id:
+            list_cluster_i = record_vertices_cluster[record_vertices_cluster[:,1]==i,0]
+            list_polygon_simplex[]
+        """
+       
+        self.vertex_bonds_index = list_short_bonds#short bonds index offered by ridge comapre method 
+        self.list_simplex_cluster = record_vertices_cluster
+        return count_polygon_relative
+
+    def draw_bonds_simplex_conditional_oop(self,png_filename=None,xy_stable=None,nb_change=None,x_unit='(um)',
+                                    LinearCompressionRatio=None,trap_filename=None,
+                                    axis_limit=None,fig=None,ax=None):
+        R"""
+        xy(self.points) must be a frame of txyz( not txyz_stable)!
+        xy_stable: a frame of txyz_stable
+        LinearCompressionRatio=0.79
+        trap_filename="/home/tplab/hoomd-examples_0/testhoneycomb3-8-12-part1"
+        """
+        if ax is None:
+            self.draw_bonds = bond_plot_module()
+        else:
+            self.draw_bonds = bond_plot_module(fig,ax)    
+        self.draw_bonds.restrict_axis_property_relative(self.points,x_unit=x_unit)
+        if not axis_limit is None:
+            xlim = [0,axis_limit[0]]
+            ylim = [0,axis_limit[1]]
+            self.draw_bonds.restrict_axis_limitation(xlim,ylim)
+        self.draw_bonds.draw_points_with_conditional_vertices(self.points,self.bond_length,self.vertex_bonds_index)
+        #self.draw_bonds.draw_bonds_conditional_bond(self.points,self.bond_length,bond_length_limmit=check,x_unit=x_unit)
+        if not trap_filename is None:
+            self.draw_bonds.plot_traps(trap_filename=trap_filename,LinearCompressionRatio=LinearCompressionRatio)
+        if not nb_change is None:
+            self.draw_bonds.plot_neighbor_change(xy_stable,nb_change)
+        if not png_filename is None:
+            self.draw_bonds.save_figure(png_filename)
+        #else:
+        #    return ax
+
+    def draw_polygon_patch_oop(self,fig=None,ax=None):
+        R"""
+        parameters:
+            vertex_bonds_index: n rows of [start_point_index, end_point_index]
+            list_simplex_cluster: n_vertices rows of [simplex_id, cluster_id],
+                where delaunay.simplices[simplex_id], 
+                and cluster_id is the cluster the simplex belonging to
+                (from get_conditional_bonds_and_simplices())
+            is_polygon_n: mark the num n of edges of the polygon.
+        
+        """
+        from matplotlib.patches import Polygon
+        from matplotlib.collections import PatchCollection
+        if ax is None:
+            fig,ax = plt.subplots()
+
+        vertices_cluster = self.list_simplex_cluster
+        points = self.points
+
+        list_cluster_id = np.unique(vertices_cluster[:,1])
+        #patches=[]
+        for cluster_id in list_cluster_id:
+            list_simplex_ids_in_cluster_i = vertices_cluster[vertices_cluster[:,1]==cluster_id,0]
+            n_simplex_in_cluster_i = np.shape(list_simplex_ids_in_cluster_i)[0]
+            cluster_i_is_polygon_n=n_simplex_in_cluster_i+2
+            if cluster_i_is_polygon_n==6:
+                #patches=[]
+                for simplex_id in list_simplex_ids_in_cluster_i.astype(int):
+                    list_points_ids_in_simplex = self.delaunay.simplices[simplex_id]
+                    list_points_xy = points[list_points_ids_in_simplex]
+                    """
+                    polygon = Polygon(list_points_xy, closed=True)
+                    polygon.set(color='r')
+                    patches.append(polygon)
+                    p = PatchCollection(patches)#, alpha=0.4
+                    ax.add_collection(p)
+                    """
+                    set_color='r'
+                    ax.fill(list_points_xy[:,0],list_points_xy[:,1],facecolor=set_color,edgecolor=set_color)
+                    
+        """
+        #rearrange points anti-clockwise
+        """
+        
+        return fig,ax
 
     def get_first_minima_radial_distribution_function(self,rdf,lattice_constant=3.0,png_filename=None):#[x]
         #print(rdf.bin_centers) print(rdf.bin_counts)
@@ -318,7 +592,13 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
         Introduction:
             get_coordination_number_with given bond_length_limit [min,max].
         parameters:
-
+            CN0 % should be 0 for all the particles must be linked by bond.
+            CN1 % is likely to be edge?
+            CN2 % in body(edge-cutted) shows the mechanical unstability
+            CN3 % shows the proportion of honeycomb.
+            CN4 % shows the proportion of kagome.
+            CN6 % shows the proportion of hexagonal.
+            CN5/7 % shows the proportion of disclination.
         Variables:
             __coordination_bond: n rows of (start_point_index, end_point_index, bond_length)
             count_coordination: 10 rows of [count]. The i-th [count_i] represents the count 
@@ -366,7 +646,26 @@ index 10 is out of bounds for axis 0 with size 10
         #print(self.count_coordination)
         self.count_coordination_ratio=self.count_coordination/sum(self.count_coordination)
         #print(self.count_coordination_ratio)
-        
+        #return self.__coordination_bond
+
+    def search_neighbor_id(self,id):
+        #cut edge to remove CN012
+        R"""
+        Introduction:
+            input a particle id and get the ids of whose neighbors
+        Variables:
+            __coordination_bond: n rows of (start_point_index, end_point_index)
+            place: (2,Nneighbors)[neighbor_id,column]
+        """
+        place=np.where(self.__coordination_bond[:]==id)
+        n_nb=len(place[0])#number of neighbors
+        place_nb=np.array(place,dtype=np.int32) 
+        #print(place_nb)
+        place_nb[1]=1-place_nb[1]
+        #print(place_nb)
+        id_nb=self.__coordination_bond[place_nb[0],place_nb[1]].astype(np.int32)
+        return id_nb
+
     def get_nearest_neighbor_dispalcement(self):
         R"""
         Introduction:
@@ -682,6 +981,11 @@ index 10 is out of bounds for axis 0 with size 10
         Parameters:
             png_filename: "prefix/bond_plot_index1513"
             nb_change: particle ids which change neighbors.
+            trap_filename:
+                '/home/remote/hoomd-examples_0/testhoneycomb3-8-12'
+                '/home/remote/hoomd-examples_0/testhoneycomb3-8-12-part1'
+                '/home/remote/hoomd-examples_0/testkagome3-11-6'
+                '/home/remote/hoomd-examples_0/testkagome_part3-11-6'
         Examples:
             import points_analysis_2D as pa
             s = "/home/tplab/Downloads/"
@@ -790,39 +1094,31 @@ index 10 is out of bounds for axis 0 with size 10
         if not png_filename is None:
             self.draw_bonds.save_figure(png_filename)
 
-    def draw_bonds_conditional_ridge(self,fignum=1,check=[0.2,5.0]):
-        #record cutted bond
-        count=0
-        shp=np.shape(self.voronoi.ridge_length)
-        cutted_temp = np.zeros((shp[0],2))
-        cutted_ridge_temp = np.zeros((shp[0],1))
-        #[x]
-        median_temp = np.median(self.voronoi.ridge_length)
-        ridge_check= [check[0]*median_temp,check[1]*median_temp]
-        self.voronoi.cut_ridge_length=ridge_check[0]
-        #check_min can be too large, but can not be too small
-        #for amorphous system, check is hard to set
-        del median_temp
-
-        #draw a figure with edges
-        plt.figure(fignum)
-        plt.scatter(self.points[:,0],self.points[:,1],color='k')
-        plt.title(str(check)+'median')
-        #add lines for edges
-        for i in range(np.shape(self.voronoi.ridge_length)[0]):
-            if (self.voronoi.ridge_length[i] > ridge_check[0])&(self.voronoi.ridge_length[i] < ridge_check[1]) :
-                edge = self.voronoi.ridge_points[i]
-                pt1,pt2 = [self.points[edge[0]],self.points[edge[1]]]
-                line = plt.Polygon([pt1,pt2], closed=None, fill=None, edgecolor='b')
-                plt.gca().add_line(line)
-            elif (self.voronoi.ridge_length[i] < ridge_check[0])&(self.voronoi.ridge_length[i] > 0):
-                cutted_temp[count]=self.voronoi.ridge_points[i]
-                cutted_ridge_temp[count]=i
-                count=count+1
-                
-        self.cutted_bonds = cutted_temp[0:count,:]
-        self.voronoi.cutted_ridges = cutted_ridge_temp[0:count]
-        del cutted_temp,cutted_ridge_temp
+    def draw_bonds_conditional_bond_for_image_oop(self,image,check,png_filename=None,xy_stable=None,nb_change=None,x_unit='(um)',
+                                    LinearCompressionRatio=None,trap_filename=None,
+                                    axis_limit=None):
+        R"""
+        xy(self.points) must be a frame of txyz( not txyz_stable)!
+        xy_stable: a frame of txyz_stable
+        LinearCompressionRatio=0.79
+        trap_filename="/home/tplab/hoomd-examples_0/testhoneycomb3-8-12-part1"
+        axis_limit=[xmin,xmax,ymin,ymax]
+        """
+        self.draw_bonds = bond_plot_module_for_image(image)
+        self.draw_bonds.restrict_axis_property_relative(self.points,x_unit=x_unit)
+        if not axis_limit is None:
+            xlim = [axis_limit[0],axis_limit[1]]
+            ylim = [axis_limit[2],axis_limit[3]]
+            self.draw_bonds.restrict_axis_limitation(xlim,ylim)
+        line = self.draw_bonds.draw_points_with_conditional_bond(self.points,self.bond_length,bond_length_limmit=check)
+        #self.draw_bonds.draw_bonds_conditional_bond(self.points,self.bond_length,bond_length_limmit=check,x_unit=x_unit)
+        if not trap_filename is None:
+            self.draw_bonds.plot_traps(trap_filename=trap_filename,LinearCompressionRatio=LinearCompressionRatio)
+        if not nb_change is None:
+            self.draw_bonds.plot_neighbor_change(xy_stable,nb_change)
+        if not png_filename is None:
+            self.draw_bonds.save_figure(png_filename)
+        return line
     
     def print_benchmark(self,bond=True,ridge=True):
         if bond :
@@ -932,77 +1228,89 @@ index 10 is out of bounds for axis 0 with size 10
         print('Tetragon,Pentagon,Hexagon...')
         print(cluster_count[2:10])
         
-    def count_honeycomb(self):   
-        '''
+    def count_polygon_n(self,n_edges):   
+        R"""
+        Introduction:
+            a polygon with n edges must be merged by n-2 triangles, hence n-3 bonds must be removed. 
+            That is, a quadrilateral contains 2 triangles with 1 bond removed.
+        parameters:
+            points: n rows of (x,y)
+            --------------------------------
+            delaunay: scipy.spatial.Delaunay
+            bond_length: n rows of (start_point_row, end_point_row, bond_length)
+            cutted_bonds: n rows of (start_point_row, end_point_row)
+            simplices: n rows of (point_row_1, point_row_2, point_row_3) vertices of triangles
+            --------------------------------
+            linked_triangles: 
+        """
+        #check whether cutted_bonds exist
+        if not ('self.cutted_bonds' in dir()):#if hasattr(self,'box')
+            self.draw_bonds_conditional_bond_oop()
+        #get linked triangles pair   
+        shp=np.shape(self.cutted_bonds)
+        self.linked_triangles = np.zeros(shp)
+        for i in range(shp[0]):
+            #1st round search
+            index1=np.where(self.delaunay.simplices[:]==self.cutted_bonds[i,0])
+            #2nd round search
+            index2=np.where(self.delaunay.simplices[index1[0]]==self.cutted_bonds[i,1])
+            temp=index1[0]
+            self.linked_triangles[i]=temp[index2[0]]
+        
+        #get linked triangles chain
+        chain=np.zeros((shp[0],8))#up to 10-polygon
+        chain[:]=-1
+        all_chain_count=np.zeros((shp[0],1))
+        chain_num=1#now we are proceeding the chain_num-th chain [x]unfinished
+        tri_count_max=shp[0]#at most the triangle pairs should be linked
+        lt_temp=self.linked_triangles[:]#np.zeros((shp[0],2))
 
-            #check whether cutted_bonds exist
-            if not ('self.cutted_bonds' in dir()):
-                self.draw_bonds_conditional_ridge()
-            #get linked triangles pair   
-            shp=np.shape(self.cutted_bonds)
-            self.linked_triangles = np.zeros(shp)
-            for i in range(shp[0]):
-                #1st round search
-                index1=np.where(self.delaunay.simplices[:]==self.cutted_bonds[i,0])
-                #2nd round search
-                index2=np.where(self.delaunay.simplices[index1[0]]==self.cutted_bonds[i,1])
-                temp=index1[0]
-                self.linked_triangles[i]=temp[index2[0]]
-            del temp
-            #get linked triangles chain
-            chain=np.zeros((shp[0],8))#up to 10-polygon
-            chain[:]=-1
-            all_chain_count=np.zeros((shp[0],1))
-            chain_num=1#now we are proceeding the chain_num-th chain [x]unfinished
-            tri_count_max=shp[0]#at most the triangle pairs should be linked
-            lt_temp=self.linked_triangles[:]#np.zeros((shp[0],2))
+        i=0#if all the triangle pairs are read, break the loop
+        while sum(all_chain_count)<tri_count_max:
+            if lt_temp[i,0]==-1:
+                #this triangle pair has been linked
+                i=i+1
+                continue
+            else:
+                #init a new chain
+                this_chain_count=1
+                lt_temp[i,:]=-1#delete the head triangle pair to avoid being searched
+                chain[chain_num,this_chain_count-1]=self.linked_triangles[i,0]
+                chain[chain_num,this_chain_count]=self.linked_triangles[i,1]
+                #search linked triangles
+                index1=np.where((lt_temp[:,0]==self.linked_triangles[i,1])|(lt_temp[:,1]==self.linked_triangles[i,1]))#rightward
+                index_check1=np.shape(index1[0])
+                if index_check1[0]==0:
+                    print('error,the triangle pair rightward not found') 
+                elif index_check1[0]==1:
+                    #find triangles
+                    if index1[1]==0:
+                        self.linked_triangles[index1[0],1]
+                        lt_temp[index1[0],:]=-1
+                        this_chain_count=this_chain_count+1
 
-            i=0#if all the triangle pairs are read, break the loop
-            while sum(all_chain_count)<tri_count_max:
-                if lt_temp[i,0]==-1:
-                    #this triangle pair has been linked
-                    i=i+1
-                    continue
-                else:
-                    #init a new chain
-                    this_chain_count=1
-                    lt_temp[i,:]=-1#delete the head triangle pair to avoid being searched
-                    chain[chain_num,this_chain_count-1]=self.linked_triangles[i,0]
-                    chain[chain_num,this_chain_count]=self.linked_triangles[i,1]
-                    #search linked triangles
-                    index1=np.where((lt_temp[:,0]==self.linked_triangles[i,1])|(lt_temp[:,1]==self.linked_triangles[i,1]))#rightward
-                    index_check1=np.shape(index1[0])
-                    if index_check1[0]==0:
-                        print('error,the triangle pair rightward not found') 
-                    elif index_check1[0]==1:
-                        #find triangles
-                        if index1[1]==0:
-                            self.linked_triangles[index1[0],1]
-                            lt_temp[index1[0],:]=-1
-                            this_chain_count=this_chain_count+1
-
-                        elif index1[1]==1:#
-                            self.linked_triangles[index1[0],0]
-                            lt_temp[index1[0],:]=-1
-                            this_chain_count=this_chain_count+1
-
-                        else:
-                            print('error')
-                                
-                    elif index_check1[0]==2:
-                        #two braches
-                        for j in index1[0]:
-                            if lt_temp[j,0]== self.linked_triangles[i,1]:
-                                pass 
+                    elif index1[1]==1:#
+                        self.linked_triangles[index1[0],0]
+                        lt_temp[index1[0],:]=-1
+                        this_chain_count=this_chain_count+1
 
                     else:
                         print('error')
-                        
-                    #leftward
-                if i==tri_count_max:
-                    #if all the triangle pairs are read, break the loop
-                    break
-        '''
+                            
+                elif index_check1[0]==2:
+                    #two braches
+                    for j in index1[0]:
+                        if lt_temp[j,0]== self.linked_triangles[i,1]:
+                            pass 
+
+                else:
+                    print('error')
+                    
+                #leftward
+            if i==tri_count_max:
+                #if all the triangle pairs are read, break the loop
+                break
+    
         '''
         for i in range(shp[0]):
             if i==0:
@@ -1026,253 +1334,30 @@ index 10 is out of bounds for axis 0 with size 10
         #a chain of triangle could be like [1,162] [162,4] [4,88.]
         '''
         pass
-                      
-class proceed_gsd_file:
-    R"""
-    Introduction:
-        the class is designed to preproceed the motion of 2D points(.gsd file), 
-        to analyze dynamic properties.
 
-    Parameters:
-        filename_gsd: a path to gsd file;
-        trajectory: trajectory data read from a hoomd gsd file;
-        num_of_frames: the number of frames in the trajectory;
-
-    Methods:
-        open_gsd:
-        read_a_frame:
-        get_displacement_field: draw the displacements of final state from initial state.
-
-    
-    Examples:
-    """
-    
-    def __init__(self,filename_gsd_seed=None, account="tplab",simu_index=None,seed=None):
-        #load positions of particles
-        if simu_index is None:
-            if filename_gsd_seed is None:
-                    print("Error: input a correct path to gsd file please!\n")
-            else:
-                self.filename_gsd = filename_gsd_seed
-                #filename_gsd="/home/tplab/hoomd-examples_0/trajectory_auto619.gsd"
-                #self.data_gsd = np.loadtxt(self.filename_gsd)
-                self.__open_gsd()
-
-                prefix_gsd = '/home/'+account+'/hoomd-examples_0/trajectory_auto'
-                simu_index = filename_gsd_seed.strip(prefix_gsd)
-                id=simu_index.index('_')
-                self.simu_index = simu_index[0:id]
-        else :
-            self.simu_index = simu_index
-            if not seed is None:
-                simu_index = str(int(simu_index))+'_'+str(int(seed))
-            prefix_gsd = '/home/'+account+'/hoomd-examples_0/trajectory_auto'
-            postfix_gsd = '.gsd'
-            self.filename_gsd = prefix_gsd+str(simu_index)+postfix_gsd
-            self.__open_gsd()
-        
-        self.box = self.trajectory.read_frame(-1).configuration.box
-
-    def __open_gsd(self):
-        import gsd.hoomd
-        self.trajectory=gsd.hoomd.open(self.filename_gsd)#open a gsd file
-        self.num_of_frames=len(self.trajectory)
-        
-    def read_a_frame(self,frame_num):
-        snap=self.trajectory.read_frame(frame_num)#take a snapshot of the N-th frame
-        positions=snap.particles.position[:,0:2]#just record [x,y] ignoring z
-        #self.N = self.snap.particles.N
-        return positions
-        
-    def get_trajectory_data(self,save_prefix = None):
-        R"""
-        introduction:
-            transform gsd file into an array [Nframes,Nparticles,3],
-            recording the trajectory of particles.
-        input:
-            gsd_file
-        return:
-            txyz [Nframes,Nparticles,3] or
-            (npy file)[Nframes,Nparticles,3]
-        """
-        frame = 0
-        snapi = self.trajectory.read_frame(frame)
-        pos_list = np.zeros([self.num_of_frames,snapi.particles.N,3])#gsd_data.trajectory[0].particles.N,
-        while frame < self.num_of_frames:
-            pos_list[frame] = self.trajectory.read_frame(frame).particles.position
-            #print(self.trajectory.read_frame(iframe).configuration.box)
-            frame = frame + 1
-        
-        self.txyz = pos_list
-
-        if not save_prefix is None:
-            file_txyz_npy = save_prefix+'txyz'
-            np.save(file = file_txyz_npy,arr = self.txyz)
-        
-    def get_trajectory_stable_data(self,save_prefix = None):
-        R"""
-        introduction:
-            transform trajectory data from simulation with periodic boundary condition 
-            into trajectories of which particles never move across boundary(box).
-        return:
-            txyz_stable: (N_frames,N_particles,3)
-
-        """
-        #dedrift?
-        frames,particles,dimensions=self.txyz.shape
-        if hasattr(self,'box'):
-            #print(locals())#local variable not of class
-            self.dtxyz = self.txyz[1:,:,:] - self.txyz[:frames-1,:,:]
-            #cross is true
-            list_crossleft = self.dtxyz[:,:,0] > 0.9*self.box[0]
-            list_crossbottom = self.dtxyz[:,:,1] > 0.9*self.box[1]
-            list_crossright = self.dtxyz[:,:,0] < -0.9*self.box[0]
-            list_crosstop = self.dtxyz[:,:,1] < -0.9*self.box[1]
-            #mark all the frames where cross event occur as True
-            list_crossx = np.logical_or(list_crossleft,list_crossright)
-            list_crossy = np.logical_or(list_crossbottom,list_crosstop)
-            list_cross = np.logical_or(list_crossx,list_crossy)
-            #mark all the particles who have experienced cross event as True
-            list_cross_true = np.array(list_cross[0,:]) 
-            #list_cross_true = list_cross_true[0]#remove empty extra dimension
-            #print(list_cross_true.shape)
-            i=0
-            while i<particles:
-                list_cross_true[i] = np.max(list_cross[:,i])
-                i = i + 1
-            list_stable_id = np.where(list_cross_true[:]==False)
-            list_stable_id = list_stable_id[0]#remove empty extra dimension
-            #print(list_stable_id.shape)
-            
-            self.txyz_stable = self.txyz[:,list_stable_id,:]
-            self.particles = list_stable_id.shape[0]
-
-            if not save_prefix is None:
-                file_txyz_npy = save_prefix+'txyz_stable'
-                np.save(file = file_txyz_npy,arr = self.txyz_stable)
-    
-    def plot_trajectory(self,length_cut_edge=0):#checked right
-        R"""
-        Example:
-            import getDataAndScatter as scatt
-            simu_index = 1369
-            prefix_gsd = '/home/tplab/hoomd-examples_0/trajectory_auto'
-            postfix_gsd = '.gsd'
-            filename_gsd = prefix_gsd+str(simu_index)+postfix_gsd
-            scatt.save_image_stack(gsd_file=filename_gsd)
-        """
-        #from celluloid import camera
-        matplotlib.use(backend="agg")#Backend agg is non-interactive backend. Turning interactive mode off.
-        #Backend Qt5Agg is interactive backend. Turning interactive mode on.
-        self.trajectory#self.trajectory=gsd.hoomd.open(self.filename_gsd)#open a gsd file
-        self.num_of_frames#self.num_of_frames=len(self.trajectory)
-
-        frame_num=0
-        dis = None
-        while frame_num < self.num_of_frames:
-            snap=self.trajectory.read_frame(frame_num)#take a snapshot of the N-th frame
-            positions=snap.particles.position
-
-            plt.figure()
-            if dis is None:
-                xmax = max(positions[:,0]) #- 3
-                ymax = max(positions[:,1]) #- 3
-                xmin = min(positions[:,0]) #+ 3
-                ymin = min(positions[:,1]) #+ 3
-                dis = min(xmax,ymax,-xmin,-ymin)
-                dis = dis - length_cut_edge #cut the edge if necessary(eg. size & scale of images not match)
-            plt.scatter(positions[:,0],positions[:,1])
-
-            plt.axis('equal')
-            plt.xlabel('x(sigma)')
-            plt.ylabel('y(sigma)')
-            """
-            the displayed image size will be the smaller one 
-            between axis limitation for xlim/ylim or data itself. 
-            Hence the effective xlim/ylim should be set smaller than data.
-
-            To ensure that xlim/ylim < data region, 
-            we add physically meaningless points.
-            """
-            #restrict ticks to show
-            """
-            #(let all the images share the same size)
-            new_ticks = np.linspace(-dis,dis,int(2*dis+1))
-            new_ticks = new_ticks.astype(int)
-            #print(new_ticks.astype(str))
-            #print((new_ticks))
-            plt.xticks(new_ticks,new_ticks.astype(str))
-            plt.yticks(new_ticks,new_ticks.astype(str))
-            """
-            #restrict data region to show
-            plt.xlim(-dis,dis)
-            plt.ylim(-dis,dis)
-            
-            #plt.show()
-
-            prefix_old="/home/tplab/hoomd-examples_0"
-            folder_name=self.filename_gsd.strip(prefix_old)
-            folder_name=folder_name.strip(".gsd")#folder_name=prefix+png_filename_as_folder
-            folder_name="t"+folder_name#"t" is necessary in case of "/t" deleted before
-            prefix='/home/tplab/Downloads/'
-            png_filename=prefix+folder_name+"/"+folder_name+"_"+str(frame_num)
-            #check if the folder exists
-            isExists=os.path.exists(prefix+folder_name)
-            if isExists:
-                plt.savefig(png_filename)
-            else:
-                os.makedirs(prefix+folder_name)
-                plt.savefig(png_filename)
-            plt.close()
-
-            frame_num=frame_num+1
-
-        return folder_name
-    
-    def get_displacement_field_xy(self,frame_index,plot=False,png_filename=None):
+    def count_polygon_n_new(self,n_edges):
         R"""
         Introduction:
-            The function draws a displacement vector field from init state to final state 
-            with positions at edge removed  to clean abnormal displacement vector. 
-        Example:
-            import points_analysis_2D as pa
-            gsd = pa.proceed_gsd_file(simu_index=1382)
-            gsd.get_displacement_field(plot=True)
+            a polygon with n edges must be merged by n-2 triangles, hence n-3 bonds must be removed. 
+            That is, a quadrilateral contains 2 triangles with 1 bond removed.
+        parameters:
+            points: n rows of (x,y)
+            --------------------------------
+            delaunay: scipy.spatial.Delaunay
+            bond_length: n rows of (start_point_row, end_point_row, bond_length)
+            cutted_bonds: n rows of (start_point_row, end_point_row)
+            simplices: n rows of (point_row_1, point_row_2, point_row_3) vertices of triangles
+            --------------------------------
+            linked_triangles:
+            list_polygon_n: 8
         """
-        self.gdf_xy = dynamic_points_analysis_2d(self.txyz_stable)
-        self.gdf_xy.displacement_field_module()
-        self.gdf_xy.displacemnt_field.get_displacement_field_xy(frame_index,plot,png_filename)
+        list_polygon_n = range(10)
 
-    def get_displacement_field_distribution(self,frame_index,log_mode=False,png_filename=None):
-        R"""
-        Introduction:
-            The function draws a displacement vector field from init state to final state 
-            with positions at edge removed  to clean abnormal displacement vector. 
-        Example:
-            import points_analysis_2D as pa
-            gsd = pa.proceed_gsd_file(simu_index=1382)
-            gsd.get_displacement_field(plot=True)
-        """
-        self.gdf_xy.displacemnt_field.get_displacement_field_distribution(frame_index,log_mode,png_filename)
-
-    def get_gr(self,frame_num):
-        rdf = freud.density.RDF(bins=200, r_max=20.0,)#
-
-        rdf.compute(system=self.trajectory.read_frame(frame_num))
-        """
-        print(rdf.bin_centers)
-        print(rdf.bin_counts)
-        rdf.plot()
-        data_filename=prefix+'index_'+str_index+'gr.png'
-        plt.savefig(data_filename)
-        """
-        plt.close()
-
-class proceed_exp_file:
-    R"""
-    see particle_tracking.py to get trajectories of particles from a video.
-    """
-    pass
+        return list_polygon_n
+    
+    def plot_polygon(self,x,y):
+         fig,ax = plt.subplots()
+         ax.fill(x,y,color='g')
 
 class dynamic_points_analysis_2d:#old_class_name: msd
     R"""
@@ -1323,7 +1408,7 @@ class dynamic_points_analysis_2d:#old_class_name: msd
         #self.account = account
         self.mode = mode
 
-    def plot_trajectory(self,png_prefix=''):
+    def plot_trajectory_all_in_one(self,png_prefix=''):
         frames,particles,dimensions=self.txyz_stable.shape
         list_stable_id = range(particles)#txyz_stable.shape[1]
         plt.figure()
@@ -1337,7 +1422,7 @@ class dynamic_points_analysis_2d:#old_class_name: msd
         plt.savefig(png_filename)
         plt.close() 
 
-    def plot_trajectory_single_particle(self,png_prefix=''):
+    def plot_trajectory_single_particle_loop(self,png_prefix=''):
         R"""
         EXP:
             path_to_results = '/home/remote/xiaotian_file/data/20221129/video_5'
@@ -1347,7 +1432,7 @@ class dynamic_points_analysis_2d:#old_class_name: msd
             msds.plot_trajectory_single_particle(path_to_results+'/')
         """
         frames,particles,dimensions=self.txyz_stable.shape
-        list_stable_id = range(self.particles)#txyz_stable.shape[1]
+        list_stable_id = range(particles)#txyz_stable.shape[1]
         for particle_id in list_stable_id:
             txyz_ith = self.txyz_stable[:,particle_id,:]
             plt.figure()
@@ -1357,6 +1442,18 @@ class dynamic_points_analysis_2d:#old_class_name: msd
             png_filename = 'traj_stable_'+str(int(particle_id))+'.png'
             plt.savefig(png_prefix+png_filename)
             plt.close()   
+
+    def plot_trajectory_single_particle(self,particle_id,png_prefix=''):
+        R"""
+        """
+        txyz_ith = self.txyz_stable[:,particle_id,:]
+        plt.figure()
+        plt.plot(txyz_ith[:,0],txyz_ith[:,1])
+        plt.xlabel("$x$ "+self.x_unit )#'(sigma)'
+        plt.ylabel("$y$ "+self.x_unit )
+        png_filename = 'traj_stable_'+str(int(particle_id))+'.png'
+        plt.savefig(png_prefix+png_filename)
+        plt.close()   
 
     def plot_a_frame_of_points(self,frame_index,png_filename):
         points = self.txyz_stable[frame_index]
@@ -1425,6 +1522,14 @@ class dynamic_points_analysis_2d:#old_class_name: msd
             #displacement neighbor
             id_dxy,dict_c_nb = result.get_nearest_neighbor_dispalcement()
             id_dxy_pd = pd.DataFrame(id_dxy)
+            """
+            list_id_dxy_nb: 
+                list[particle_id,num_neighbors, sum_id_neighbors,dx,dy], 
+                id of center particles and their displacements relative to neighbors.
+                if the particle has new neighbors, unless inter-frame time is too long to
+                catch the event of breaking old bond and forming new bond, number of neighbors
+                will change together with the event.  
+            """
             #print(id_dxy_pd.head())
             if frame == 0:
                 #ts_id_dxy = t_id_dxy
@@ -1978,9 +2083,10 @@ class mean_square_displacement:
         time_log = np.loadtxt(time_log)
         pa.plot_msd_t_chips(time_log)
     """
-    def __init__(self,txyz_stable):
+    def __init__(self,txyz_stable,mode):
         self.txyz_stable = txyz_stable
         self.frames,self.particles,self.dimensions=self.txyz_stable.shape
+        self.mode = mode
 
     def compute_msd_normal(self):
         m_max = int(0.5*self.frames)#to ensure the robustness of statistics
@@ -2017,6 +2123,35 @@ class mean_square_displacement:
             sq_dm_xyz2 = np.square(self.dm_xyz)
             sum_sq_dm_r2 = np.sum(sq_dm_xyz2)
             self.record_msd[m-start,1]=sum_sq_dm_r2/self.dm_xyz.shape[0]/self.particles
+    
+    def compute_atmsd_scan_t_log_record(self):
+        R"""
+        method:
+            scan t axis, 1 frame for each interval. here may exist some overlaps between two intervals who share the same length of time interval m.
+        record_msd:[interval m, msd_m]
+        k: the frame to start scan 
+        m: time interval
+        m_max: max time interval
+        """
+        frames = np.log10(self.frames)
+        print(self.frames)
+        bins = 20
+        alpha = np.linspace(0,frames,bins)
+        list_m = np.int32(np.power(10,alpha)) 
+        print(list_m)
+        self.record_msd=np.zeros((np.shape(list_m)[0],2))#[interval m, msd_m]
+        
+        snap_to_step = 1000
+        self.record_msd[:,0]=list_m*snap_to_step#+500000-100
+        i=0
+        for m in list_m:
+            self.dm_xyz = self.txyz_stable[m:,:,:] - self.txyz_stable[:-m,:,:]
+            sq_dm_xyz2 = np.square(self.dm_xyz)
+            sum_sq_dm_r2 = np.sum(sq_dm_xyz2)
+            self.record_msd[i,1]=sum_sq_dm_r2/self.dm_xyz.shape[0]/self.particles
+            i=i+1
+        
+        return self.record_msd
 
     def compute_atmsd_t_chips(self,interval_max=0.1,msd_per_particle=False):
         R"""
@@ -2127,7 +2262,7 @@ class mean_square_displacement:
         import matplotlib.pyplot as plt 
         plt.figure()
         if time_log is None:
-            plt.loglog(self.record_msd[:,0],self.record_msd[:,1])
+            plt.semilogx(self.record_msd[:,0],self.record_msd[:,1])#loglog semilogx
         else:
             time_msd=time_log[:self.record_msd.shape[0]]
             plt.loglog(time_msd,self.record_msd[:,1])
@@ -2135,7 +2270,7 @@ class mean_square_displacement:
         if self.mode =='simu':
             plt.title("Mean Squared Displacement")
             plt.xlabel("$t$ (steps)" )
-            plt.ylabel("MSD$(t)$ (sigma^2)")
+            plt.ylabel("MSD$(t)(\sigma^2)$ ")
         elif self.mode == 'exp':
             if lindemann:
                 plt.title("Mean Squared Displacement")
@@ -2229,7 +2364,12 @@ class displacemnt_field_2D:
         self.fig = fig
         self.ax = ax      
 
-    def get_displacement_field_xy(self,frame_index_start=0,frame_index_end=-1,plot=False,png_filename=None,x_unit='($\sigma$)'):
+    def get_displacements(self,frame_index_end=-1,frame_index_start=0):
+        init_positions = self.txyz_stable[frame_index_start]
+        final_positions = self.txyz_stable[frame_index_end]
+        self.displacements =  final_positions - init_positions
+
+    def get_displacement_field_xy(self,frame_index_start=0,frame_index_end=-1,plot=False,png_filename=None,x_unit='($\sigma$)',limit=None):
         R"""
         Introduction:
             The function draws a displacement vector field from init state to final state 
@@ -2239,10 +2379,9 @@ class displacemnt_field_2D:
             plot:True or False
             png_filename: 'displacement_field_xy.png'
             x_unit:'(sigma)', '(um)' or '(1)'
+            limit: [[-4,12],[-5,16]]
         Example:
-            import points_analysis_2D as pa
-            gsd = pa.proceed_gsd_file(simu_index=1382)
-            gsd.get_displacement_field(plot=True)
+            4302_2,0-29,[[9,21],[-7,7]]
         """
         self.get_displacements(frame_index_end,frame_index_start)
 
@@ -2251,21 +2390,69 @@ class displacemnt_field_2D:
         uv = self.displacements
 
         if plot:
+            if not limit is None:
+                self.ax.set_xlim(limit[0])
+                self.ax.set_ylim(limit[1])
+                self.ax.quiver(xy[:,0],xy[:,1],uv[:,0],uv[:,1],color='orange',angles='xy', scale_units='xy', scale=1,width=0.01)
             #self.ax.scatter(self.final_positions[:,0],self.final_positions[:,1])#final_state
-            self.ax.quiver(xy[:,0],xy[:,1],uv[:,0],uv[:,1],color='orange',angles='xy', scale_units='xy', scale=1)
+            else:
+                self.ax.quiver(xy[:,0],xy[:,1],uv[:,0],uv[:,1],color='orange',angles='xy', scale_units='xy', scale=1)#,width=0.01
             self.ax.scatter(xye[:,0],xye[:,1],c='k')#init_state
             self.ax.set_title('displacement field ')#+'index:'+str(self.simu_index)
             self.ax.set_xlabel('x'+x_unit)
             self.ax.set_ylabel('y'+x_unit)
             self.ax.set_aspect('equal','box')
 
-            if False:
-                self.ax.xlim(5,20)
-                self.ax.ylim(-15,0)
-                pass
             if not png_filename is None:
                 plt.savefig(png_filename)
             plt.close()
+        return uv
+
+    def get_bicolor_disp(self,list_pin_bool,frame_index_start=0,frame_index_end=-1,plot=False,png_filename=None,x_unit='($\sigma$)',limit=None,traps=None):
+        R"""
+        Introduction:
+            The function draws a displacement vector field from init state to final state 
+            with positions at edge removed  to clean abnormal displacement vector. 
+        input:
+            frame_index: -1
+            plot:True or False
+            png_filename: 'displacement_field_xy.png'
+            x_unit:'(sigma)', '(um)' or '(1)'
+            limit: [[-4,12],[-5,16]]
+        Example:
+            4302_2,0-29,[[9,21],[-7,7]]
+        """
+        import numpy
+        self.get_displacements(frame_index_end,frame_index_start)
+        xy = self.txyz_stable[frame_index_start]#init_positions
+        xye = self.txyz_stable[frame_index_end]
+        uv = self.displacements
+        list_pin_bool = list_pin_bool.astype(bool)
+        list_pin_nbool = np.logical_not(list_pin_bool)
+        if plot:
+            if not limit is None:
+                self.ax.set_xlim(limit[0])
+                self.ax.set_ylim(limit[1])
+                self.ax.quiver(xy[list_pin_bool,0],xy[list_pin_bool,1],uv[list_pin_bool,0],uv[list_pin_bool,1],color='r',angles='xy', scale_units='xy', scale=1,width=0.01)
+                self.ax.quiver(xy[list_pin_nbool,0],xy[list_pin_nbool,1],uv[list_pin_nbool,0],uv[list_pin_nbool,1],color='orange',angles='xy', scale_units='xy', scale=1,width=0.01)
+            #self.ax.scatter(self.final_positions[:,0],self.final_positions[:,1])#final_state
+            else:
+                #self.ax.quiver(xy[:,0],xy[:,1],uv[:,0],uv[:,1],c=list_pin_bool,angles='xy', scale_units='xy', scale=1)#,width=0.01,color='r'
+                self.ax.quiver(xy[list_pin_bool,0],xy[list_pin_bool,1],uv[list_pin_bool,0],uv[list_pin_bool,1],color='r',angles='xy', scale_units='xy', scale=1)#,width=0.01,color='r'
+                self.ax.quiver(xy[list_pin_nbool,0],xy[list_pin_nbool,1],uv[list_pin_nbool,0],uv[list_pin_nbool,1],color='orange',angles='xy', scale_units='xy', scale=1)
+            #self.ax.scatter(xye[list_pin_bool,0],xye[list_pin_bool,1],c='k')
+            #self.ax.scatter(xye[list_pin_nbool,0],xye[list_pin_nbool,1],c='darkviolet')
+            self.ax.scatter(xye[:,0],xye[:,1],c='k')
+            #self.ax.scatter(traps[:,0],traps[:,1],c='r',marker = 'x',zorder=3)
+            self.ax.set_title('displacement field ')#+'index:'+str(self.simu_index)
+            self.ax.set_xlabel('x'+x_unit)
+            self.ax.set_ylabel('y'+x_unit)
+            self.ax.set_aspect('equal','box')
+
+            if not png_filename is None:
+                plt.savefig(png_filename)
+            plt.close()
+        return uv
 
     def get_displacement_field_xy_id(self,frame_index_start=0,frame_index_end=-1,x_unit='($\sigma$)',color='limegreen'):
         R"""
@@ -2339,8 +2526,6 @@ class displacemnt_field_2D:
         mapp = self.ax.quiver(xy[ids,0],xy[ids,1],uv[:,0],uv[:,1],rank,angles='xy', scale_units='xy', scale=1)#,rank
         self.fig.colorbar(mapp,ax=self.ax)#ax=self.ax
 
-
-
     def get_displacement_field_distribution(self,frame_index,log_mode=False,png_filename=None):
         R"""
         Introduction:
@@ -2370,11 +2555,6 @@ class displacemnt_field_2D:
 
         plt.savefig(png_filename)
         plt.close()
-       
-    def get_displacements(self,frame_index_end=-1,frame_index_start=0):
-        init_positions = self.txyz_stable[frame_index_start]
-        final_positions = self.txyz_stable[frame_index_end]
-        self.displacements =  final_positions - init_positions
 
     def select_long_displacement_arrow(self):
         R"""
@@ -2440,8 +2620,12 @@ class displacemnt_field_2D:
         return rank_relative#normalized
 
 class bond_plot_module:
-    def __init__(self):
-        self.fig,self.ax = plt.subplots()
+    def __init__(self,fig=None,ax=None):
+        if ax is None:
+            self.fig,self.ax = plt.subplots()
+        else:
+            self.fig = fig
+            self.ax = ax
         
     def restrict_axis_property_relative(self,xy,x_unit='(um)'):
         R"""
@@ -2530,6 +2714,7 @@ class bond_plot_module:
             oname2 = s+"bond_plot_"+index_name
             bb.draw_bonds_conditional_bond(check=[0.9, bb.bond_first_minima_left], png_filename=oname2)
         """
+        self.points = xy
         if not (bond_length is None):
             bond_check= tuple([bond_length_limmit[0],bond_length_limmit[1]])
             #add lines for edges
@@ -2541,7 +2726,34 @@ class bond_plot_module:
                     self.ax.add_line(line)
             self.ax.set_title("bond_length:"+str(np.around(bond_length_limmit,2))+self.x_unit)  # Add a title to the axes
 
+        if not particle_size is None:
+            self.ax.scatter(xy[:,0],xy[:,1],color='k',zorder=1,s=particle_size)
+        else:
+            self.ax.scatter(xy[:,0],xy[:,1],color='k',zorder=1)
+
+    def draw_points_with_conditional_vertices(self,xy,bond_length=None,vertex_bonds_index=None,particle_size=None):
+        R"""
+        Parameters:
+            xy: particle positions of a frame, with no one removed.
+            bond_length: [particle_id1,particle_id2, bond_length] for txyz.
+            vertex_bonds_index: [particle_id1,particle_id2]
+        weight of shapes:
+            bond(blue line) < particles(black circle) < neighbor_change(orange circle) < traps(red cross)
+            0   1   2   3   
+        Examples:
+        """
         self.points = xy
+        if not (bond_length is None):
+            #add lines for edges
+            for i in range(np.shape(vertex_bonds_index)[0]):
+                #vertex_bonds_index = vertex_bonds_index[i,0:2].astype(int)
+                #bond_index=vertex_bonds_index[i]
+                #pt1,pt2 = [self.points[int(bond_length[bond_index,0])],self.points[int(bond_length[bond_index,1])]]
+                pt1,pt2 = [self.points[vertex_bonds_index[i,0]],self.points[vertex_bonds_index[i,1]]]
+                line = plt.Polygon([pt1,pt2], closed=None, fill=None, edgecolor='b')
+                plt.gca().add_line(line)
+            self.ax.set_title("bond_length: vertices"+self.x_unit)  # Add a title to the axes
+
         if not particle_size is None:
             self.ax.scatter(xy[:,0],xy[:,1],color='k',zorder=1,s=particle_size)
         else:
@@ -2714,3 +2926,749 @@ class bond_plot_module:
             plt.annotate(particle_ids_str[j],self.points[j])
         """
         self.ax.scatter(xy[:,0],xy[:,1],color='k',zorder=1)
+
+class bond_plot_module_for_image:
+    def __init__(self,image):
+        self.fig,self.ax = plt.subplots()
+
+        self.ax.imshow(image,zorder=-1)
+        
+    def restrict_axis_property_relative(self,xy,x_unit='(um)'):
+        R"""
+        Parameters:
+            txyz: all the particle positions, no one removed.
+            bond_length: [particle_id1,particle_id2, bond_length] for txyz.
+            check: limit the shortest and longest bond( in bond_length) to draw.
+            png_filename: "prefix/bond_plot_index1513.png"
+        weight of shapes:
+            bond(blue line) < particles(black circle) < neighbor_change(orange circle) < traps(red cross)
+            0   1   2   3   
+        """
+        
+        #if dis is None:
+        self.points = xy
+        xmax = max(self.points[:,0]) #- 3
+        ymax = max(self.points[:,1]) #- 3
+        xmin = min(self.points[:,0]) #+ 3
+        ymin = min(self.points[:,1]) #+ 3
+        dis = min(xmax-xmin,ymax-ymin)/2.0#half of the length of the system.
+        dis = dis - 0 #cut the edge if necessary(eg. size & scale of images not match)
+
+        center = [(xmax+xmin)*0.5,(ymax+ymin)*0.5]
+        center_origin_distance = np.abs(np.dot(center,center))
+        if  center_origin_distance < 1.0:# center is really close to origin
+            center = [0,0]
+
+        #draw a figure with edges
+        if x_unit == '(sigma)':
+            """
+            plt.rcParams.update({
+            "text.usetex": True,
+            "font.family": "Helvetica"
+            })
+            """
+            x_unit = '($\sigma$)'#pip install latex is necessary for plt.savefig
+        self.ax.set_aspect('equal','box')#plt.axis('equal')
+        self.ax.set_xlabel('x'+x_unit)  # Add an x-label to the axes.
+        self.ax.set_ylabel('y'+x_unit)  # Add a y-label to the axes.
+        """
+        the displayed image size will be the smaller one 
+        between axis limitation for xlim/ylim or data itself. 
+        Hence the effective xlim/ylim should be set smaller than data.
+
+        To ensure that xlim/ylim < data region, 
+        we add physically meaningless points.
+        """
+        #restrict ticks to show
+        """
+        #(let all the images share the same size)
+        new_ticks = np.linspace(-dis,dis,int(2*dis+1))
+        new_ticks = new_ticks.astype(int)
+        #print(new_ticks.astype(str))
+        #print((new_ticks))
+        plt.xticks(new_ticks,new_ticks.astype(str))
+        plt.yticks(new_ticks,new_ticks.astype(str))
+        """
+        #restrict data region to show
+        self.ax.set_xlim(-dis+center[0],dis+center[0])#plt.xlim(-dis+center[0],dis+center[0])
+        self.ax.set_ylim(-dis+center[1],dis+center[1])#plt.ylim(-dis+center[1],dis+center[1])
+        self.x_unit = x_unit
+
+    def restrict_axis_limitation(self,xlim,ylim):
+        #restrict data region to show
+        self.ax.set_xlim(xlim[0],xlim[1])
+        self.ax.set_ylim(ylim[0],ylim[1])
+
+    def draw_points_with_conditional_bond(self,xy,bond_length=None,bond_length_limmit=[0.9,2.0],particle_size=None):
+        R"""
+        Parameters:
+            xy: particle positions of a frame, with no one removed.
+            bond_length: [particle_id1,particle_id2, bond_length] for txyz.
+            bond_length_limmit: limit the shortest and longest bond( in bond_length) to draw.
+        weight of shapes:
+            bond(blue line) < particles(black circle) < neighbor_change(orange circle) < traps(red cross)
+            0   1   2   3   
+        Examples:
+            import points_analysis_2D as pa
+            s = "/home/tplab/Downloads/"
+            index_num = 1387
+            index_name = "index"+str(index_num)
+            fname = s+index_name
+            bb = pa.PointsAnalysis2D(filename=fname)
+            oname1 = s+"bond_hist_"+index_name
+            bb.draw_bond_length_distribution_and_first_minima(png_filename=oname1)
+            oname2 = s+"bond_plot_"+index_name
+            bb.draw_bonds_conditional_bond(check=[0.9, bb.bond_first_minima_left], png_filename=oname2)
+        """
+        if not (bond_length is None):
+            bond_check= tuple([bond_length_limmit[0],bond_length_limmit[1]])
+            #add lines for edges
+            for i in range(np.shape(bond_length)[0]):
+                if (bond_length[i,2] > bond_check[0])&(bond_length[i,2] < bond_check[1]) :
+                    edge = tuple(bond_length[i,0:2].astype(int))
+                    pt1,pt2 = [self.points[edge[0]],self.points[edge[1]]]
+                    line = plt.Polygon([pt1,pt2], closed=None, fill=None, edgecolor='b',zorder=0,lw=1)#,lineStyle='dashed'
+                    self.ax.add_line(line)
+            self.ax.set_title("bond_length:"+str(np.around(bond_length_limmit,2))+self.x_unit)  # Add a title to the axes
+
+        self.points = xy
+        if not particle_size is None:
+            self.ax.scatter(xy[:,0],xy[:,1],color='k',zorder=1,s=particle_size)
+        else:
+            pass#self.ax.scatter(xy[:,0],xy[:,1],color='k',zorder=1)
+        return line
+
+    def plot_neighbor_change(self,xy_stable,nb_change):
+        R"""
+        txyz_stable:array[Nframes,Nparticles,xyz]
+                for simu data, 
+                    ensure that particles never move across the boundary(box)!
+                for exp data, 
+                    unit of xyz must be um! 
+                    ensure that particles are always in the vision field!
+        nb_change: particle ids( in txyz_stable) which change neighbors.
+        """
+        self.ax.scatter(xy_stable[nb_change,0],xy_stable[nb_change,1],color='orange',zorder=2)
+            
+    def plot_traps(self,trap_filename="/home/tplab/hoomd-examples_0/testhoneycomb3-8-12-part1",LinearCompressionRatio=0.79,mode='array'):
+        R"""
+        trap_filename:
+                '/home/remote/hoomd-examples_0/testhoneycomb3-8-12'
+                '/home/remote/hoomd-examples_0/testhoneycomb3-8-12-part1'
+                '/home/remote/hoomd-examples_0/testkagome3-11-6'
+                '/home/remote/hoomd-examples_0/testkagome_part3-11-6'
+        mode: 'array'(scatter) or 'map'(pcolormesh)
+        """
+        traps=np.loadtxt(trap_filename)
+        traps=np.multiply(traps,LinearCompressionRatio)
+        if mode=='array':
+            #x_scale = 200
+            self.ax.scatter(traps[:,0], traps[:,1],c='r',marker = 'x',zorder=3)#,s=x_scale
+        elif mode=='map':
+            """
+            #get points
+            N = 256
+            vals = np.ones((N, 4))
+            vals[:, 0] = np.linspace(1, 1, N)
+            vals[:, 1] = np.linspace(1, 128/256, N)
+            vals[:, 2] = np.linspace(1, 128/256, N)
+            newcmp = ListedColormap(vals)#LinearSegmentedColormap(vals)#ListedColormap(vals)
+            
+            cmp = plt.get_cmap('autumn')
+            cmp.reversed('autumn_r')
+            """
+            rcut=1.0
+            cmap_name = 'Reds'#'autumn_r'#'autumn'#newcmp#'binary'#
+            transparency = 0.5#0.3
+
+
+            #set traps
+            max = np.max(traps)
+            min = np.min(traps)
+            length = (max - min)
+            steps = length/(rcut/10.0)
+            #plt.style.use('_mpl-gallery-nogrid')
+
+            # make data
+            X, Y = np.meshgrid(np.linspace(min, max, steps.astype(int)), np.linspace(min, max, steps.astype(int)))
+            HarmonicK = 100
+            #origin = np.zeros((1,2))
+            sz = np.shape(traps)
+            i = 0
+            Z = ( (0.50*HarmonicK*rcut*rcut-0.50*HarmonicK*((X-traps[i,0])**2 + (Y-traps[i,1])**2))\
+                *(((X-traps[i,0])**2 + (Y-traps[i,1])**2) < rcut*rcut) )
+            i = i+1
+            while i<sz[0]:#sz[0]
+                Zi = (0.50*HarmonicK*rcut*rcut-0.50*HarmonicK*((X-traps[i,0])**2 + (Y-traps[i,1])**2))\
+                    *(((X-traps[i,0])**2 + (Y-traps[i,1])**2) < rcut*rcut)
+                Z = Z + Zi
+                i = i+1
+            
+            self.ax.pcolormesh(X, Y, Z,cmap=cmap_name,zorder = -1,alpha=transparency)#,zorder=1
+
+    def save_figure(self,png_filename):
+        R"""
+        parameter:
+            png_filename: "prefix/bond_plot_index1513.png"
+
+        if latex is used in matplolib,
+        'pip install latex' is necessary for plt.savefig()
+        """
+        self.fig.savefig(png_filename)#plt.savefig(png_filename)
+        plt.close() # closes the current active figure
+        #del self.ax,self.fig
+
+    def draw_bonds_conditional_bond(self,xy,bond_length,bond_length_limmit=[0.9,2.0],x_unit='(um)'):#compatible module
+        R"""
+        Parameters:
+            txyz: all the particle positions, no one removed.
+            bond_length: [particle_id1,particle_id2, bond_length] for txyz.
+            check: limit the shortest and longest bond( in bond_length) to draw.
+            png_filename: "prefix/bond_plot_index1513.png"
+        weight of shapes:
+            bond(blue line) < particles(black circle) < neighbor_change(orange circle) < traps(red cross)
+            0   1   2   3   
+        Examples:
+            import points_analysis_2D as pa
+            s = "/home/tplab/Downloads/"
+            index_num = 1387
+            index_name = "index"+str(index_num)
+            fname = s+index_name
+            bb = pa.PointsAnalysis2D(filename=fname)
+            oname1 = s+"bond_hist_"+index_name
+            bb.draw_bond_length_distribution_and_first_minima(png_filename=oname1)
+            oname2 = s+"bond_plot_"+index_name
+            bb.draw_bonds_conditional_bond(check=[0.9, bb.bond_first_minima_left], png_filename=oname2)
+        """
+        bond_check= tuple([bond_length_limmit[0],bond_length_limmit[1]])
+        
+        #if dis is None:
+        self.points = xy
+        xmax = max(self.points[:,0]) #- 3
+        ymax = max(self.points[:,1]) #- 3
+        xmin = min(self.points[:,0]) #+ 3
+        ymin = min(self.points[:,1]) #+ 3
+        dis = min(xmax-xmin,ymax-ymin)/2.0#half of the length of the system.
+        dis = dis - 0 #cut the edge if necessary(eg. size & scale of images not match)
+
+        center = [(xmax+xmin)*0.5,(ymax+ymin)*0.5]
+        center_origin_distance = np.abs(np.dot(center,center))
+        if  center_origin_distance < 1.0:# center is really close to origin
+            center = [0,0]
+
+        #draw a figure with edges
+        if x_unit == '(sigma)':
+            """
+            plt.rcParams.update({
+            "text.usetex": True,
+            "font.family": "Helvetica"
+            })
+            """
+            x_unit = '($\sigma$)'#pip install latex is necessary for plt.savefig
+        self.ax.set_aspect('equal','box')#plt.axis('equal')
+        self.ax.set_xlabel('x'+x_unit)  # Add an x-label to the axes.
+        self.ax.set_ylabel('y'+x_unit)  # Add a y-label to the axes.
+        self.ax.set_title("bond_length:"+str(np.around(bond_length_limmit,2))+x_unit)  # Add a title to the axes
+        """
+        the displayed image size will be the smaller one 
+        between axis limitation for xlim/ylim or data itself. 
+        Hence the effective xlim/ylim should be set smaller than data.
+
+        To ensure that xlim/ylim < data region, 
+        we add physically meaningless points.
+        """
+        #restrict ticks to show
+        """
+        #(let all the images share the same size)
+        new_ticks = np.linspace(-dis,dis,int(2*dis+1))
+        new_ticks = new_ticks.astype(int)
+        #print(new_ticks.astype(str))
+        #print((new_ticks))
+        plt.xticks(new_ticks,new_ticks.astype(str))
+        plt.yticks(new_ticks,new_ticks.astype(str))
+        """
+        #restrict data region to show
+        self.ax.set_xlim(-dis+center[0],dis+center[0])#plt.xlim(-dis+center[0],dis+center[0])
+        self.ax.set_ylim(-dis+center[1],dis+center[1])#plt.ylim(-dis+center[1],dis+center[1])
+        
+        #add lines for edges
+        for i in range(np.shape(bond_length)[0]):
+            if (bond_length[i,2] > bond_check[0])&(bond_length[i,2] < bond_check[1]) :
+                edge = tuple(bond_length[i,0:2].astype(int))
+                pt1,pt2 = [self.points[edge[0]],self.points[edge[1]]]
+                line = plt.Polygon([pt1,pt2], closed=None, fill=None, edgecolor='b',zorder=0)
+                self.ax.add_line(line)
+        """
+        particle_ids = np.linspace(0,self.points.shape[0]-1,self.points.shape[0],dtype=int)
+        particle_ids_str = particle_ids.astype(str)
+        for j in particle_ids:
+            plt.annotate(particle_ids_str[j],self.points[j])
+        """
+        self.ax.scatter(xy[:,0],xy[:,1],color='k',zorder=1)
+
+class dynamical_facilitation_module:
+    R"""
+    example:
+        import points_analysis_2D as pa
+        df = pa.dynamical_facilitation_module()
+        df.plot_displacement_t(0)
+    """
+    def __init__(self):
+        pass
+    
+    def plot_displacement_t(self,trajectory,ax=None):
+        R"""
+        input:    
+            trajectory: Nframes rows of [x,y,z], a trajectory for a particle
+        """
+        uv = trajectory - trajectory[0]
+        dr2 = uv*uv
+        dr = np.sqrt(dr2[:,0]+dr2[:,1])
+        if ax is None:
+            fig,ax = plt.subplots()
+            ax.set_xlabel('t (k steps)')
+            ax.set_ylabel('$\delta$r ($\sigma$)')
+        ax.plot(dr)
+        #plt.show()
+        return ax
+        """
+        #test right
+        traj = np.ones((10,3))
+        t0 = [1,2,3]
+        t0 = np.array(t0)
+        dt = traj - t0
+        print(dt)
+        """
+    def plot_scan_displacement_t(self,trajectory,dt=1,ax=None):
+        R"""
+        input:    
+            trajectory: Nframes rows of [x,y,z], a trajectory for a particle
+            dt: time interval to calculate displacement.
+        """
+        dr = self.scan_displacement_t(trajectory,dt)
+        if ax is None:
+            fig,ax = plt.subplots()
+            ax.set_xlabel('t (k steps)')
+            ax.set_ylabel('$\delta$r ($\sigma$)')
+        ax.plot(dr)
+        #plt.show()
+        return ax
+    
+    def scan_displacement_t(self,trajectory,dt=1):
+        R"""
+        input:    
+            trajectory: Nframes rows of [x,y,z], a trajectory for a particle
+            dt: time interval to calculate displacement.
+        """
+        uv = trajectory[dt:] - trajectory[:-dt]
+        dr2 = uv*uv
+        dr = np.sqrt(dr2[:,0]+dr2[:,1])
+
+        return dr
+
+    def compute_atmsd_scan_t(self):#reference
+        R"""
+        method:
+            scan t axis, 1 frame for each interval. here may exist some overlaps between two intervals who share the same length of time interval m.
+        record_msd:[interval m, msd_m]
+        k: the frame to start scan 
+        m: time interval
+        m_max: max time interval
+        """
+        m_max = 9000#int(0.5*self.frames)#to ensure the robustness of statistics
+        #k_max = 0
+        start = 1000
+        self.record_msd=np.zeros((m_max-start+1,2))#[interval m, msd_m]
+        
+        list_m=np.arange(start,m_max+1)
+        self.record_msd[:,0]=list_m
+        for m in list_m:
+            self.dm_xyz = self.txyz_stable[m:,:,:] - self.txyz_stable[:-m,:,:]
+            sq_dm_xyz2 = np.square(self.dm_xyz)
+            sum_sq_dm_r2 = np.sum(sq_dm_xyz2)
+            self.record_msd[m-start,1]=sum_sq_dm_r2/self.dm_xyz.shape[0]/self.particles
+
+    def plot_displacement_t_all(self,txyz_stable,dt=1,ax=None):#[x]
+        R"""
+        input:    
+            trajectory: Nframes rows of [x,y,z], a trajectory for a particle
+        """
+        
+        uv = txyz_stable[dt:] - txyz_stable[:-dt]#[Nframe,Nparticle,xyz]
+        dr2 = uv*uv
+        sz = np.shape(dr2)
+        print(sz)
+        dr = np.sqrt(dr2[:,0]+dr2[:,1])
+    
+    def get_activation_event(self,trajectory,ta,a):#[x]
+        R"""
+        input:
+            trajectory: 
+        output:
+
+        """
+        dt = 0
+        t = 0
+        sz = np.size(trajectory)#(Nframe,Ndimension)
+        tt = ta/2 - dt
+        uv = trajectory[t+tt] - trajectory[t-tt]
+        dr2 = uv*uv
+        dr = np.sqrt(dr2[:,0]+dr2[:,1])
+        abs(dr[t+tt] - dr[t-tt])
+
+    def coarse_grain(self):#[x]
+        pass
+
+    def get_facilitation_waiting_time_distributions_1(self,reference_occupation,prefix=None,io_only=False):#,png_filename=None
+        R"""
+        input:
+            reference_occupation:
+                (Nframe,Nreference,)[frame:int, reference_point: int, isvacancy:bool]
+                Check if a reference point is a vacancy; 
+                If so, check if its neighbors are occupied in future frames 
+            prefix: directory to save file.
+            io_only: not proceeding data, just draw a figure as result.
+        output:
+            txt file: 'list_waiting_time_1.txt' e.g.: 11111222334
+        example:
+            import points_analysis_2D as pa
+            import numpy as np
+            #get reference positions
+            dfm = pa.dynamical_facilitation_module()
+            pt_filename="/home/tplab/hoomd-examples_0/testhoneycomb3-8-12"
+            pt = np.loadtxt(pt_filename)
+            pt = pt[:,:2]*0.81
+            #get box from gsd
+            gsd_filename=None#"/home/remote/hoomd-examples_0/trajectory_auto4302_9.gsd"
+            pgsd=pa.proceed_gsd_file(gsd_filename,'remote',4302,9)
+            box = pgsd.box[:2]
+            #get reference positions inside box.
+            pt = dfm.cut_edge_of_positions(pt,box)
+
+
+            txyz_filename="/home/remote/Downloads/4302_9/txyz_stable.npy"
+            result_filename="/home/remote/Downloads/4302_9/reference_occupation_cut.npy"
+            txyz = np.load(txyz_filename)
+            dfm.get_reference_occupation(pt,txyz,result_filename,1)#[:1000]
+            reference_occupation=np.load(result_filename)
+            prefix = "/home/remote/Downloads/4302_9/reference_occupation/"
+            dfm.get_reference_neighbors(pt)
+            dfm.get_facilitation_waiting_time_distributions_1(reference_occupation,prefix)#,io_only=True
+            #non-square figure not restrained ax.set_xlim(-dis+center[0],dis+center[0]);ax.set_ylim(-dis+center[1],dis+center[1])
+            #dfm.plot_reference_occupation(pt,reference_occupation[:106],prefix)
+        """
+        if not io_only:
+            sz = np.shape(reference_occupation)
+            list_waiting_time = np.zeros(sz)
+            #list_waiting_time = np.ones(sz)
+            #list_waiting_time[:] = -list_waiting_time[:]
+
+            for frame in range(sz[0]):
+                for id in range(sz[1]):
+                    if reference_occupation[frame,id]:
+                        nb = self.search_reference_neighbors(id)#search_nb.
+                        count_nb = len(nb)
+                        list_waiting_time_fr_id = np.zeros((count_nb,))
+                        for i in range(count_nb):
+                            bool0 = bool(reference_occupation[frame,nb[i]])
+                            for frame_s in range(sz[0]):
+                                if frame_s > frame:
+                                    bool1 = bool(reference_occupation[frame_s,nb[i]])
+                                    if (bool0 != bool1):#flop event
+                                        list_waiting_time_fr_id[i] = frame_s-frame
+                                        break
+                        
+                        if np.max(list_waiting_time_fr_id)==0:
+                            waiting_time_fr_id = 0
+                        elif np.min(list_waiting_time_fr_id)==0:
+                            #choose the time > 0
+                            #print('error! waiting time is 0!')
+                            list_waiting_time_fr_id_sort = np.sort(list_waiting_time_fr_id)
+                            #from small to large
+                            for wt in list_waiting_time_fr_id_sort:
+                                if wt > 0:
+                                    waiting_time_fr_id = wt
+                                    break
+                        elif np.min(list_waiting_time_fr_id)>0:
+                            waiting_time_fr_id = np.min(list_waiting_time_fr_id)
+                        list_waiting_time[frame,id] = waiting_time_fr_id
+            lwt_filename = prefix + 'list_waiting_time_frame_id_1.npy'
+            np.save(lwt_filename,list_waiting_time)
+            sz = np.shape(list_waiting_time)
+            list_waiting_time_1d = np.reshape(list_waiting_time,sz[0]*sz[1])
+            list_waiting_time_sort = np.sort(list_waiting_time_1d)
+            count_wt_max = sz[0]*sz[1]
+            print(count_wt_max)
+            for i in range(count_wt_max):
+                if list_waiting_time_sort[i]>0:#The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+                    #count_wt_1 = i
+                    list_waiting_time_eff = list_waiting_time_sort[i:]
+                    break
+            #count_wt = count_wt_max - count_wt_1
+            txt_filename = prefix + 'list_waiting_time_1.txt'
+            np.savetxt(txt_filename,list_waiting_time_eff)
+        else:
+            txt_filename = prefix + 'list_waiting_time_1.txt'
+            list_waiting_time_eff = np.loadtxt(txt_filename)
+
+        if not prefix is None:
+            fig,ax = plt.subplots()
+            count_bins = ax.hist (list_waiting_time_eff,bins=200,log=True)#bins=20,range=[0,100]
+            #plt.show()
+            _count=count_bins[0]
+            _bins=count_bins[1]
+            fig2,ax2 = plt.subplots()
+            ax2.loglog(_bins[1:],_count)#semilogy,loglog
+            ax2.set_xlabel('waiting time (k steps)')
+            ax2.set_ylabel('count (1)')
+            png_filename = prefix + 'list_waiting_time_1_bin.png'
+            plt.savefig(png_filename)
+            txt_filename = prefix + 'list_waiting_time_1_bin.txt'
+            cb = np.zeros((_count.size,2))
+            cb[:,0] = _bins[1:]
+            cb[:,1] = _count
+            np.savetxt(txt_filename,cb)
+
+    def get_facilitation_waiting_time_distributions_0(self,search_nb,reference_occupation,prefix=None):#[x]
+        R"""
+        flopping simultaneously (coarse grained step) is counted in waiting time
+        """
+        pass
+
+    def cut_facilitation_waiting_time(self,list_waiting_time_frame_id,wait_max,prefix=None):#[x]
+        R"""
+        flopping simultaneously (coarse grained step) is counted in waiting time
+        """
+        sz = np.shape(list_waiting_time_frame_id)
+
+        for frame in range(sz[0]):
+            for id in range(sz[1]):
+                if list_waiting_time_frame_id[frame,id]>=wait_max:
+                    list_waiting_time_frame_id[frame,id]=0
+        return list_waiting_time_frame_id
+
+    def get_reference_neighbors(self,reference_positions):
+        R"""
+        Input: 
+            reference_positions(Nreference,2)[x,y]
+        Output: 
+            activate search_reference_neighbors()
+            List_reference_neighbors (Nreference,)[list_neighbors_id]
+
+        example:
+            import numpy as np
+            import data_analysis_cycle as dac
+            trap_filename="/home/tplab/hoomd-examples_0/testhoneycomb3-8-12-part1"
+            trap = np.loadtxt(trap_filename)
+            pt_filename="/home/tplab/hoomd-examples_0/testhoneycomb3-8-12"
+            pt = np.loadtxt(pt_filename)
+        """
+        self.get_nb = static_points_analysis_2d(points=reference_positions)
+        self.get_nb.get_first_minima_bond_length_distribution(lattice_constant=3)
+        #get_nb.draw_bonds_conditional_bond()
+        self.get_nb.get_coordination_number_conditional()#__coordination_bond recorded
+        
+    def search_reference_neighbors(self,id):
+        R"""
+        input:
+            id
+        output:
+            neighobrs
+        caution: function get_reference_neighbors has been runned.
+        """
+        neighbors = self.get_nb.search_neighbor_id(id)
+        return neighbors
+        
+    def get_reference_occupation(self,reference_positions,txyz,result_filename=None,r_trap=1):#,txyz
+        R"""
+        Input: 
+            txyz(Nframe,Nparticle,2)[x,y]
+        Output: 
+            reference_occupation: save .npy file recording list_reference_occupation
+        Variables:
+            list_reference_occupation (Nframe,Nreference,)[frame:int, reference_point: int, occupied:bool]        
+            bond_length: (Nref,Nxy)[Length_ij]
+            ref_dis: (Nreference,)
+        example:
+            import numpy as np
+            import points_analysis_2D as pa
+            pt_filename="/home/tplab/hoomd-examples_0/testhoneycomb3-8-12"
+            pt = np.loadtxt(pt_filename)
+            dfm = pa.dynamical_facilitation_module()
+            dfm.get_reference_neighbors(pt)`
+        """
+        txy = txyz[:,:,:2]
+        reference_positions = reference_positions[:,:2]
+        sz_txy = np.shape(txy)
+        sz_ref = np.shape(reference_positions)
+        list_reference_occupation = np.zeros((sz_txy[0],sz_ref[0]))
+        for frame in range(sz_txy[0]):
+            xy = txy[frame]
+            self.bond_length_temp=distance.cdist(reference_positions,xy,'euclidean')
+            #print(self.bond_length_temp)
+            
+            ref_dis = np.zeros((sz_ref[0],))
+            for irow in range(sz_ref[0]):
+                min_irow = np.min(self.bond_length_temp[irow])
+                ref_dis[irow] = min_irow
+            #print(ref_dis)
+            ref_dis[:] = ref_dis[:]>r_trap# 0 for committment; 1 for active
+            #print(ref_dis)
+            list_reference_occupation[frame] = ref_dis
+        print('size of list_reference_occupation:')
+        print(np.shape(list_reference_occupation))
+        if not result_filename is None:
+            np.save(result_filename,list_reference_occupation)
+        #np.min()
+        #print()
+        """
+        shp=np.shape(self.voronoi.ridge_points)
+        self.bond_length = np.zeros((shp[0],shp[1]+1))#(start_point,end_point,length)
+        self.bond_length_temp=distance.cdist(self.voronoi.points[self.voronoi.ridge_points[:,0],:], self.voronoi.points[self.voronoi.ridge_points[:,1],:], 'euclidean')
+        self.bond_length[:,0:2]=self.voronoi.ridge_points
+        self.bond_length[:,2]=self.bond_length_temp.diagonal()
+        """
+    def get_pin_bool(self,reference_positions,txyz,result_prefix=None,r_trap=1):
+        R"""
+        Input: 
+            reference_positions: (Ntrap,2)[x,y]
+            txyz:(Nframe,Nparticle,2)[x,y]
+        Output: 
+            reference_occupation: save .npy file recording list_reference_occupation
+                (Nframe,Nparticle)[bool] means particle_id at frame_i is pinned or not.
+        Variables:
+            bond_length_temp: (Nframe,Nparticle,)[frame:int, reference_point: int, occupied:bool]        
+
+        example:
+            
+        """
+        txy = txyz[:,:,:2]
+        reference_positions = reference_positions[:,:2]
+        sz_txy = np.shape(txy)
+        sz_ref = np.shape(reference_positions)
+        list_pin_bool = np.zeros((sz_txy[0],sz_txy[1]))
+        for frame in range(sz_txy[0]):
+            xy = txy[frame]
+            bond_length_temp = distance.cdist(reference_positions,xy,'euclidean')
+            bond_length_sort = np.sort(bond_length_temp,axis=0)
+            #print(self.bond_length_temp)
+            list_pin_bool_1 = bond_length_sort[0]<r_trap# 0 for free; 1 for pin
+            #print(ref_dis)
+            list_pin_bool[frame] = list_pin_bool_1
+        print('size of list_reference_occupation:')
+        print(np.shape(list_pin_bool))
+        if not result_prefix is None:
+            result_filename = result_prefix+'t_pin_bool'
+            np.save(result_filename,list_pin_bool)
+
+    def plot_reference_occupation(self,reference_positions,reference_occupation,prefix=None):
+        sz = np.shape(reference_occupation)
+        for frame in range(sz[0]):
+            fig,ax = plt.subplots()
+            circle_size=50
+            vac = reference_occupation[frame,:]==1
+            occu = np.logical_not(vac) 
+            lw=2
+            ax.scatter(reference_positions[vac,0],reference_positions[vac,1],facecolors='none',edgecolors='k',marker='o',s=circle_size,linewidths=lw)
+            ax.scatter(reference_positions[occu,0],reference_positions[occu,1],c='k',marker='o',s=circle_size)
+            
+            png_filename = prefix+'reference_occupation'+str(int(frame))+'.png'
+            #scatter size
+            #axis_equal
+            x_unit = '($\sigma$)'#pip install latex is necessary for plt.savefig
+            ax.set_aspect('equal','box')#plt.axis('equal')
+            ax.set_xlabel('x'+x_unit)  # Add an x-label to the axes.
+            ax.set_ylabel('y'+x_unit)  # Add a y-label to the axes.
+            plt.savefig(png_filename)
+            plt.close()
+    
+    def plot_reference_positions_waiting_time_colored(self,reference_positions,reference_occupation,prefix=None):
+        R"""
+        EXAMPLE:
+            #get box from gsd
+            gsd_filename=None#"/home/remote/hoomd-examples_0/trajectory_auto4302_9.gsd"
+            pgsd=pa.proceed_gsd_file(gsd_filename,'remote',4302,9)
+            box = pgsd.box[:2]
+            pt_filename="/home/tplab/hoomd-examples_0/testhoneycomb3-8-12"
+            pt = np.loadtxt(pt_filename)
+            pt = pt[:,:2]*0.81
+            dfm = pa.dynamical_facilitation_module()
+            pt = dfm.cut_edge_of_positions(pt,box)
+            print(np.shape(pt))
+            txyz_filename="/home/remote/Downloads/4302_9/txyz_stable.npy"
+            result_filename="/home/remote/Downloads/4302_9/reference_occupation_cut.npy"
+            txyz = np.load(txyz_filename)
+            #dfm.get_reference_occupation(pt,txyz,result_filename,1)#[:1000]
+            reference_occupation=np.load(result_filename)
+            prefix = "/home/remote/Downloads/4302_9/reference_occupation/"
+            #dfm.get_reference_neighbors(pt)
+            #dfm.get_facilitation_waiting_time_distributions_1(reference_occupation,prefix)#,io_only=True
+            #non-square figure not restrained ax.set_xlim(-dis+center[0],dis+center[0]);ax.set_ylim(-dis+center[1],dis+center[1])
+            dfm.plot_reference_occupation(pt,reference_occupation[:110],prefix)
+
+            #draw scatter reference positions waiting time colored
+            lwt_filename = prefix + 'list_waiting_time_frame_id_1.npy'
+            list_waiting_time_frame_id = np.load(lwt_filename)
+            list_waiting_time_frame_id = dfm.cut_facilitation_waiting_time(list_waiting_time_frame_id,5,prefix)
+            dfm.plot_reference_positions_waiting_time_colored(pt,list_waiting_time_frame_id,prefix)
+        """
+        sz = np.shape(reference_occupation)
+        for frame in range(sz[0]):
+            if frame<=200:
+                fig,ax = plt.subplots()
+                circle_size=50
+                mapp = ax.scatter(reference_positions[:,0],reference_positions[:,1],c=reference_occupation[frame],marker='o',s=circle_size)
+                png_filename = prefix+'reference_waiting_time_color'+str(int(frame))+'.png'
+                #scatter size
+                #axis_equal
+                x_unit = '($\sigma$)'#pip install latex is necessary for plt.savefig
+                ax.set_aspect('equal','box')#plt.axis('equal')
+                ax.set_xlabel('x'+x_unit)  # Add an x-label to the axes.
+                ax.set_ylabel('y'+x_unit)  # Add a y-label to the axes.
+                fig.colorbar(mapp,ax=ax)#plt.cm.ScalarMappable(norm=plt.autoscale()),
+                #plt.colorbar()
+                plt.savefig(png_filename)
+                plt.close()
+        
+    def cut_edge_of_positions(self,points,box):
+        R"""
+        input:
+            points: [x,y]
+            box: [Lx,Ly] get from gsd file
+        return:
+            points_selected
+        Variables:
+            effective_lattice_constant： the distance between a particle and its neighbor
+            edge_cut_positions_list: list the rows of particles' positions at given snapshot.
+        example:
+            gsd_filename="/home/remote/hoomd-examples_0/trajectory_auto4302_9.gsd"
+            pgsd=pa.proceed_gsd_file(gsd_filename,'remote',4302,9)
+            box = pgsd.box[:2]
+        """
+        xmax = box[0]/2
+        ymax = box[1]/2
+        xmin = -box[0]/2
+        ymin = -box[1]/2
+        
+        #That directly using 'and' has been banned, so 'logical_and' is necessary
+        list_xmin = points[:,0] > xmin
+        list_xmax = points[:,0] < xmax
+        list_ymin = points[:,1] > ymin
+        list_ymax = points[:,1] < ymax
+        list_x = np.logical_and(list_xmin,list_xmax)
+        list_y = np.logical_and(list_ymin,list_ymax)
+        list_xy = np.logical_and(list_x,list_y)
+
+        #edge_cut_positions_list = np.where(list_xy)
+        #edge_cut_positions_bool = list_xy 
+        points_selected = points[list_xy]
+        print('size of traps:')
+        print(np.shape(points_selected))
+        return points_selected
+
+class polygon_analyzer:
+    def __init__(self,points,bonds,faces):
+        R"""
+        
+        """
+        pass

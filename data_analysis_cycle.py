@@ -2,6 +2,7 @@ import points_analysis_2D as pa
 import numpy 
 import matplotlib.pyplot as plt
 import os
+import proceed_file as pf
 
 def saveIndexPsi3Psi6(start_index,end_index,k1,step,linear_compression_ratio):
     R"""
@@ -238,6 +239,51 @@ def saveIndexCN346Seed(start_index,end_index,k1,step,linear_compression_ratio,ra
         record[(index-start_index).astype(int),5]=ccn[6]
 
         record[(index-start_index).astype(int),6]=randomseed
+
+        
+        
+    save_file_name=prefix+str(start_index)+'-'+str(end_index)+'klcn346'
+    numpy.savetxt(save_file_name,record)
+    #print(record)
+    return save_file_name
+
+def saveIndexCN346PCairoSeed(start_index,end_index,k1,step,linear_compression_ratio,randomseed):
+    R"""
+    This function will save a txt file named 'start index - end index kl', which contains
+    n rows of data 
+    [ simu_index | HarmonicK | LinearCompressionRatio | 
+        CoordinationNum3Rate | CoordinationNum4Rate | 
+        CoordinationNum6Rate | PCairo | RandomSeed ]
+    """
+    diference_index=end_index-start_index+1
+    prefix='/home/tplab/Downloads/'
+    record=numpy.zeros((diference_index,8))
+
+    for index in numpy.linspace(start_index,end_index,diference_index):
+        data_filename=prefix+'index'+str(index.astype(int))
+        obj_of_simu_index = pa.static_points_analysis_2d(filename=data_filename)
+        
+        
+        record[(index-start_index).astype(int),0]=index
+
+        record[(index-start_index).astype(int),1]=k1+step*(index-start_index)
+
+        record[(index-start_index).astype(int),2]=linear_compression_ratio
+
+        
+        obj_of_simu_index.get_coordination_number_conditional()
+        ccn=obj_of_simu_index.count_coordination_ratio
+        record[(index-start_index).astype(int),3]=ccn[3]
+
+        record[(index-start_index).astype(int),4]=ccn[4]
+
+        record[(index-start_index).astype(int),5]=ccn[6]
+
+        import workflow_analysis as wa
+        cp = wa.show_cairo_order_parameter()
+        record[(index-start_index).astype(int),6]=cp.compute_cairo_order_parameter(ccn[3],ccn[4])
+
+        record[(index-start_index).astype(int),7]=randomseed
 
         
         
@@ -730,7 +776,6 @@ def save_exp_20230113_6(i,stable=True):
     xy_adjust = center+trap_locate
     pos,trap_filename = spe.get_trap_positions(tsf_filename,xy_adjust,1,90)#
 
-    import points_analysis_2D as pa  
     directory = spe.path_to_results+'/'
     dataname = video_name
     if stable:
@@ -790,7 +835,7 @@ def save_exp_20230113_8(i,stable=True):
     xy_adjust = center+trap_locate
     pos,trap_filename = spe.get_trap_positions(tsf_filename,xy_adjust,1,90)#
 
-    import points_analysis_2D as pa  
+
     directory = spe.path_to_results+'/'
     dataname = video_name
     if stable:
@@ -1040,11 +1085,11 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
     #load time steps
     if seed is None:
         str_index=str(int(simu_index))
-        gsd_data = pa.proceed_gsd_file(simu_index=simu_index)
+        gsd_data = pf.proceed_gsd_file(simu_index=simu_index)
     else:
         str_index=str(int(simu_index))+'_'+str(seed)
         file_gsd = log_prefix+'trajectory_auto'+str_index+'.gsd'#+'_'+str(seed)
-        gsd_data = pa.proceed_gsd_file(filename_gsd_seed=file_gsd,account=account)
+        gsd_data = pf.proceed_gsd_file(filename_gsd_seed=file_gsd,account=account)
         
     file_log=log_prefix+'log-output_auto'+str_index+'.log'#+'_'+str(seed)
     log_data = numpy.genfromtxt(fname=file_log, skip_header=True)
@@ -1308,6 +1353,8 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
         plt.savefig(png_filename)
         plt.close()
     if coordination_number:
+        #txt_filename = prefix +'T_VS_CN_k_tcut'+'index'+str_index+'egcut'+'.txt'
+        #numpy.savetxt(txt_filename,record_cn)
         plt.figure()
         if frame_cut == 0:#frame_cut is set to abstract a part of the process to watch in detail
             #plt.plot(record_cn[:,0],record_cn[:,1],label='CN_0')
@@ -1510,6 +1557,7 @@ class data_analysis_workflow:
             dpa.draw_bonds.plot_neighbor_change(txyz_stable,nb_change)
             dpa.draw_bonds.plot_traps(trap_filename,LinearCompressionRatio)
             """
+    
     def get_defect_motion(self,directory,data_name=None,trap_filename=None,trap_lcr=None):
         file_txyz_stable = directory + 'txyz_stable.npy'
         txyz_stable = numpy.load(file_txyz_stable)
@@ -1599,8 +1647,85 @@ class data_analysis_workflow:
         dpa = pa.dynamic_points_analysis_2d(txyz_stable,mode='simu')
         dpa.plot_a_frame_of_points(frame_index,directory+str(frame_index)+'.png')
 
+    def get_displacement_1D(self,directory,data_name=None):#,id=0
+        R"""
+        example:
+            import data_analysis_cycle as dac
+            daw = dac.data_analysis_workflow()
+            directory,data_name = daw.gsd_to_txyz(simu_index=4302,io_only=True)
+            daw.get_displacement_1D(directory,data_name)
+        """
+        file_txyz_stable = directory + 'txyz_stable.npy'
+        txyz_stable = numpy.load(file_txyz_stable)
+        sz = numpy.shape(txyz_stable)
+        #print(sz)
+        """
+        prefix = directory
+        folder_name = ''
+        isExists=os.path.exists(prefix+folder_name)
+        if not isExists:
+            os.makedirs(prefix+folder_name)
+            prefix = prefix+folder_name
+        """
+        
+        #dpa = pa.dynamic_points_analysis_2d(txyz_stable,mode='simu')
+        #import points_analysis_2D as pa
+        #dp = pa.dynamic_points_analysis_2d(txyz_stable)
+        df = pa.dynamical_facilitation_module()
+        for id in range(sz[1]):
+            ax = df.plot_displacement_t(txyz_stable[:,id,:2])
+            png_filename = directory+data_name+'_'+str(int(id))+'.png'
+            ax.set_title(data_name+'_'+str(int(id)))
+            plt.savefig(png_filename)
+            plt.close()
+
+    def get_displacement_1D_overlap(self,directory,data_name=None):#,id=0
+        file_txyz_stable = directory + 'txyz_stable.npy'
+        txyz_stable = numpy.load(file_txyz_stable)
+        sz = numpy.shape(txyz_stable)
+        df = pa.dynamical_facilitation_module()
+        fig,ax = plt.subplots()
+        for id in range(sz[1]):#
+            df.plot_displacement_t(txyz_stable[:,id,:2],ax)
+        ax.set_xlabel('t (k steps)')
+        ax.set_ylabel('$\delta$r ($\sigma$)')
+        ax.set_title(data_name+'_'+str(int(id)))
+        png_filename = directory+data_name+'_dr_abs'+'.png'
+        plt.savefig(png_filename)
+        plt.close()
+
+    def scan_displacement_1D_overlap(self,directory,data_name=None):#,id=0
+        file_txyz_stable = directory + 'txyz_stable.npy'
+        txyz_stable = numpy.load(file_txyz_stable)
+        sz = numpy.shape(txyz_stable)
+        df = pa.dynamical_facilitation_module()
+        fig,ax = plt.subplots()
+        for id in range(sz[1]):#
+            df.plot_displacement_t(txyz_stable[:,id,:2],ax)
+            df.plot_scan_displacement_t(txyz_stable[:,id,:2],ax)
+        ax.set_xlabel('t (k steps)')
+        ax.set_ylabel('$\delta$r ($\sigma$)')
+        ax.set_title(data_name+'_'+str(int(id)))
+        png_filename = directory+data_name+'_dr_abs'+'.png'
+        plt.savefig(png_filename)
+        plt.close()
+
+    def get_displacement_1D_data(self,directory,data_name=None):
+        file_txyz_stable = directory + 'txyz_stable.npy'
+        txyz_stable = numpy.load(file_txyz_stable)
+        sz = numpy.shape(txyz_stable)
+        df = pa.dynamical_facilitation_module()
+
+        for id in range(sz[1]):#
+            df.plot_displacement_t(txyz_stable[:,id,:2])
+
+        
 class transfer_txt_to_array:
     R"""
+    introduction:
+        to draw traps on bond_plot in exp, 
+        I have to transfer txt/tsf file into array
+
     example:
         import numpy as np
         import data_analysis_cycle as dac
@@ -1661,3 +1786,4 @@ class transfer_txt_to_array:
         png_filename=prefix+'K_VS_T_Psi6_as_value'+postfix
         plt.savefig(png_filename)
         plt.close()
+

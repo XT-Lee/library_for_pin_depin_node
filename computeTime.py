@@ -34,3 +34,4 @@ def getTimeCost(t1,t2):
         print("start",t1.tm_hour,":",t1.tm_min,":",t1.tm_sec)
         print("end  ",t2.tm_hour,":",t2.tm_min,":",t2.tm_sec)
         print("cost ",dt_h,":",dt_m,":",dt_s)
+        

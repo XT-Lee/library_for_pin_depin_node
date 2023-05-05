@@ -3142,16 +3142,22 @@ def get_dual_lattice():
     scatt.get_dual_lattice()
     """
     point_prefix = "/home/remote/hoomd-examples_0/"
-    filename = point_prefix + "testkagome3-9-6"
+    filename = point_prefix + "testhoneycomb3-8-12-part1"
+    filename2 = point_prefix + "testhoneycomb3-8-12"
     #"testkagome_part3-11-6" "testhoneycomb3-8-12-part1"
     #"testhoneycomb3-8-12" "testkagome3-9-6" "testhex3-16-8"
-    test = static_points_analysis_2d(filename=filename,hide_figure=False)
+    points = np.loadtxt(filename )
+    points2 = np.loadtxt(filename2 )
+    test = static_points_analysis_2d(points,hide_figure=False)
     
     pt = test.voronoi.vertices
     plt.figure()
     plt.scatter(test.points[:,0],test.points[:,1],c='k')#points
-    plt.scatter(pt[:,0],pt[:,1],c='r',marker = 'x')#voronoi vertices
+    plt.scatter(pt[:,0],pt[:,1],c='r')#voronoi vertices
+    plt.scatter(points2[:,0],points2[:,1],c='g')#points
     plt.axis('equal')
+    plt.xlim([-30,30])
+    plt.ylim([-30,30])
     plt.show()
 
 def get_xy_gr_sk(simu_index,seed,xy=False,gr=False,sk=False):
