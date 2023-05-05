@@ -1,3 +1,5 @@
+from fileinput import filename
+from pickle import FALSE
 import numpy as np
 import matplotlib.pyplot as plt
 import numpy
@@ -259,7 +261,7 @@ class optimize_polyfit:
         self.plot_dash(ax,xy[:nums,0],y_s)
         ax.annotate('k='+k_str,[10,100],c='orange')
         png_filename = prefix+"list_waiting_time_1_polyfit.png"
-        plt.savefig(png_filename)
+        fig.savefig(png_filename)
         #plt.show()
         #scipy.optimize.curve_fit()
         return z
@@ -645,13 +647,15 @@ class show_polygon_dye:
         self.read_data(prefix_write)
 
     def get_points_plot(self):
-        #self.test_patch()
         import points_analysis_2D as pa
         import numpy as np
-        
-        prefix = '/home/remote/Downloads/4302_9/'
-        prefix_write='/home/remote/Downloads/4302_9/polygon_6/'#delauny_voronoi_polygon/'
-        filename_txyz = prefix+'txyz.npy'
+        import proceed_file as pf
+        pfile = pf.proceed_file_shell()
+        prefix_simu, str_simu_index = pfile.create_prefix_results(simu_index=4302,seed=9)
+        prefix_write = pfile.create_folder(prefix_simu,'polygon_6')
+        print(prefix_write)
+        #delauny_voronoi_polygon/'
+        filename_txyz = prefix_simu+'txyz.npy'
         txyz = np.load(filename_txyz)
         nframes =2000
         #self.read_data(prefix_write)
@@ -689,39 +693,27 @@ class show_polygon_dye:
                 #self.p2d.draw_polygon_patch_oop()
                 self.draw_bonds_conditional_ridge_oop(prefix_write,frame,limit=True)
                 
-    def get_point_simulations(self,simu_index=4302,seed=9,account='remote'):
+    def get_points_plot_loop(self,seed):
         import points_analysis_2D as pa
         import numpy as np
-        str_simu_index = str(int(simu_index))+'_'+str(seed)
-        prefix = '/home/'+account+'/Downloads/'+str_simu_index#+'/'
-        #check if the folder exists
-        isExists=os.path.exists(prefix)
-        if not isExists:
-            os.makedirs(prefix)
-        prefix = prefix+'/'
-        prefix_write=prefix+'polygon_6'#delauny_voronoi_polygon/'
-        isExists=os.path.exists(prefix_write)
-        if not isExists:
-            os.makedirs(prefix_write)
-        prefix_write = prefix_write+'/'
-        filename_txyz = prefix+'txyz.npy'
+        import proceed_file as pf
+        pfile = pf.proceed_file_shell()
+        prefix_simu, str_simu_index = pfile.create_prefix_results(simu_index=4302,seed=seed)
+        prefix_write = pfile.create_folder(prefix_simu,'polygon_6')
+        print(prefix_write)
+        #delauny_voronoi_polygon/'
+        filename_txyz = prefix_simu+'txyz.npy'
         txyz = np.load(filename_txyz)
-
-        nframes =50
+        nframes =40
         #self.read_data(prefix_write)
-        record_polygon_s_rate = np.zeros((20,nframes))
         for frame in range(nframes):
-            if frame>=0:
+            if frame>=20:
                 points = txyz[frame]
                 self.p2d = pa.static_points_analysis_2d(points)
                 self.get_first_minima_ridge_length_distribution(prefix_write,frame=frame)#,io_only=True
                 #draw bonds selected
                 #self.p2d.draw_polygon_patch_oop()
-                count_polygon_relative = self.draw_bonds_conditional_ridge_oop(prefix_write,frame)#,io_only=True
-                record_polygon_s_rate[:,frame] = count_polygon_relative[:,1]
-        fname=prefix_write+'polygon_n_vs_frame_rate_as_value2000.txt'
-        np.savetxt(fname,record_polygon_s_rate)
-        #self.read_data(prefix_write)
+                self.draw_bonds_conditional_ridge_oop(prefix_write,frame)#,io_only=True
 
     def plot_points(self,points,prefix_write):
         #self.plot_points(points,prefix_write)
@@ -786,13 +778,14 @@ class show_polygon_dye:
         png_filename = 'voronoi.png'
         plt.savefig(prefix_write+png_filename)
     
-    def get_first_minima_ridge_length_distribution(self,prefix_write,hist_cutoff=5,frame=None,io_only=True):
+    def get_first_minima_ridge_length_distribution(self,prefix_write,hist_cutoff=5,frame=None,io_only=False):
         print(frame)
         if io_only:
             self.p2d.get_first_minima_ridge_length_distribution(hist_cutoff=hist_cutoff)
         else :
             png_filename = prefix_write+"ridge_length_hist"+str(int(frame))+".png"
             self.p2d.get_first_minima_ridge_length_distribution(hist_cutoff=hist_cutoff,png_filename=png_filename)
+    
     def draw_bonds_conditional_ridge_oop(self,prefix_write,frame,io_only=False,limit=False):
         count_polygon_relative = self.p2d.get_conditional_bonds_and_simplices()
         if not io_only:
@@ -910,7 +903,7 @@ class show_polygon_dye:
         ax.set_ylabel('honeycomb(%)')
         
         png_filename = prefix_write+"polygon_n_vs_frame_rate.png"
-        plt.savefig(png_filename)
+        fig.savefig(png_filename)
 
 class show_disp_field:
     def __init__(self):
@@ -930,6 +923,317 @@ class show_disp_field:
         self.p2d = pa.dynamic_points_analysis_2d(txyz)
         self.p2d.displacement_field_module()
         self.p2d.displacemnt_field.get_displacement_field_xy(0,8,plot=True,png_filename=png_filename,limit=True)
+    
+    def get_disp(self,seed,frame1,frame2):
+        import points_analysis_2D as pa
+        import numpy as np
+        import proceed_file as pf
+        pfile = pf.proceed_file_shell()
+        prefix_simu, str_simu_index = pfile.create_prefix_results(simu_index=4302,seed=seed)
+        prefix_write = pfile.create_folder(prefix_simu,'polygon_6')
+        filename_txyz = prefix_simu+'txyz_stable.npy'
+        txyz = np.load(filename_txyz)
+        png_filename=prefix_write+'displacement_field_xy_'+str(int(frame1))+'_'+str(int(frame2))+'.png'#'_part.png'
+
+        self.p2d = pa.dynamic_points_analysis_2d(txyz)
+        self.p2d.displacement_field_module()
+        self.p2d.displacemnt_field.get_displacement_field_xy(frame1,frame2,plot=True,png_filename=png_filename)#,limit=True
+    
+    def get_disp_lim(self,seed,frame):
+        import points_analysis_2D as pa
+        import numpy as np
+        import proceed_file as pf
+        pfile = pf.proceed_file_shell()
+        prefix_simu, str_simu_index = pfile.create_prefix_results(simu_index=4302,seed=seed)
+        prefix_write = pfile.create_folder(prefix_simu,'polygon_6')
+        filename_txyz = prefix_simu+'txyz_stable.npy'
+        txyz = np.load(filename_txyz)
+        png_filename=prefix_write+'displacement_field_xy_0_'+str(int(frame))+'_part.png'
+
+        self.p2d = pa.dynamic_points_analysis_2d(txyz)
+        self.p2d.displacement_field_module()
+        self.p2d.displacemnt_field.get_displacement_field_xy(0,frame,plot=True,png_filename=png_filename,limit=[[-4,8],[-3,16]])
+                
+    def get_bicolor_disp(self,seed,frame1,frame2,lim):
+        R"""
+        import workflow_analysis as wa
+        sdf = wa.show_disp_field()
+        seed=[0,1,2,8,9]
+        frame=[12,10,29,6,8]
+        lim=[[[-5,9],[-5,10]],[[11,21],[-13,1]],[[9,21],[-7,7]],[[-9,4],[-12,3]],[[-4,8],[-3,16]]]
+        for i in range(5):
+            print(seed[i])
+            sdf.get_bicolor_disp(seed[i],frame[i],lim[i])
+        """
+        #seed=9
+        lcr=0.81
+        trap_filename='/home/remote/hoomd-examples_0/testhoneycomb3-8-12-part1'
+        traps = numpy.loadtxt(trap_filename)*lcr
+        import proceed_file as pf
+        pfile = pf.proceed_file_shell()
+        prefix_simu, str_simu_index = pfile.create_prefix_results(simu_index=4302,seed=seed)
+        prefix_write = pfile.create_folder(prefix_simu,'pin_check')
+        file_txyz_stable = prefix_simu + 'txyz_stable.npy'
+        txyz_stable = numpy.load(file_txyz_stable)
+        import points_analysis_2D as pa
+        df = pa.dynamical_facilitation_module()
+        #df.get_pin_bool(traps,txyz_stable,prefix_write,1.0)
+        #plot
+        #frame=8
+        file_t_pin_bool = '/home/remote/Downloads/'+str_simu_index+'/pin_check/t_pin_bool.npy'
+        t_pin_bool = numpy.load(file_t_pin_bool)
+        
+        self.p2d = pa.dynamic_points_analysis_2d(txyz_stable)
+        self.p2d.displacement_field_module()
+        #lim=[[-25,25],[-20,20]]
+        png_filename=prefix_write+'displacement_field_xy_'+str(int(frame1))+'_'+str(int(frame2))+'.png'#_part
+        self.p2d.displacemnt_field.get_bicolor_disp(t_pin_bool[frame2],frame1,frame2,plot=True,png_filename=png_filename,limit=lim,traps=traps)
+        #png_filename=prefix_write+'displacement_field_xy_0_2000.png'#'_part.png'
+        #self.p2d.displacemnt_field.get_bicolor_disp(t_pin_bool[2000],0,2000,plot=True,png_filename=png_filename)
+
+class show_dual_lattice:
+    R"""
+    import getDataAndScatter
+    getDataAndScatter.get_dual_lattice()
+    """
+    def __init__(self) -> None:
+        pass
+
+    def go(self):
+        trap_filename='/home/remote/hoomd-examples_0/testhoneycomb3-8-12'
+        traps=np.loadtxt(trap_filename)
+        LinearCompressionRatio=1
+        traps=np.multiply(traps,LinearCompressionRatio)
+        fig,ax = plt.subplots()
+        #ax.scatter(pos[:,0],pos[:,1],c='k')
+        ax.scatter(traps[:,0], 
+                traps[:,1],
+                c='r')#,marker = 'x'
+        ax.set_aspect('equal','box')
+        """
+        limit=[[],[]]
+        ax.set_xlim(limit[0])
+        ax.set_ylim(limit[1])
+        """
+            
+class show_cairo_order_parameter:
+    def __init__(self) -> None:
+        pass
+    def compute_diagram(self):
+        R"""
+        output:
+            record: [cn3,cn4,order_parameter_for_cairo]
+        example:
+            import workflow_analysis as wa
+            ca = wa.show_cairo_order_parameter()
+            xyc = ca.compute()
+            ca.plot_diagram(xyc)
+        """
+        num_x = 99
+        list_num = np.linspace(0.01,0.99,num_x)
+        num_scan = 0.5*num_x*(num_x+1)
+        record = np.zeros((int(num_scan),3))
+        count = 0
+        for cn3 in list_num:
+            for cn4 in list_num:
+                p1 = cn3+cn4
+                if p1<=1:
+                    cn4_normal = cn4*2
+                    r34 = cn3/cn4_normal
+                    r43 = cn4_normal/cn3
+                    p2 = np.minimum(r34,r43)
+                    p = p1*p2
+                    record[count] = [cn3,cn4,p]
+                    count = count + 1
+        return record
+    
+    def compute_cairo_order_parameter(self,cn3,cn4):
+        R"""
+        output:
+            p: order_parameter_for_cairo
+        """
+        p1 = cn3+cn4
+        if p1<=1:
+            cn4_normal = cn4*2
+            r0 = cn3*cn4
+            if r0>0:
+                r34 = cn3/cn4_normal
+                r43 = cn4_normal/cn3
+                p2 = np.minimum(r34,r43)
+                p = p1*p2
+            else:
+                p = 0
+        else:
+            print('error: cn3+cn4>1')
+            p = -1
+                    
+        return p
+
+    def plot_diagram(self,xyc,account='remote'):
+        fig,ax = plt.subplots()
+        #ax.scatter(pos[:,0],pos[:,1],c='k')
+        scat = ax.scatter(xyc[:,0],xyc[:,1],c=xyc[:,2])
+        ax.set_aspect('equal','box')
+        ax.set_xlabel('cn3(1)')
+        ax.set_ylabel('cn4(1)')
+        ax.set_title('order_parameter_for_cairo')
+        fig.colorbar(scat,ax=ax)
+        prefix = "/home/"+account+"/Downloads/"
+        png_filename=prefix+'test_order_parameter_for_cairo.png'
+        plt.savefig(png_filename)
+
+class show_cn_k():
+    def __init__(self) -> None:
+        pass
+    
+    def get_cn_k(self,a_frame,lattice_constant,gsd_data,time_steps,i):
+        R"""
+        CN0 % should be 0 for all the particles must be linked by bond.
+        CN1 % is likely to be edge?
+        CN2 % in body(edge-cutted) shows the mechanical unstability
+        CN3 % shows the proportion of honeycomb.
+        CN4 % shows the proportion of kagome.
+        CN6 % shows the proportion of hexagonal.
+        CN5/7 % shows the proportion of disclination.
+        """
+        #print('index '+str(i))
+        #print(snap.particles.position[137])
+        a_frame.get_coordination_number_conditional(lattice_constant=lattice_constant)#cut edge to remove CN012
+        ccn = a_frame.count_coordination_ratio#[time_steps,psi3,psi6]
+        ccn = numpy.transpose(ccn)
+        if not "record_cn" in locals():#check if the variable exists
+            #load CN_k s
+            record_cn = numpy.zeros((gsd_data.num_of_frames,numpy.shape(ccn)[1]+1))
+            record_cn[:,0] = time_steps#range(10)##gsd frame is different from log frame for period set 100 vs 2e3
+        #print(numpy.shape(ccn)[1])
+        record_cn[i,1:numpy.shape(ccn)[1]+1] = ccn
+    
+    def show_cn_k(self,frame_cut,record_cn,prefix,str_index):
+        plt.figure()
+        if frame_cut == 0:#frame_cut is set to abstract a part of the process to watch in detail
+            #plt.plot(record_cn[:,0],record_cn[:,1],label='CN_0')
+            #plt.plot(record_cn[:,0],record_cn[:,2],label='CN_1')
+            #plt.plot(record_cn[:,0],record_cn[:,3],label='CN_2')
+            plt.plot(record_cn[:,0],record_cn[:,4],label='CN_3')
+            plt.plot(record_cn[:,0],record_cn[:,5],label='CN_4')
+            plt.plot(record_cn[:,0],record_cn[:,6],label='CN_5')
+            plt.plot(record_cn[:,0],record_cn[:,7],label='CN_6')
+            plt.plot(record_cn[:,0],record_cn[:,8],label='CN_7')
+            #plt.plot(record_cn[:,0],record_cn[:,9],label='CN_8')
+            #plt.plot(record_cn[:,0],record_cn[:,-1],label='CN_9')
+            png_filename = prefix +'T_VS_CN_k'+'index'+str_index+'egcut'+'.png'
+        else:
+            #plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,1],label='CN_0')
+            #plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,2],label='CN_1')
+            #plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,3],label='CN_2')
+            plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,4],label='CN_3')
+            plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,5],label='CN_4')
+            plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,6],label='CN_5')
+            plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,7],label='CN_6')
+            plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,8],label='CN_7')
+            #plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,9],label='CN_8')
+            #plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,-1],label='CN_9')
+            png_filename = prefix +'T_VS_CN_k_tcut'+'index'+str_index+'egcut'+'.png'
+        plt.legend()
+        plt.title('CN_k '+'index:'+str_index)
+        plt.xlabel('time(steps)')
+        plt.ylabel('CN_k(1)')
+        #plt.show()
+        plt.savefig(png_filename)
+        record_filename = prefix +'T_VS_CN_k_cut'+'index'+str_index+'.txt'
+        numpy.savetxt(record_filename,record_cn)
+        plt.close()
+
+    def reorganize_cn_k_txt_and_show(self):
+        filename1 = '/home/remote/Downloads/record_results/pin_hex_to_honeycomb_2m/'+'T_VS_CN_k_cutindex5238_9.txt'
+        record_cn1 = np.loadtxt(filename1)
+        cn3h = record_cn1[:,4]#4634'CN_3'
+        t = record_cn1[:,0]#steps
+
+        filename2 = '/home/remote/Downloads/4302_9/cn_k/'+'T_VS_CN_k_cutindex4302_9.txt'
+        record_cn2 = np.loadtxt(filename2)
+        cn3hp = record_cn2[:,4]#4302'CN_3'
+
+        fig,ax = plt.subplots()
+        ax.plot(t,cn3h,label='honeycomb traps')
+        ax.plot(t,cn3hp,label='honeycomb_part traps')
+        ax.legend()
+        ax.set_title('honeycomb vs honeycomb_part')
+        ax.set_xlabel('time(steps)')
+        ax.set_ylabel('$CN_3(1)$')
+        #plt.show()
+        prefix_write = '/home/remote/Downloads/4302_9/cn_k/'
+        png_filename = prefix_write+'T_VS_CN_kindex_5238_4302_egcut.png'
+        fig.savefig(png_filename)
+        #fig.savefig(png_filename)
+
+    def show_list_of_cn_k(self,prefix,simu_index,seed):
+        prefix = '/home/remote/Downloads/record_results/pin_hex_to_honeycomb_2m/'
+        simu_index = 4302
+
+        fig,ax = plt.subplots()
+
+        for seed in range(10):
+            cn3h,t = self.extract_cn_k_txt(prefix,simu_index,seed)
+            ax.plot(t,cn3h,label='honeycomb traps')
+
+
+        ax.legend()
+        ax.set_title('honeycomb vs honeycomb_part')
+        ax.set_xlabel('time(steps)')
+        ax.set_ylabel('$CN_3(1)$')
+        #plt.show()
+        prefix_write = '/home/remote/Downloads/4302_9/cn_k/'
+        png_filename = prefix_write+'T_VS_CN_kindex_5238_4302_egcut.png'
+        fig.savefig(png_filename)
+
+        
+    
+    def extract_cn_k_txt(self,prefix,simu_index,seed):
+        str_index = str(int(simu_index))+'_'+str(int(seed))
+        filename = prefix+'T_VS_CN_k'+'index'+str_index+'egcut'+'.png'
+        #filename = '/home/remote/Downloads/record_results/pin_hex_to_honeycomb_2m/'+'T_VS_CN_k_cutindex5238_9.txt'
+        record_cn = np.loadtxt(filename)
+        cn3h = record_cn[:,4]#4634'CN_3'
+        t = record_cn[:,0]#steps
+        return cn3h,t
+
+
+
         
 
-
+    def show_cn_k_compare(self,cni,cnj,time_steps,record_cn,prefix,str_index,frame_cut=0):
+        plt.figure()
+        if frame_cut == 0:#frame_cut is set to abstract a part of the process to watch in detail
+            #plt.plot(record_cn[:,0],record_cn[:,1],label='CN_0')
+            #plt.plot(record_cn[:,0],record_cn[:,2],label='CN_1')
+            #plt.plot(record_cn[:,0],record_cn[:,3],label='CN_2')
+            plt.plot(record_cn[:,0],record_cn[:,4],label='CN_3')
+            plt.plot(record_cn[:,0],record_cn[:,5],label='CN_4')
+            plt.plot(record_cn[:,0],record_cn[:,6],label='CN_5')
+            plt.plot(record_cn[:,0],record_cn[:,7],label='CN_6')
+            plt.plot(record_cn[:,0],record_cn[:,8],label='CN_7')
+            #plt.plot(record_cn[:,0],record_cn[:,9],label='CN_8')
+            #plt.plot(record_cn[:,0],record_cn[:,-1],label='CN_9')
+            png_filename = prefix +'T_VS_CN_k'+'index'+str_index+'egcut'+'.png'
+        else:
+            #plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,1],label='CN_0')
+            #plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,2],label='CN_1')
+            #plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,3],label='CN_2')
+            plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,4],label='CN_3')
+            plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,5],label='CN_4')
+            plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,6],label='CN_5')
+            plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,7],label='CN_6')
+            plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,8],label='CN_7')
+            #plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,9],label='CN_8')
+            #plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,-1],label='CN_9')
+            png_filename = prefix +'T_VS_CN_k_tcut'+'index'+str_index+'egcut'+'.png'
+        plt.legend()
+        plt.title('CN_k '+'index:'+str_index)
+        plt.xlabel('time(steps)')
+        plt.ylabel('CN_k(1)')
+        #plt.show()
+        plt.savefig(png_filename)
+        record_filename = prefix +'T_VS_CN_k_cut'+'index'+str_index+'.txt'
+        numpy.savetxt(record_filename,record_cn)
+        plt.close()

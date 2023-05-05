@@ -1,23 +1,20 @@
 #import threading
 import time
+import computeTime as ct
 tm1=time.localtime(time.time())
 
-#get reference positions
-import numpy as np
-import workflow_analysis as wa
-spd = wa.show_disp_field()
-#spd.get_points_plot()
-pd = wa.show_polygon_dye()
-pd.get_points_plot()#_xylim()
 
 
 
 
+import file_for_CUDA.test_cuda as tc
+tcc = tc.comapre_speed_cpu_vs_gpu()
+t1,t2,r2 = tcc.calculate_cpu(tcc.rm1)
+t1,t2,r2c = tcc.calculate_gpu(tcc.rm1)
 
 
 #time.sleep(1)
 tm2=time.localtime(time.time())
 #calculate the time cost
-import computeTime as ct
 ct.getTimeCost(tm1,tm2)
 

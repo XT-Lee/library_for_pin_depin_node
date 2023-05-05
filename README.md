@@ -5,6 +5,11 @@
 - and has a library to proceed trajectories of particles in 2D and get their structural or dynamic properties
 
 ## log:
+- 20230504 add file_for_CUDA.test_cuda
+- 20230424 edit workflow_analysis.show_disp_field.get_bicolor_disp.
+- 20230423 add workflow_part.saveIndexCN346PCairoSeed. 
+- 20230422 add workflow_analysis.show_cairo_order_parameter.
+- 20230420 add proceed_file to operate files and make directories.
 - 20230420 fix get_conditional_bonds_and_simplices, return count_polygon_relative
 - 20230410 edit get_conditional_bonds_and_simplices, return count_polygon_relative
 - 20230408 edit bond_plot_module init(ax=none)

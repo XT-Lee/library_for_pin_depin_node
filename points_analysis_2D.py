@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from prometheus_client import Summary
 from scipy.spatial import Voronoi
 from scipy.spatial import  Delaunay
 from scipy.spatial import  distance
@@ -12,8 +11,6 @@ import freud
 R"""
 CLASS list:
     static_points_analysis_2d: old_class_name: PointsAnalysis2D
-    proceed_gsd_file:
-    proceed_exp_file:
     dynamic_points_analysis_2d: old_class_name: msd
 """
 class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
@@ -78,8 +75,7 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
             if filename is None:
                 print("Error: input points or file please!\n")
             else:
-                self.filename = filename#[x]
-                #filename='/home/tplab/Downloads/index93.0'
+                self.filename = filename
                 self.points = np.loadtxt(filename)
                 self.points = self.points[:,0:2]
                 self.basic_points_analysis()
@@ -90,8 +86,6 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
         #not show figures
         if hide_figure:
             matplotlib.use(backend="agg")#Backend agg is non-interactive backend. Turning interactive mode off. 'QtAgg' is interactive mode
-        #set basic parameters
-        #self.prefix='/home/tplab/Downloads/'
             
     def basic_points_analysis(self):
         self.voronoi = Voronoi(self.points)
@@ -598,7 +592,13 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
         Introduction:
             get_coordination_number_with given bond_length_limit [min,max].
         parameters:
-
+            CN0 % should be 0 for all the particles must be linked by bond.
+            CN1 % is likely to be edge?
+            CN2 % in body(edge-cutted) shows the mechanical unstability
+            CN3 % shows the proportion of honeycomb.
+            CN4 % shows the proportion of kagome.
+            CN6 % shows the proportion of hexagonal.
+            CN5/7 % shows the proportion of disclination.
         Variables:
             __coordination_bond: n rows of (start_point_index, end_point_index, bond_length)
             count_coordination: 10 rows of [count]. The i-th [count_i] represents the count 
@@ -981,6 +981,11 @@ index 10 is out of bounds for axis 0 with size 10
         Parameters:
             png_filename: "prefix/bond_plot_index1513"
             nb_change: particle ids which change neighbors.
+            trap_filename:
+                '/home/remote/hoomd-examples_0/testhoneycomb3-8-12'
+                '/home/remote/hoomd-examples_0/testhoneycomb3-8-12-part1'
+                '/home/remote/hoomd-examples_0/testkagome3-11-6'
+                '/home/remote/hoomd-examples_0/testkagome_part3-11-6'
         Examples:
             import points_analysis_2D as pa
             s = "/home/tplab/Downloads/"
@@ -1353,280 +1358,6 @@ index 10 is out of bounds for axis 0 with size 10
     def plot_polygon(self,x,y):
          fig,ax = plt.subplots()
          ax.fill(x,y,color='g')
-
-class proceed_gsd_file:
-    R"""
-    Introduction:
-        the class is designed to preproceed the motion of 2D points(.gsd file), 
-        to analyze dynamic properties.
-
-    Parameters:
-        filename_gsd: a path to gsd file;
-        trajectory: trajectory data read from a hoomd gsd file;
-        num_of_frames: the number of frames in the trajectory;
-
-    Methods:
-        open_gsd:
-        read_a_frame:
-        get_displacement_field: draw the displacements of final state from initial state.
-
-    
-    Examples:
-    """
-    
-    def __init__(self,filename_gsd_seed=None, account="tplab",simu_index=None,seed=None):
-        #load positions of particles
-        if simu_index is None:
-            if filename_gsd_seed is None:
-                    print("Error: input a correct path to gsd file please!\n")
-            else:
-                self.filename_gsd = filename_gsd_seed
-                #filename_gsd="/home/tplab/hoomd-examples_0/trajectory_auto619.gsd"
-                #self.data_gsd = np.loadtxt(self.filename_gsd)
-                self.__open_gsd()
-
-                prefix_gsd = '/home/'+account+'/hoomd-examples_0/trajectory_auto'
-                simu_index = filename_gsd_seed.strip(prefix_gsd)
-                id=simu_index.index('_')
-                self.simu_index = simu_index[0:id]
-        else :
-            self.simu_index = simu_index
-            if not seed is None:
-                simu_index = str(int(simu_index))+'_'+str(int(seed))
-            prefix_gsd = '/home/'+account+'/hoomd-examples_0/trajectory_auto'
-            postfix_gsd = '.gsd'
-            self.filename_gsd = prefix_gsd+str(simu_index)+postfix_gsd
-            self.__open_gsd()
-        
-        self.box = self.trajectory.read_frame(-1).configuration.box
-
-    def __open_gsd(self):
-        import gsd.hoomd
-        self.trajectory=gsd.hoomd.open(self.filename_gsd)#open a gsd file
-        self.num_of_frames=len(self.trajectory)
-        
-    def read_a_frame(self,frame_num):
-        snap=self.trajectory.read_frame(frame_num)#take a snapshot of the N-th frame
-        positions=snap.particles.position[:,0:2]#just record [x,y] ignoring z
-        #self.N = self.snap.particles.N
-        return positions
-        
-    def get_trajectory_data(self,save_prefix = None):
-        R"""
-        introduction:
-            transform gsd file into an array [Nframes,Nparticles,3],
-            recording the trajectory of particles.
-        input:
-            gsd_file
-        return:
-            txyz [Nframes,Nparticles,3] or
-            (npy file)[Nframes,Nparticles,3]
-        """
-        frame = 0
-        snapi = self.trajectory.read_frame(frame)
-        pos_list = np.zeros([self.num_of_frames,snapi.particles.N,3])#gsd_data.trajectory[0].particles.N,
-        while frame < self.num_of_frames:
-            pos_list[frame] = self.trajectory.read_frame(frame).particles.position
-            #print(self.trajectory.read_frame(iframe).configuration.box)
-            frame = frame + 1
-        
-        self.txyz = pos_list
-
-        if not save_prefix is None:
-            file_txyz_npy = save_prefix+'txyz'
-            np.save(file = file_txyz_npy,arr = self.txyz)
-        
-    def get_trajectory_stable_data(self,save_prefix = None):
-        R"""
-        introduction:
-            transform trajectory data from simulation with periodic boundary condition 
-            into trajectories of which particles never move across boundary(box).
-        return:
-            txyz_stable: (N_frames,N_particles,3)
-
-        """
-        #dedrift?
-        frames,particles,dimensions=self.txyz.shape
-        if hasattr(self,'box'):
-            #print(locals())#local variable not of class
-            self.dtxyz = self.txyz[1:,:,:] - self.txyz[:frames-1,:,:]
-            #cross is true
-            list_crossleft = self.dtxyz[:,:,0] > 0.9*self.box[0]
-            list_crossbottom = self.dtxyz[:,:,1] > 0.9*self.box[1]
-            list_crossright = self.dtxyz[:,:,0] < -0.9*self.box[0]
-            list_crosstop = self.dtxyz[:,:,1] < -0.9*self.box[1]
-            #mark all the frames where cross event occur as True
-            list_crossx = np.logical_or(list_crossleft,list_crossright)
-            list_crossy = np.logical_or(list_crossbottom,list_crosstop)
-            list_cross = np.logical_or(list_crossx,list_crossy)
-            #mark all the particles who have experienced cross event as True
-            list_cross_true = np.array(list_cross[0,:]) 
-            #list_cross_true = list_cross_true[0]#remove empty extra dimension
-            #print(list_cross_true.shape)
-            i=0
-            while i<particles:
-                list_cross_true[i] = np.max(list_cross[:,i])
-                i = i + 1
-            list_stable_id = np.where(list_cross_true[:]==False)
-            list_stable_id = list_stable_id[0]#remove empty extra dimension
-            #print(list_stable_id.shape)
-            
-            self.txyz_stable = self.txyz[:,list_stable_id,:]
-            self.particles = list_stable_id.shape[0]
-
-            if not save_prefix is None:
-                file_txyz_npy = save_prefix+'txyz_stable'
-                np.save(file = file_txyz_npy,arr = self.txyz_stable)
-    
-    def get_trajectory_data_large(self,save_prefix = None):
-        R"""
-        introduction:
-            transform gsd file into an array [Nframes,Nparticles,3],
-            recording the trajectory of particles.
-        input:
-            gsd_file
-        return:
-            txyz [Nframes,Nparticles,3] or
-            (npy file)[Nframes,Nparticles,3]
-        """
-        frame = 0
-        snapi = self.trajectory.read_frame(frame)
-        pos_list = np.zeros([int(self.num_of_frames/10+1),snapi.particles.N,3])#gsd_data.trajectory[0].particles.N,
-        i=0
-        while frame < self.num_of_frames:
-            pos_list[i] = self.trajectory.read_frame(frame).particles.position
-            #print(self.trajectory.read_frame(iframe).configuration.box)
-            frame = frame + 10
-            i = i+1
-        
-        self.txyz = pos_list
-
-        if not save_prefix is None:
-            file_txyz_npy = save_prefix+'txyz'
-            np.save(file = file_txyz_npy,arr = self.txyz)
-
-    def plot_trajectory(self,length_cut_edge=0):#checked right
-        R"""
-        Example:
-            import getDataAndScatter as scatt
-            simu_index = 1369
-            prefix_gsd = '/home/tplab/hoomd-examples_0/trajectory_auto'
-            postfix_gsd = '.gsd'
-            filename_gsd = prefix_gsd+str(simu_index)+postfix_gsd
-            scatt.save_image_stack(gsd_file=filename_gsd)
-        """
-        #from celluloid import camera
-        matplotlib.use(backend="agg")#Backend agg is non-interactive backend. Turning interactive mode off.
-        #Backend Qt5Agg is interactive backend. Turning interactive mode on.
-        self.trajectory#self.trajectory=gsd.hoomd.open(self.filename_gsd)#open a gsd file
-        self.num_of_frames#self.num_of_frames=len(self.trajectory)
-
-        frame_num=0
-        dis = None
-        while frame_num < self.num_of_frames:
-            snap=self.trajectory.read_frame(frame_num)#take a snapshot of the N-th frame
-            positions=snap.particles.position
-
-            plt.figure()
-            if dis is None:
-                xmax = max(positions[:,0]) #- 3
-                ymax = max(positions[:,1]) #- 3
-                xmin = min(positions[:,0]) #+ 3
-                ymin = min(positions[:,1]) #+ 3
-                dis = min(xmax,ymax,-xmin,-ymin)
-                dis = dis - length_cut_edge #cut the edge if necessary(eg. size & scale of images not match)
-            plt.scatter(positions[:,0],positions[:,1])
-
-            plt.axis('equal')
-            plt.xlabel('x(sigma)')
-            plt.ylabel('y(sigma)')
-            """
-            the displayed image size will be the smaller one 
-            between axis limitation for xlim/ylim or data itself. 
-            Hence the effective xlim/ylim should be set smaller than data.
-
-            To ensure that xlim/ylim < data region, 
-            we add physically meaningless points.
-            """
-            #restrict ticks to show
-            """
-            #(let all the images share the same size)
-            new_ticks = np.linspace(-dis,dis,int(2*dis+1))
-            new_ticks = new_ticks.astype(int)
-            #print(new_ticks.astype(str))
-            #print((new_ticks))
-            plt.xticks(new_ticks,new_ticks.astype(str))
-            plt.yticks(new_ticks,new_ticks.astype(str))
-            """
-            #restrict data region to show
-            plt.xlim(-dis,dis)
-            plt.ylim(-dis,dis)
-            
-            #plt.show()
-
-            prefix_old="/home/tplab/hoomd-examples_0"
-            folder_name=self.filename_gsd.strip(prefix_old)
-            folder_name=folder_name.strip(".gsd")#folder_name=prefix+png_filename_as_folder
-            folder_name="t"+folder_name#"t" is necessary in case of "/t" deleted before
-            prefix='/home/tplab/Downloads/'
-            png_filename=prefix+folder_name+"/"+folder_name+"_"+str(frame_num)
-            #check if the folder exists
-            isExists=os.path.exists(prefix+folder_name)
-            if isExists:
-                plt.savefig(png_filename)
-            else:
-                os.makedirs(prefix+folder_name)
-                plt.savefig(png_filename)
-            plt.close()
-
-            frame_num=frame_num+1
-
-        return folder_name
-    
-    def get_displacement_field_xy(self,frame_index,plot=False,png_filename=None):
-        R"""
-        Introduction:
-            The function draws a displacement vector field from init state to final state 
-            with positions at edge removed  to clean abnormal displacement vector. 
-        Example:
-            import points_analysis_2D as pa
-            gsd = pa.proceed_gsd_file(simu_index=1382)
-            gsd.get_displacement_field(plot=True)
-        """
-        self.gdf_xy = dynamic_points_analysis_2d(self.txyz_stable)
-        self.gdf_xy.displacement_field_module()
-        self.gdf_xy.displacemnt_field.get_displacement_field_xy(frame_index,plot,png_filename)
-
-    def get_displacement_field_distribution(self,frame_index,log_mode=False,png_filename=None):
-        R"""
-        Introduction:
-            The function draws a displacement vector field from init state to final state 
-            with positions at edge removed  to clean abnormal displacement vector. 
-        Example:
-            import points_analysis_2D as pa
-            gsd = pa.proceed_gsd_file(simu_index=1382)
-            gsd.get_displacement_field(plot=True)
-        """
-        self.gdf_xy.displacemnt_field.get_displacement_field_distribution(frame_index,log_mode,png_filename)
-
-    def get_gr(self,frame_num):
-        rdf = freud.density.RDF(bins=200, r_max=20.0,)#
-
-        rdf.compute(system=self.trajectory.read_frame(frame_num))
-        """
-        print(rdf.bin_centers)
-        print(rdf.bin_counts)
-        rdf.plot()
-        data_filename=prefix+'index_'+str_index+'gr.png'
-        plt.savefig(data_filename)
-        """
-        plt.close()
-
-class proceed_exp_file:
-    R"""
-    see particle_tracking.py to get trajectories of particles from a video.
-    """
-    pass
 
 class dynamic_points_analysis_2d:#old_class_name: msd
     R"""
@@ -2638,7 +2369,7 @@ class displacemnt_field_2D:
         final_positions = self.txyz_stable[frame_index_end]
         self.displacements =  final_positions - init_positions
 
-    def get_displacement_field_xy(self,frame_index_start=0,frame_index_end=-1,plot=False,png_filename=None,x_unit='($\sigma$)',limit=False):
+    def get_displacement_field_xy(self,frame_index_start=0,frame_index_end=-1,plot=False,png_filename=None,x_unit='($\sigma$)',limit=None):
         R"""
         Introduction:
             The function draws a displacement vector field from init state to final state 
@@ -2648,10 +2379,9 @@ class displacemnt_field_2D:
             plot:True or False
             png_filename: 'displacement_field_xy.png'
             x_unit:'(sigma)', '(um)' or '(1)'
+            limit: [[-4,12],[-5,16]]
         Example:
-            import points_analysis_2D as pa
-            gsd = pa.proceed_gsd_file(simu_index=1382)
-            gsd.get_displacement_field(plot=True)
+            4302_2,0-29,[[9,21],[-7,7]]
         """
         self.get_displacements(frame_index_end,frame_index_start)
 
@@ -2660,18 +2390,65 @@ class displacemnt_field_2D:
         uv = self.displacements
 
         if plot:
+            if not limit is None:
+                self.ax.set_xlim(limit[0])
+                self.ax.set_ylim(limit[1])
+                self.ax.quiver(xy[:,0],xy[:,1],uv[:,0],uv[:,1],color='orange',angles='xy', scale_units='xy', scale=1,width=0.01)
             #self.ax.scatter(self.final_positions[:,0],self.final_positions[:,1])#final_state
-            self.ax.quiver(xy[:,0],xy[:,1],uv[:,0],uv[:,1],color='orange',angles='xy', scale_units='xy', scale=1,width=0.01)
+            else:
+                self.ax.quiver(xy[:,0],xy[:,1],uv[:,0],uv[:,1],color='orange',angles='xy', scale_units='xy', scale=1)#,width=0.01
             self.ax.scatter(xye[:,0],xye[:,1],c='k')#init_state
             self.ax.set_title('displacement field ')#+'index:'+str(self.simu_index)
             self.ax.set_xlabel('x'+x_unit)
             self.ax.set_ylabel('y'+x_unit)
             self.ax.set_aspect('equal','box')
 
-            if limit:#False
-                self.ax.set_xlim(-4,12)
-                self.ax.set_ylim(-5,16)
-                pass
+            if not png_filename is None:
+                plt.savefig(png_filename)
+            plt.close()
+        return uv
+
+    def get_bicolor_disp(self,list_pin_bool,frame_index_start=0,frame_index_end=-1,plot=False,png_filename=None,x_unit='($\sigma$)',limit=None,traps=None):
+        R"""
+        Introduction:
+            The function draws a displacement vector field from init state to final state 
+            with positions at edge removed  to clean abnormal displacement vector. 
+        input:
+            frame_index: -1
+            plot:True or False
+            png_filename: 'displacement_field_xy.png'
+            x_unit:'(sigma)', '(um)' or '(1)'
+            limit: [[-4,12],[-5,16]]
+        Example:
+            4302_2,0-29,[[9,21],[-7,7]]
+        """
+        import numpy
+        self.get_displacements(frame_index_end,frame_index_start)
+        xy = self.txyz_stable[frame_index_start]#init_positions
+        xye = self.txyz_stable[frame_index_end]
+        uv = self.displacements
+        list_pin_bool = list_pin_bool.astype(bool)
+        list_pin_nbool = np.logical_not(list_pin_bool)
+        if plot:
+            if not limit is None:
+                self.ax.set_xlim(limit[0])
+                self.ax.set_ylim(limit[1])
+                self.ax.quiver(xy[list_pin_bool,0],xy[list_pin_bool,1],uv[list_pin_bool,0],uv[list_pin_bool,1],color='r',angles='xy', scale_units='xy', scale=1,width=0.01)
+                self.ax.quiver(xy[list_pin_nbool,0],xy[list_pin_nbool,1],uv[list_pin_nbool,0],uv[list_pin_nbool,1],color='orange',angles='xy', scale_units='xy', scale=1,width=0.01)
+            #self.ax.scatter(self.final_positions[:,0],self.final_positions[:,1])#final_state
+            else:
+                #self.ax.quiver(xy[:,0],xy[:,1],uv[:,0],uv[:,1],c=list_pin_bool,angles='xy', scale_units='xy', scale=1)#,width=0.01,color='r'
+                self.ax.quiver(xy[list_pin_bool,0],xy[list_pin_bool,1],uv[list_pin_bool,0],uv[list_pin_bool,1],color='r',angles='xy', scale_units='xy', scale=1)#,width=0.01,color='r'
+                self.ax.quiver(xy[list_pin_nbool,0],xy[list_pin_nbool,1],uv[list_pin_nbool,0],uv[list_pin_nbool,1],color='orange',angles='xy', scale_units='xy', scale=1)
+            #self.ax.scatter(xye[list_pin_bool,0],xye[list_pin_bool,1],c='k')
+            #self.ax.scatter(xye[list_pin_nbool,0],xye[list_pin_nbool,1],c='darkviolet')
+            self.ax.scatter(xye[:,0],xye[:,1],c='k')
+            #self.ax.scatter(traps[:,0],traps[:,1],c='r',marker = 'x',zorder=3)
+            self.ax.set_title('displacement field ')#+'index:'+str(self.simu_index)
+            self.ax.set_xlabel('x'+x_unit)
+            self.ax.set_ylabel('y'+x_unit)
+            self.ax.set_aspect('equal','box')
+
             if not png_filename is None:
                 plt.savefig(png_filename)
             plt.close()
@@ -3652,7 +3429,6 @@ class dynamical_facilitation_module:
             cb[:,1] = _count
             np.savetxt(txt_filename,cb)
 
-
     def get_facilitation_waiting_time_distributions_0(self,search_nb,reference_occupation,prefix=None):#[x]
         R"""
         flopping simultaneously (coarse grained step) is counted in waiting time
@@ -3752,7 +3528,39 @@ class dynamical_facilitation_module:
         self.bond_length[:,0:2]=self.voronoi.ridge_points
         self.bond_length[:,2]=self.bond_length_temp.diagonal()
         """
-    
+    def get_pin_bool(self,reference_positions,txyz,result_prefix=None,r_trap=1):
+        R"""
+        Input: 
+            reference_positions: (Ntrap,2)[x,y]
+            txyz:(Nframe,Nparticle,2)[x,y]
+        Output: 
+            reference_occupation: save .npy file recording list_reference_occupation
+                (Nframe,Nparticle)[bool] means particle_id at frame_i is pinned or not.
+        Variables:
+            bond_length_temp: (Nframe,Nparticle,)[frame:int, reference_point: int, occupied:bool]        
+
+        example:
+            
+        """
+        txy = txyz[:,:,:2]
+        reference_positions = reference_positions[:,:2]
+        sz_txy = np.shape(txy)
+        sz_ref = np.shape(reference_positions)
+        list_pin_bool = np.zeros((sz_txy[0],sz_txy[1]))
+        for frame in range(sz_txy[0]):
+            xy = txy[frame]
+            bond_length_temp = distance.cdist(reference_positions,xy,'euclidean')
+            bond_length_sort = np.sort(bond_length_temp,axis=0)
+            #print(self.bond_length_temp)
+            list_pin_bool_1 = bond_length_sort[0]<r_trap# 0 for free; 1 for pin
+            #print(ref_dis)
+            list_pin_bool[frame] = list_pin_bool_1
+        print('size of list_reference_occupation:')
+        print(np.shape(list_pin_bool))
+        if not result_prefix is None:
+            result_filename = result_prefix+'t_pin_bool'
+            np.save(result_filename,list_pin_bool)
+
     def plot_reference_occupation(self,reference_positions,reference_occupation,prefix=None):
         sz = np.shape(reference_occupation)
         for frame in range(sz[0]):
