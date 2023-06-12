@@ -1,10 +1,58 @@
 # library_for_pin_depin
 ## description:
 - this is just a library for me to record the codes used to finish my Ph.D project.
-- the repository has a series of workflows to operate hoomd-blue; 
-- and has a library to proceed trajectories of particles in 2D and get their structural or dynamic properties
+- the repository has a series of workflows to operate HOOMD-blue; 
+- and has a library to proceed trajectories of particles in 2D and get their structural or kinetic properties
+## file structure:
+- this library contains four parts: HOOMD-blue simulation module, data management module, data analysis module and application scripts. 
+- the filenames are listed as follows.
+- HOOMD-blue simulation module:
+	all files in symmetry_transformation.
+- data management module:
+	opertateOnMysql,
+	proceed_file.
+- data analysis module:
+	points_analysis_2D,
+	particle_tracking.
+- application scripts:
+	workflow_part,
+	workflow_analysis,
+	data_analysis_cycle,
+	getDataAndDiagram,
+	and others.
 
 ## log:
+- 20230610 add showTables in opertateOnMysql
+- 20230609 add select_content in opertateOnMysql.getDataFromMysql
+			add workflow_mysql_to_data_pin_hex_to_honeycomb_klt_2m_random in getDataAndDiagram
+- 20230605 add dis_edge_cut in static_points_analysis_2d.__cut_edge_of_positions
+			add dis_edge_cut in data_analysis_cycle.saveIndexCN346PCairoSeed
+			add createTableInMysql in opertateOnMysql
+- 20230603 add plot_diagram_value in getDataAndScatter
+			rename getDataAndScatter as getDataAndDiagram
+- 20230602 add data_decorating in workflow_analysis.compare_diagram_dynamics.
+- 20230526 edit plot_polygon_bond_xylim in workflow_analysis.show_polygon_dye
+			rename show_tuned_image as show_bond_image
+- 20230525 edit trajectory_coarse_grain_single_particle in workflow_analysis.show_waiting_time_interstitial_motion
+			add trajectory_module in points_analysis_2d
+			edit get_points_plot_loop in workflow_analysis.show_polygon_dye
+- 20230523 add self.image in particle_tracking.particle_track.single_frame_particle_tracking 
+			add file_name parameters in workflow_analysis.draw_tuned_image
+			add axis_limit in particle_tracking.particle_track.single_frame_particle_tracking
+- 20230519 add "ridge_length_method" in 
+			points_analysis_2d.static_points_analysis_2d.get_coordination_number_conditional
+- 20230517 add first_two_peak_group_method in 
+			points_analysis_2d.static_points_analysis_2d.get_first_minima_bond_length_distribution
+			edit "global_compare_method" to fix bug in 4323_8_2000
+- 20230517 add compare_diagram_dynamics.plot_h_hp_cn3_scan_k_fast
+		    add compare_diagram_dynamics.get_data_cn3_scan_k_fast
+- 20230516 simu is forced to stop 
+- 20230515 add compare_diagram_dynamics.plot_cn3_scan_k_fast(rename as plot_hp_cn3_scan_k_fast)
+		    add compare_diagram_dynamics.plot_honey_cn3_scan_k
+- 20230511 add compare_diagram_dynamics.plot_cn3_scan_lcr
+- 20230510 add compare_diagram.
+- 20230508 add workflow_analysis.compare_diagram
+	   edit test_cuda.comapre_speed_cpu_vs_gpu
 - 20230504 add file_for_CUDA.test_cuda
 - 20230424 edit workflow_analysis.show_disp_field.get_bicolor_disp.
 - 20230423 add workflow_part.saveIndexCN346PCairoSeed. 

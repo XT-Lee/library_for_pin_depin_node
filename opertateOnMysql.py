@@ -1,5 +1,4 @@
 import numpy as np
-from numpy.lib.function_base import select
 import pymysql
 def introduction():
     R"""
@@ -11,6 +10,29 @@ def introduction():
         https://zhuanlan.zhihu.com/p/51553625
     """
     pass
+
+def createTableInMysql(new_table_name,param_name_data_type=None,old_table_name=None):
+    R"""
+    DATA_TYPE:    (<param_name1> <data_type1>,<param_name2> <data_type2>) 
+    """
+    mysql_conn = connectToMysql()
+
+    if not param_name_data_type is None:
+        sql = 'create table '+new_table_name+'( '+param_name_data_type+');'
+    elif not old_table_name is None:
+        sql = 'create table '+new_table_name+' like '+old_table_name+';'
+        #create table xxx like pin_hex_to_cairo_egct2lcra;
+
+    try:
+        with mysql_conn.cursor() as cursor:
+            cursor.execute(sql)
+        mysql_conn.commit()
+    except Exception as e:
+        print(e)
+        mysql_conn.rollback()
+
+    mysql_conn.close()
+
 def loadDataToMysql(path_to_file_name,table_name):
     R"""
     Examples:
@@ -44,7 +66,7 @@ def loadDataToMysql(path_to_file_name,table_name):
 
     mysql_conn.close()
 
-def getDataFromMysql(path_to_save_file=None,table_name='',search_condition='',):
+def getDataFromMysql(path_to_save_file=None,table_name='',search_condition='',select_content='*'):
     R"""
     Examples:
         data = operateOnMysql.getDataFromMysql(
@@ -55,7 +77,24 @@ def getDataFromMysql(path_to_save_file=None,table_name='',search_condition='',):
     
     mysql_conn = connectToMysql()
 
-    sql = 'select * from '+table_name+' '+search_condition+';'#where column_name = xx
+    sql = 'select '+select_content+' from '+table_name+' '+search_condition+';'#where column_name = xx
+    try:
+        with mysql_conn.cursor() as cursor:
+            cursor.execute(sql)
+        select_result = cursor.fetchall()
+        #np.savetxt(path_to_save_file,select_result)
+        return select_result
+    except Exception as e:
+        print(e)
+        
+        mysql_conn.rollback()
+
+    mysql_conn.close()
+
+def showTables(search_condition=''):
+    mysql_conn = connectToMysql()
+
+    sql = 'show tables'+search_condition+';'
     try:
         with mysql_conn.cursor() as cursor:
             cursor.execute(sql)
