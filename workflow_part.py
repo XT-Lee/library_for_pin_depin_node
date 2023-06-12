@@ -1280,7 +1280,7 @@ def workflow_simu_to_mysql_depin_from_kagome_part_oop_kt(index1,lcr=0.866,kT=1.0
     
     #step5
     #watch kT limitation while cooling
-    import getDataAndScatter as scatt
+    import getDataAndDiagram as scatt
     scatt.workflow_mysql_to_data_depin_from_kagome_part_klt()
     """
     import data_analysis_cycle as da
@@ -2430,11 +2430,11 @@ def workflow_simu_to_mysql_pin_hex_to_cairo_egct(index1,lcr,seed=9):#[x]
             lcr1=lcr1+0.01
             """
     #set parameters
-    table_name = "pin_hex_to_cairo_egct"
+    table_name = "pin_hex_to_cairo_egct2lcra"
 
-    k1=0.0#100.0
-    stp=10.0#100.0
-    kend=90.0#1000.0
+    k1=100.0#0.0#
+    stp=100.0#10.0#
+    kend=1000.0#90.0#
     #get simulation results
     #import symmetry_transformation.symmetry_transformation_auto_cairo_pin as sa_c
     #end_index=sa_c.workflow(index1=index1,k1=k1,step=stp,k_end=kend,linear_compression_ratio=lcr,seed_set=seed)
@@ -2449,7 +2449,7 @@ def workflow_simu_to_mysql_pin_hex_to_cairo_egct(index1,lcr,seed=9):#[x]
     
     #loadDataToMysql
     R"""
-    Note: the format of table_name='pin_hex_to_cairo'
+    Note: the format of table_name='pin_hex_to_cairo_egct2lcra'
         [ simu_index | HarmonicK | LinearCompressionRatio | 
         CoordinationNum3Rate | CoordinationNum4Rate | 
         CoordinationNum6Rate | PCairo | RandomSeed ]

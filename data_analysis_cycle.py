@@ -261,7 +261,8 @@ def saveIndexCN346PCairoSeed(start_index,end_index,k1,step,linear_compression_ra
 
     for index in numpy.linspace(start_index,end_index,diference_index):
         data_filename=prefix+'index'+str(index.astype(int))
-        obj_of_simu_index = pa.static_points_analysis_2d(filename=data_filename)
+        dis_egct = 2*linear_compression_ratio*3*1.01
+        obj_of_simu_index = pa.static_points_analysis_2d(filename=data_filename,dis_edge_cut=dis_egct)
         
         
         record[(index-start_index).astype(int),0]=index
@@ -1387,9 +1388,93 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
         #plt.show()
         plt.savefig(png_filename)
         record_filename = prefix +'T_VS_CN_k_cut'+'index'+str_index+'.txt'
-        numpy.savetxt(record_filename,record_cn)
+        numpy.save(record_filename,record_cn)#numpy.savetxt(record_filename,record_cn)
         plt.close()
 
+def save_from_gsd_to_cn3(simu_index=None,seed=None,frame_cut=0,
+                    final_cut=False,
+                    coordination_number=False,lattice_constant=3,
+                    account='tplab'):
+    R"""
+    Introduction:
+        Read a gsd file and save a series of analyzed results as follow.
+        coordination_number:
+    Format:
+        [Psi_3_global,Psi_6_global]
+
+    example:
+       
+    """
+    prefix='/home/'+account+'/Downloads/'#'/home/tplab/Downloads/'
+    log_prefix='/home/'+account+'/hoomd-examples_0/'#'/home/tplab/hoomd-examples_0/'
+    #load time steps
+    if seed is None:
+        str_index=str(int(simu_index))
+        gsd_data = pf.proceed_gsd_file(simu_index=simu_index)
+    else:
+        str_index=str(int(simu_index))+'_'+str(seed)
+        file_gsd = log_prefix+'trajectory_auto'+str_index+'.gsd'#+'_'+str(seed)
+        gsd_data = pf.proceed_gsd_file(filename_gsd_seed=file_gsd,account=account)
+        
+    file_log=log_prefix+'log-output_auto'+str_index+'.log'#+'_'+str(seed)
+    log_data = numpy.genfromtxt(fname=file_log, skip_header=True)
+    time_steps = log_data[:,0]
+
+    for i in range(gsd_data.num_of_frames):
+        if final_cut:
+            i = gsd_data.num_of_frames-1#i=9#!!! 23
+        
+        a_frame = pa.static_points_analysis_2d(points=gsd_data.read_a_frame(i))#hide_figure=False
+
+        if coordination_number:
+            R"""
+            CN0 % should be 0 for all the particles must be linked by bond.
+            CN1 % is likely to be edge?
+            CN2 % in body(edge-cutted) shows the mechanical unstability
+            CN3 % shows the proportion of honeycomb.
+            CN4 % shows the proportion of kagome.
+            CN6 % shows the proportion of hexagonal.
+            CN5/7 % shows the proportion of disclination.
+            """
+            #print('index '+str(i))
+            #print(snap.particles.position[137])
+            a_frame.get_coordination_number_conditional(lattice_constant=lattice_constant)#cut edge to remove CN012
+            ccn = a_frame.count_coordination_ratio#[time_steps,psi3,psi6]
+            ccn = numpy.transpose(ccn)
+            if not "record_cn" in locals():#check if the variable exists
+                #load CN_k s
+                record_cn = numpy.zeros((gsd_data.num_of_frames,numpy.shape(ccn)[1]+1))
+                record_cn[:,0] = time_steps#range(10)##gsd frame is different from log frame for period set 100 vs 2e3
+            #print(numpy.shape(ccn)[1])
+            record_cn[i,1:numpy.shape(ccn)[1]+1] = ccn#[0:numpy.shape(ccn)[1]-1]
+        
+        
+        if final_cut:
+            break
+    
+    """
+    #plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,1],label='CN_0')
+    #plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,2],label='CN_1')
+    #plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,3],label='CN_2')
+    plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,4],label='CN_3')
+    plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,5],label='CN_4')
+    plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,6],label='CN_5')
+    plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,7],label='CN_6')
+    plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,8],label='CN_7')
+    #plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,9],label='CN_8')
+    #plt.plot(record_cn[0:frame_cut,0],record_cn[0:frame_cut,-1],label='CN_9')
+    png_filename = prefix +'T_VS_CN_k_tcut'+'index'+str_index+'egcut'+'.png'
+    plt.legend()
+    plt.title('CN_k '+'index:'+str_index)
+    plt.xlabel('time(steps)')
+    plt.ylabel('CN_k(1)')
+    #plt.show()
+    plt.savefig(png_filename)
+    plt.close()
+    """
+    record_filename = prefix +'T_VS_CN_k_cut'+'index'+str_index+'.npy'
+    numpy.save(record_filename,record_cn)#numpy.savetxt(record_filename,record_cn)
+    return record_filename
 
 class data_analysis_workflow:
     R"""
@@ -1479,6 +1564,35 @@ class data_analysis_workflow:
         """
         pass
     
+    def get_info_from_mysql_bond(self,account='remote'):
+        import opertateOnMysql as osql
+        import numpy as np
+        import points_analysis_2D as pa
+        list_tbname = osql.showTables(' like \'pin%\'')#_hex_to_honeycomb_klt_2m
+        #print()
+        tb = np.array(list_tbname[5],dtype=str) 
+        con = 'where HarmonicK = 60 and RandomSeed = 9'#HarmonicK = 600,36,60
+        cont = 'SimuIndex, RandomSeed, LinearCompressionRatio '
+        data = osql.getDataFromMysql(table_name=tb[0],search_condition=con,select_content=cont)
+        list_index_lcr = np.array(data,dtype=str) 
+        list_index_seed = np.char.add('_',list_index_lcr[:,1])#list_index[:,0],
+        list_index_seed = np.char.add(list_index_lcr[:,0],list_index_seed)
+        #list_index_seed = np.char.add(list_index_seed,'.txt')
+        tfn = '/home/'+account+'/hoomd-examples_0/'+'testhoneycomb3-8-12'
+        xu='(1)'
+        prefix = '/home/'+account+'/Downloads/'
+        for i in range(len(list_index_seed)):
+            str_filename = 'index'+list_index_seed[i]
+            lcr = list_index_lcr[i,2].astype(float)
+            fn = prefix+str_filename#+'.txt'
+            png = prefix+str_filename+'.png'
+            spa = pa.static_points_analysis_2d(filename=fn)
+            spa.get_first_minima_bond_length_distribution()
+            spa.draw_bonds_conditional_bond_oop(check=[1,spa.bond_first_minima_left],png_filename=png,
+                        x_unit=xu,LinearCompressionRatio=lcr,trap_filename=tfn)
+        #print(list_index_seed)
+
+
     def gsd_to_txyz(self,account='remote',simu_index=0,seed=9,io_only=False):
         R"""
         input:

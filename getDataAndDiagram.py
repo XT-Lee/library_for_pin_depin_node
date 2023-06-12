@@ -2,9 +2,7 @@ import matplotlib
 from matplotlib.colors import LinearSegmentedColormap, ListedColormap
 import matplotlib.pyplot as plt
 import numpy as np
-from numpy.core.fromnumeric import mean, var
-from numpy.lib import average
-import opertateOnMysql as sql
+import opertateOnMysql as osql
 from points_analysis_2D import static_points_analysis_2d
 import freud
 R"""
@@ -30,7 +28,7 @@ def workflow_mysql_to_data_pin_hex_to_honeycomb():
     simu_index | HarmonicK | LinearCompressionRatio | Psi3Global | Psi3Ratio
     """
     U_interaction=300*np.exp(-0.25)
-    points=sql.getDataFromMysql(table_name="pin_hex_to_honeycomb",search_condition="where LinearCompressionRatio < 0.855")
+    points=osql.getDataFromMysql(table_name="pin_hex_to_honeycomb",search_condition="where LinearCompressionRatio < 0.855")
     points=np.asarray(points)
 
     plt.figure()
@@ -213,6 +211,87 @@ def workflow_mysql_to_data_pin_hex_to_honeycomb_klt_2m(account='tplab'):
     png_filename=prefix+'K_VS_T_Psi3_as_value'+postfix
     plt.savefig(png_filename)
     plt.close()
+
+def workflow_mysql_to_data_pin_hex_to_honeycomb_klt_2m_random(account='tplab'):
+    R"""
+
+    Note: the format of table_name='pin_hex_to_honeycomb_klt_2m'
+    | SimuIndex | HarmonicK | LinearCompressionRatio | kT | 
+    Psi3     | Psi6     | RandomSeed | 
+    
+    FIGURE scatter  HarmonicK vs KBT, Psi6 as value 
+
+    import getDataAndScatter as scatt
+    scatt.workflow_mysql_to_data_pin_hex_to_honeycomb_klt_2m()
+
+    select distinct LinearCompressionRatio, HarmonicK
+    from pin_hex_to_honeycomb_klt_2m 
+    where SimuIndex<4686 
+    order by SimuIndex, RandomSeed asc;
+    """
+    #import matplotlib.pyplot as plt
+    import numpy as np
+    #getDataToMysql
+    import opertateOnMysql as osql
+    U_interaction=300*np.exp(-0.25)
+
+    cont='distinct LinearCompressionRatio'
+    con='where SimuIndex<4686 order by LinearCompressionRatio asc'
+    lcrs=osql.getDataFromMysql(table_name='pin_hex_to_honeycomb_klt_2m',
+                                search_condition=con,select_content=cont)
+    #data=np.array(data)
+
+    cont='distinct HarmonicK'
+    con='where SimuIndex<4686 order by HarmonicK asc'
+    ks=osql.getDataFromMysql(table_name='pin_hex_to_honeycomb_klt_2m',
+                                search_condition=con,select_content=cont)
+
+    record_lk3 = np.zeros((len(lcrs)*len(ks),3))
+    cont='distinct LinearCompressionRatio,HarmonicK'
+    con='where SimuIndex<4686 order by LinearCompressionRatio,HarmonicK asc'
+    lks=osql.getDataFromMysql(table_name='pin_hex_to_honeycomb_klt_2m',
+                                search_condition=con,select_content=cont)
+    record_lk3[:,0:2]=np.array(lks)   
+
+    count = 0
+    cont='avg(Psi3)'
+    lcr_step=0.01 
+    for lcr in lcrs:
+        for k in ks:
+            lcr1 = np.array(lcr)
+            lcr_min=lcr1 - 0.5*lcr_step
+            lcr_max=lcr1 + 0.5*lcr_step
+            con='where SimuIndex<4686 and HarmonicK='+str(int(k[0]))+\
+                ' and LinearCompressionRatio >'+str(lcr_min[0])+' and LinearCompressionRatio <'+str(lcr_max[0])
+            psi3_avg=osql.getDataFromMysql(table_name='pin_hex_to_honeycomb_klt_2m',
+                                search_condition=con,select_content=cont)
+            psi3 = np.array(psi3_avg)                    
+            record_lk3[count,2] = psi3[0]
+            count = count + 1
+    
+    #data = record_lk3
+    mp = mysql_data_processor()
+    title = 'lcr VS k, Psi3 as value'#, Uparticle='+str(int(U_interaction))
+    xname = 'LinearCompressionRatio(1)'
+    yname = 'U trap ($k_BT$)[honeycomb]'
+    prefix='/home/'+account+'/Downloads/'
+    postfix = '_pin_hex_to_honeycomb_klt_2m_random.png'
+    record_lk3[:,1] = 0.5*record_lk3[:,1]# k -> Utrap(kT)
+    mp.draw_diagram_scatter(record_lk3,title,xname,yname,prefix,postfix)
+    """
+    plt.figure()
+    #plot lcr VS k, Psi3 as value
+    plt.scatter(data[:,2],data[:,1]*0.5,c=data[:,4])# LCR VS K, Psi3 as value
+    #plt.show()
+    plt.title('lcr VS k, Psi3 as value, Uparticle='+str(int(U_interaction)) )
+    plt.xlabel('LinearCompressionRatio(1)')
+    plt.ylabel('U trap (kBT)[honeycomb]')
+    plt.colorbar()
+    png_filename=prefix+'K_VS_T_Psi3_as_value'+postfix
+    plt.savefig(png_filename)
+    plt.close()
+    """
+    
 
 def workflow_mysql_to_data_depin_from_honeycomb():
     R"""
@@ -1808,7 +1887,7 @@ def workflow_mysql_to_data_pin_hex_to_kagome_part():
     scatt.workflow_mysql_to_data_pin_hex_to_kagome_part()
     """
     U_interaction=300*np.exp(-0.25)
-    points=sql.getDataFromMysql(table_name="pin_hex_to_kagome_part_repeat")#,search_condition="where LinearCompressionRatio < 0.855"
+    points=osql.getDataFromMysql(table_name="pin_hex_to_kagome_part_repeat")#,search_condition="where LinearCompressionRatio < 0.855"
     points=np.asarray(points)
 
     plt.figure()
@@ -1982,7 +2061,7 @@ def workflow_mysql_to_data_pin_hex_to_kagome_part_random():
             cond1=' where HarmonicK >'+str(kset-0.5*k_step)+' and HarmonicK <'+str(kset+0.5*k_step)
             lcrset=lcr1+(j-1)*lcr_step
             cond2=' and LinearCompressionRatio > '+str(lcrset-lcr_step*0.5)+' and LinearCompressionRatio <'+str(lcrset+lcr_step*0.5)
-            data=sql.getDataFromMysql(table_name='pin_hex_to_kagome_part_repeat',search_condition=cond1+cond2)
+            data=osql.getDataFromMysql(table_name='pin_hex_to_kagome_part_repeat',search_condition=cond1+cond2)
             data=np.array(data)
             m4=np.mean(data[:,3])
             std4=np.std(data[:,3])
@@ -2231,7 +2310,7 @@ def workflow_mysql_to_data_pin_hex_to_cairo():
     """
     #control table
     trap_name = 'cairo'
-    table_name = "pin_hex_to_cairo"
+    table_name = "pin_hex_to_cairo_egct" #"pin_hex_to_cairo"
     result_prefix='/home/tplab/Downloads/'
     save_data_txt = True
     if save_data_txt:
@@ -2284,17 +2363,68 @@ def workflow_mysql_to_data_pin_hex_to_cairo():
     ylabel_name = 'U trap (kBT)['+trap_name+']'
     
     #plot LCR VS K, CN3 as value
-    plot_value_and_std\
+    plot_diagram_value_and_std\
         (data[:,1],data[:,0],data[:,2],data[:,2],
         'CN3',U_interaction,result_prefix,table_name,ylabel_name)
     #plot LCR VS K, CN4 as value
-    plot_value_and_std\
+    plot_diagram_value_and_std\
         (data[:,1],data[:,0],data[:,3],data[:,3],
         'CN4',U_interaction,result_prefix,table_name,ylabel_name)
     #plot LCR VS K, CN6 as value
-    plot_value_and_std\
+    plot_diagram_value_and_std\
         (data[:,1],data[:,0],data[:,4],data[:,4],
         'CN6',U_interaction,result_prefix,table_name,ylabel_name)
+
+def workflow_mysql_to_data_pin_hex_to_cairo_egct(account='tplab'):
+    R"""
+    Introduction:
+    table_name='pin_hex_to_cairo'
+        Simu_Index | HarmonicK | LinearCompressionRatio | 
+        CoordinationNum3Rate | CoordinationNum4Rate | 
+        CoordinationNum6Rate |RandomSeed |
+    
+    FIGURE scatter  LinearCompressionRatio vs U_trap, PCairo as value 
+    
+    Example:
+    import getDataAndDiagram as scatt
+    scatt.workflow_mysql_to_data_pin_hex_to_cairo_egct()
+
+    """
+    #control table
+    trap_name = 'cairo'
+    table_name = "pin_hex_to_cairo_egct2lcra" #"pin_hex_to_cairo"
+    result_prefix='/home/'+account+'/Downloads/'
+    save_data_txt = False
+    if save_data_txt:
+        data_file_name = "cairo_diagram_1_accurate"
+        save_file_name=result_prefix+data_file_name
+
+    #getDataToMysql
+    import opertateOnMysql as osql
+    U_interaction = 300*np.exp(-0.25)
+    U_interaction = str(int(U_interaction))
+
+    cond1=' where HarmonicK>99 '#  < 101
+    cond2=' and RandomSeed > 8.5'
+    search_condition=cond1+cond2
+    data=osql.getDataFromMysql(table_name=table_name,search_condition=search_condition)
+    data=np.array(data)
+    #| SimuIndex | HarmonicK | LinearCompressionRatio | CoordinationNum3Rate | 
+    # CoordinationNum4Rate | CoordinationNum6Rate | PCairo   | RandomSeed |
+    data=data[:,1:7]
+
+
+    #save data
+    if save_data_txt:
+        np.savetxt(save_file_name,data)
+
+    #plot
+    ylabel_name = 'U trap (kBT)['+trap_name+']'
+    
+    #plot LCR VS K, PCairo as value
+    plot_diagram_value\
+        (data[:,1],data[:,0],data[:,5],
+        'PCairo',U_interaction,result_prefix,table_name,ylabel_name)
 
 def workflow_mysql_to_data_pin_hex_to_cairo_random():#[x]
     R"""
@@ -2379,20 +2509,19 @@ def workflow_mysql_to_data_pin_hex_to_cairo_random():#[x]
     ylabel_name = 'U trap (kBT)['+trap_name+']'
     
     #plot LCR VS K, CN3 as value
-    plot_value_and_std\
+    plot_diagram_value_and_std\
         (data[:,0],data[:,1],data[:,2],data[:,3],
         'CN3',U_interaction,result_prefix,table_name,ylabel_name)
     #plot LCR VS K, CN4 as value
-    plot_value_and_std\
+    plot_diagram_value_and_std\
         (data[:,0],data[:,1],data[:,4],data[:,5],
         'CN4',U_interaction,result_prefix,table_name,ylabel_name)
     #plot LCR VS K, CN6 as value
-    plot_value_and_std\
+    plot_diagram_value_and_std\
         (data[:,0],data[:,1],data[:,6],data[:,7],
         'CN6',U_interaction,result_prefix,table_name,ylabel_name)
     
-
-def plot_value_and_std(dx,dy,dv,dstd,value_name,U_interaction,result_prefix,table_name,ylabel_name):
+def plot_diagram_value_and_std(dx,dy,dv,dstd,value_name,U_interaction,result_prefix,table_name,ylabel_name):
     postfix = ', Uparticle='
     title1 = 'LCR VS K, '+value_name+' as value'
     title2 = 'LCR VS K, '+value_name+'std as value'
@@ -2417,6 +2546,21 @@ def plot_value_and_std(dx,dy,dv,dstd,value_name,U_interaction,result_prefix,tabl
     plt.ylabel(ylabel_name)
     plt.colorbar()
     png_filename=result_prefix+title2+'_'+table_name+'_random'
+    plt.savefig(png_filename)
+    plt.close()
+
+def plot_diagram_value(dx,dy,dv,value_name,U_interaction,result_prefix,table_name,ylabel_name):
+    postfix = ', Uparticle='
+    title1 = 'LCR VS K, '+value_name+' as value'
+    plt.figure()
+    #plot LCR VS K, Data as value
+    plt.scatter(dx,dy*0.5,c=dv)# LCR VS K, Data as value
+    #plt.show()
+    plt.title(title1+postfix+U_interaction )
+    plt.xlabel('Linear Compression Ratio (1)')
+    plt.ylabel(ylabel_name)
+    plt.colorbar()
+    png_filename=result_prefix+title1+'_'+table_name
     plt.savefig(png_filename)
     plt.close()
 

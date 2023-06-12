@@ -18,6 +18,12 @@ class comapre_speed_cpu_vs_gpu:
     for RTX 2080,
     operate n row random matrixmultiply(matmul), O(n)~n^3,
     when row<<3k, cpu is faster;row>>3k, gpu faster 
+
+    exp:
+        import file_for_CUDA.test_cuda as tc
+        tcc = tc.comapre_speed_cpu_vs_gpu()
+        t1,t2,r2 = tcc.calculate_cpu(tcc.rm1)
+        t1,t2,r2c = tcc.calculate_gpu(tcc.rm1)
     """
     def __init__(self):
         lengt = 3000#

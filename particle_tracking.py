@@ -141,7 +141,7 @@ class particle_track:
     def __init__(self):
         pass
     
-    def single_frame_particle_tracking(self,filename,D=11,minmass=500,calibration=False):
+    def single_frame_particle_tracking(self,filename,D=11,minmass=500,calibration=False,axis_limit=None):
         R"""
         instruction:
             D should be the the diameter of dark ring of the smallest particle in image.
@@ -155,6 +155,9 @@ class particle_track:
                 size means the radius of gyration of its Gaussian-like profile,
                 ecc is its eccentricity (0 is circular),
                 and raw_mass is the total integrated brightness in raw_image.
+            
+            axis_limit should be a list of 4 ints [xmin,xmax,ymin,ymax] 
+                to limit the region(pixel as unit)of image to recognize particles.
                 
         example:
             import particle_tracking as pt
@@ -164,12 +167,16 @@ class particle_track:
             track.multiple_particle_tracking(filename) 
         """
         f0 = plt.imread(filename)
-        f0 = f0[:,:,0]#3 channel to 1 channel
-        sz=np.shape(f0)
+        if axis_limit is None:
+            f1 = f0[:,:,0]#3 channel to 1 channel
+        else:
+            lm = axis_limit
+            f1 = f0[lm[0]:lm[1],lm[2]:lm[3],0]
+        sz=np.shape(f1)
         #print(sz)
         #plt.imshow(frames[0])
         #diameter of particles should includes dark ring!
-        self.f = tp.locate(f0, D, minmass= minmass,invert=False,separation=0.9*D)#diameter must be odd in pixels
+        self.f = tp.locate(f1, D, minmass= minmass,invert=False,separation=0.9*D)#diameter must be odd in pixels
         #f is feature.
         #collumn name: y 	x 	mass 	size 	ecc 	signal 	raw_mass 	ep 	frame
         if calibration:
@@ -190,7 +197,7 @@ class particle_track:
             #sf2=sf[sf['mass'] < 3000]
 
             plt.figure(3)
-            tp.annotate(self.f, f0)#,imshow_style=
+            tp.annotate(self.f, f1)#,imshow_style=
             #plt.imsave(png_filename)#savefig(png_filename)   miss array
             #plt.close()
         """
@@ -207,6 +214,12 @@ class particle_track:
         self.xy = np.array(self.f[['x','y']])# unit: pixel
         self.Diameter = D
         self.minmass = minmass
+        if axis_limit is None:
+            self.image = f0
+        else:
+            lm = axis_limit
+            self.image = f0[lm[0]:lm[1],lm[2]:lm[3],:]
+            
 
     def folder_frames_particle_tracking(self,dir_path,Diameter=19, minmass=1000,feature_filename='feature.csv'):
         R"""
