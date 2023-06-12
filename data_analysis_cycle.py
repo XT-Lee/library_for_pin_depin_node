@@ -1,5 +1,3 @@
-from audioop import add
-from fileinput import filename
 import points_analysis_2D as pa
 import numpy 
 import matplotlib.pyplot as plt

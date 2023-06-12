@@ -2,8 +2,6 @@ import matplotlib
 from matplotlib.colors import LinearSegmentedColormap, ListedColormap
 import matplotlib.pyplot as plt
 import numpy as np
-from numpy.core.fromnumeric import mean, var
-from numpy.lib import average
 import opertateOnMysql as osql
 from points_analysis_2D import static_points_analysis_2d
 import freud
