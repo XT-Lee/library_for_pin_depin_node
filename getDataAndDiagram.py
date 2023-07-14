@@ -1,3 +1,4 @@
+import math
 import matplotlib
 from matplotlib.colors import LinearSegmentedColormap, ListedColormap
 import matplotlib.pyplot as plt
@@ -292,7 +293,6 @@ def workflow_mysql_to_data_pin_hex_to_honeycomb_klt_2m_random(account='tplab'):
     plt.close()
     """
     
-
 def workflow_mysql_to_data_depin_from_honeycomb():
     R"""
     table_name='depin_from_honeycomb'
@@ -351,6 +351,134 @@ def workflow_mysql_to_data_depin_from_honeycomb():
     plt.savefig(png_filename)
     plt.close()
     '''
+
+def workflow_mysql_to_data_pin_hex_to_honeycomb_klt_2m_random_mark(account='tplab'):
+    R"""
+    Note: the format of table_name=
+    'pin_hex_to_honeycomb_klt_2m'
+    | SimuIndex | HarmonicK | LinearCompressionRatio | kT | 
+    Psi3 | Psi6 | RandomSeed | 
+
+    'depin_from_honeycomb_part1'
+    | simu_index | HarmonicK | LinearCompressionRatio | 
+    Psi3Global | Psi6Global | RandomSeed |
+    
+    https://matplotlib.org/stable/api/markers_api.html#module-matplotlib.markers
+    "H" <_> hexagon2
+    "^"     triangle_up
+    "v"     triangle_down
+    "d" v^  thin_diamond
+    example:
+    """
+    import numpy as np
+    #getDataToMysql
+    import opertateOnMysql as osql
+    #U_interaction=300*np.exp(-0.25)
+    table_name = 'pin_hex_to_honeycomb_klt_2m'
+
+    cont='distinct LinearCompressionRatio'
+    con=' order by LinearCompressionRatio asc'#where SimuIndex<4686
+    lcrs=osql.getDataFromMysql(table_name=table_name,
+                                search_condition=con,select_content=cont)
+
+    cont='distinct HarmonicK'
+    con=' order by HarmonicK asc'
+    ks=osql.getDataFromMysql(table_name=table_name,
+                                search_condition=con,select_content=cont)
+
+    cont='distinct LinearCompressionRatio,HarmonicK'
+    con=' order by LinearCompressionRatio,HarmonicK asc'
+    lks=osql.getDataFromMysql(table_name=table_name,
+                                search_condition=con,select_content=cont)
+    record_lk36 = np.zeros((len(lks),4))#(lcr,k,psi3,psi6)
+    #record_lk36[:,0:2]=np.array(lks)   
+
+    count = 0
+    cont=' avg(Psi3),avg(Psi6) '
+    lcr_step=0.001 
+    for lcr in lcrs:
+        for k in ks:
+            lcr1 = np.array(lcr)
+            lcr_min=lcr1 - 0.5*lcr_step
+            lcr_max=lcr1 + 0.5*lcr_step
+            con=' where HarmonicK='+str(int(k[0]))+\
+                ' and LinearCompressionRatio >'+str(lcr_min[0])+' and LinearCompressionRatio <'+str(lcr_max[0])
+            psi36_avg=osql.getDataFromMysql(table_name=table_name,
+                                search_condition=con,select_content=cont)
+            psi36 = np.array(psi36_avg[0])
+            #print(math.isnan(psi36[0]))#(np.nan(psi36_avg[0])
+            if not psi36[0] is None:#math.isnan(psi36[0]):    
+                #if not (k[0]<101 and k[0]>97):   
+                #print(k)           
+                #record_lk36[count,2:] = psi36[0:2]
+                record_lk36[count,:] = [lcr[0],k[0],psi36[0],psi36[1]]
+                count = count + 1
+    record_lk36 = record_lk36[:count]
+    #data = record_lk3
+    
+    record_lk36[:,1] = 0.5*record_lk36[:,1]# k -> Utrap(kT)
+    return record_lk36
+    
+def workflow_mysql_to_data_depin_from_honeycomb_mark():
+    R"""
+    Note: the format of table_name=
+    'depin_from_honeycomb'
+    | simu_index | HarmonicK | LinearCompressionRatio | 
+    Psi3Global | Psi6Global | RandomSeed |
+    """
+    data=osql.getDataFromMysql(table_name='depin_from_honeycomb')#,search_condition=' where HarmonicK <100'
+    data=np.array(data)
+
+    p36=data[:,3]/data[:,4]
+    p36=np.log10(p36)
+
+    sz = np.shape(data)
+    record_lklg3 = np.zeros((sz[0],3))
+    record_lklg3[:,0] = data[:,2]#lcr
+    record_lklg3[:,1] = data[:,1]*0.5#k
+    record_lklg3[:,2] = p36
+    list_lg3 = record_lklg3[:,1] < 11#U(honeycomb pin stable)~10
+
+    return record_lklg3[list_lg3]
+
+def workflow_data_to_diagram_honeycomb_mark(account='tplab',save_mode="csv"):
+    R"""
+    Note: the format of table_name=
+    'pin_hex_to_honeycomb_klt_2m'
+    | SimuIndex | HarmonicK | LinearCompressionRatio | kT | 
+    Psi3 | Psi6 | RandomSeed | 
+
+    'depin_from_honeycomb'
+    | simu_index | HarmonicK | LinearCompressionRatio | 
+    Psi3Global | Psi6Global | RandomSeed |
+    
+    https://matplotlib.org/stable/api/markers_api.html#module-matplotlib.markers
+    "H" <_> hexagon2
+    "^"     triangle_up
+    "v"     triangle_down
+    "d" v^  thin_diamond
+    example:
+    """
+    fig_name = 'diagram_HC_mark'
+    record_lk36 = workflow_mysql_to_data_pin_hex_to_honeycomb_klt_2m_random_mark()
+    record_lklg3 = workflow_mysql_to_data_depin_from_honeycomb_mark()
+
+    mp = mysql_data_processor()
+    title = 'lcr VS k, Psi3 as value'#, Uparticle='+str(int(U_interaction))
+    xlabel_name = 'Linear Compression Ratio (1)'
+    ylabel_name = 'Usub ($k_BT$)[Honeycomb]'#[HC]
+    prefix='/home/'+account+'/Downloads/'
+    
+    if save_mode=="pdf":
+        postfix = '_'+fig_name+'.pdf'
+        fig,ax = mp.draw_diagram_scatter_mark_multi(record_lk36,title, xlabel_name,ylabel_name,prefix,postfix=None,oop_check=0.85)
+        mp.draw_diagram_scatter_mark_multi(record_lklg3,title, xlabel_name,ylabel_name,prefix,postfix,0.2,fig,ax,"depin")
+    
+    elif save_mode=="csv":
+        postfix = '_'+fig_name+'.csv'
+        df0 = mp.get_diagram_data_mark_multi(record_lk36,title, xlabel_name,ylabel_name,prefix,csv_postfix=None,oop_check=0.85)
+        mp.get_diagram_data_mark_multi(record_lklg3,title, xlabel_name,ylabel_name,prefix,postfix,0.2,"depin",df0)
+
 
 def workflow_mysql_to_data_depin_from_honeycomb_part1(num_to_zero=64):
     R"""
@@ -711,6 +839,134 @@ def workflow_mysql_to_data_pin_hex_to_honeycomb_part_klt_2m_random_oop(account='
     results = pr.record_to_results_for_scatter(record,1,0,5)
     pr.draw_diagram_scatter(results,title_name,xlabel_name,ylabel_name,prefix,postfix)
 
+def workflow_mysql_to_data_pin_hex_to_honeycomb_part_klt_2m_random_mark(account='tplab'):
+    R"""
+    Note: the format of table_name=
+    'pin_hex_to_honeycomb_part_klt_2m'
+    | SimuIndex | HarmonicK | LinearCompressionRatio | kT | 
+    Psi3 | Psi6 | RandomSeed | 
+
+    'depin_from_honeycomb_part1'
+    | simu_index | HarmonicK | LinearCompressionRatio | 
+    Psi3Global | Psi6Global | RandomSeed |
+    
+    https://matplotlib.org/stable/api/markers_api.html#module-matplotlib.markers
+    "H" <_> hexagon2
+    "^"     triangle_up
+    "v"     triangle_down
+    "d" v^  thin_diamond
+    example:
+    """
+    import numpy as np
+    #getDataToMysql
+    import opertateOnMysql as osql
+    #U_interaction=300*np.exp(-0.25)
+    table_name = 'pin_hex_to_honeycomb_part_klt_2m'
+
+    cont='distinct LinearCompressionRatio'
+    con=' order by LinearCompressionRatio asc'#where SimuIndex<4686
+    lcrs=osql.getDataFromMysql(table_name=table_name,
+                                search_condition=con,select_content=cont)
+
+    cont='distinct HarmonicK'
+    con=' order by HarmonicK asc'
+    ks=osql.getDataFromMysql(table_name=table_name,
+                                search_condition=con,select_content=cont)
+
+    cont='distinct LinearCompressionRatio,HarmonicK'
+    con=' order by LinearCompressionRatio,HarmonicK asc'
+    lks=osql.getDataFromMysql(table_name=table_name,
+                                search_condition=con,select_content=cont)
+    record_lk36 = np.zeros((len(lks),4))#(lcr,k,psi3,psi6)
+    #record_lk36[:,0:2]=np.array(lks)   
+
+    count = 0
+    cont=' avg(Psi3),avg(Psi6) '
+    lcr_step=0.001 
+    for lcr in lcrs:
+        for k in ks:
+            lcr1 = np.array(lcr)
+            lcr_min=lcr1 - 0.5*lcr_step
+            lcr_max=lcr1 + 0.5*lcr_step
+            con=' where HarmonicK='+str(int(k[0]))+\
+                ' and LinearCompressionRatio >'+str(lcr_min[0])+' and LinearCompressionRatio <'+str(lcr_max[0])
+            psi36_avg=osql.getDataFromMysql(table_name=table_name,
+                                search_condition=con,select_content=cont)
+            psi36 = np.array(psi36_avg[0])
+            #print(math.isnan(psi36[0]))#(np.nan(psi36_avg[0])
+            if not psi36[0] is None:#math.isnan(psi36[0]):    
+                if not (k[0]<101 and k[0]>97):   
+                    #print(k)           
+                    #record_lk36[count,2:] = psi36[0:2]
+                    record_lk36[count,:] = [lcr[0],k[0],psi36[0],psi36[1]]
+                    count = count + 1
+    record_lk36 = record_lk36[:count]
+    #data = record_lk3
+    
+    record_lk36[:,1] = 0.5*record_lk36[:,1]# k -> Utrap(kT)
+    return record_lk36
+    
+def workflow_mysql_to_data_depin_from_honeycomb_part1_mark():
+    R"""
+    Note: the format of table_name=
+    'depin_from_honeycomb_part1'
+    | simu_index | HarmonicK | LinearCompressionRatio | 
+    Psi3Global | Psi6Global | RandomSeed |
+    """
+    data=osql.getDataFromMysql(table_name='depin_from_honeycomb_part1')#,search_condition=' where HarmonicK <100'
+    data=np.array(data)
+
+    p36=data[:,3]/data[:,4]
+    p36=np.log10(p36)
+
+    sz = np.shape(data)
+    record_lklg3 = np.zeros((sz[0],3))
+    record_lklg3[:,0] = data[:,2]#lcr
+    record_lklg3[:,1] = data[:,1]*0.5#k
+    record_lklg3[:,2] = p36
+    list_lg3 = record_lklg3[:,1] < 31#U(honeycomb_part pin stable)~30
+
+    return record_lklg3[list_lg3]
+
+def workflow_data_to_diagram_honeycomb_part_mark(account='tplab',save_mode="csv"):
+    R"""
+    Note: the format of table_name=
+    'pin_hex_to_honeycomb_part_klt_2m'
+    | SimuIndex | HarmonicK | LinearCompressionRatio | kT | 
+    Psi3 | Psi6 | RandomSeed | 
+
+    'depin_from_honeycomb_part1'
+    | simu_index | HarmonicK | LinearCompressionRatio | 
+    Psi3Global | Psi6Global | RandomSeed |
+    
+    https://matplotlib.org/stable/api/markers_api.html#module-matplotlib.markers
+    "H" <_> hexagon2
+    "^"     triangle_up
+    "v"     triangle_down
+    "d" v^  thin_diamond
+    example:
+    """
+    fig_name = 'diagram_HCP_mark'
+    record_lk36 = workflow_mysql_to_data_pin_hex_to_honeycomb_part_klt_2m_random_mark()
+    record_lklg3 = workflow_mysql_to_data_depin_from_honeycomb_part1_mark()
+
+    mp = mysql_data_processor()
+    title = 'lcr VS k, Psi3 as value'#, Uparticle='+str(int(U_interaction))
+    xlabel_name = 'Linear Compression Ratio (1)'
+    ylabel_name = 'Usub ($k_BT$)[Honeycomb_part]'
+    prefix='/home/'+account+'/Downloads/'
+
+    if save_mode=="pdf":
+        postfix = '_'+fig_name+'.pdf'
+        fig,ax = mp.draw_diagram_scatter_mark_multi(record_lk36,title, xlabel_name,ylabel_name,prefix,postfix=None,oop_check=0.85)
+        mp.draw_diagram_scatter_mark_multi(record_lklg3,title, xlabel_name,ylabel_name,prefix,postfix,0.3,fig,ax,"depin")
+    
+    elif save_mode=="csv":
+        postfix = '_'+fig_name+'.csv'
+        df0 = mp.get_diagram_data_mark_multi(record_lk36,title, xlabel_name,ylabel_name,prefix,csv_postfix=None,oop_check=0.85)
+        mp.get_diagram_data_mark_multi(record_lklg3,title, xlabel_name,ylabel_name,prefix,postfix,0.3,"depin",df0)
+
+
 class mysql_data_processor:
     def __init__(self):
         pass
@@ -752,6 +1008,162 @@ class mysql_data_processor:
         png_filename=prefix+title_name+postfix
         plt.savefig(png_filename)
         plt.close()
+    
+    def draw_diagram_scatter_oop(self,data,title_name,xlabel_name,ylabel_name,prefix,postfix):
+        fig,ax = plt.subplots()
+        ax.scatter(data[:,0],data[:,1],c=data[:,2])
+        #plt.show()
+        ax.set_title(title_name)
+        ax.set_xlabel(xlabel_name)
+        ax.set_ylabel(ylabel_name)
+        #ax.set_yscale('log')
+        #ax.set_xlim(xlim)
+        ax.set_ylim([0,300])
+        from matplotlib import cm
+        from matplotlib.colors import Normalize as nm
+        vmin = np.min(data[:,2])
+        vmax = np.max(data[:,2])
+        #print(vmin,vmax)
+        nmm = nm(vmin=vmin,vmax=vmax)
+        #https://matplotlib.org/stable/api/figure_api.html#matplotlib.figure.Figure.colorbar
+        fig.colorbar(cm.ScalarMappable(norm=nmm),ax=ax)#.autoscale(data[:,2])
+        png_filename=prefix+title_name+postfix
+        fig.savefig(png_filename)
+        plt.close()
+    
+    def draw_diagram_scatter_mark(self,data,title_name,xlabel_name,ylabel_name,prefix,postfix,oop_check = 0.88):
+        R"""
+        scatter:
+        https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.scatter.html#matplotlib.axes.Axes.scatter
+        marker:
+        https://matplotlib.org/stable/api/markers_api.html#module-matplotlib.markers
+        "H" <_> hexagon2
+        "^"     triangle_up
+        "v"     triangle_down
+        "d" v^  thin_diamond
+        colors:
+        https://matplotlib.org/stable/gallery/color/named_colors.html#sphx-glr-gallery-color-named-colors-py
+        """
+        from matplotlib import colors
+        color_transparent = colors.to_rgba('w',alpha = 0.0)
+        #color_transparent = np.array(color_transparent)
+        #oop_check = 0.88
+        list_HC = data[:,2]>oop_check
+        list_DF = data[:,2]<oop_check
+        fig,ax = plt.subplots()
+        ax.scatter(data[list_HC,0],data[list_HC,1],c=None,facecolors=color_transparent,edgecolors='k',marker='H')#'w'
+        ax.scatter(data[list_DF,0],data[list_DF,1],c=None,facecolors=color_transparent,edgecolors='k',marker="^")
+        #plt.show()
+        ax.set_title(title_name)
+        ax.set_xlabel(xlabel_name)
+        ax.set_ylabel(ylabel_name)
+        #ax.set_yscale('log')
+        #ax.set_xlim(xlim)
+        ax.set_ylim([0,120])
+        from matplotlib import cm
+        from matplotlib.colors import Normalize as nm
+        vmin = np.min(data[:,2])
+        vmax = np.max(data[:,2])
+        #print(vmin,vmax)
+        nmm = nm(vmin=vmin,vmax=vmax)
+        #https://matplotlib.org/stable/api/figure_api.html#matplotlib.figure.Figure.colorbar
+        fig.colorbar(cm.ScalarMappable(norm=nmm),ax=ax)#.autoscale(data[:,2])
+        png_filename=prefix+title_name+postfix
+        fig.savefig(png_filename)
+        plt.close()
+    
+    def draw_diagram_scatter_mark_multi(self,data,title_name,xlabel_name,ylabel_name,prefix,
+                                        postfix=None,oop_check = 0.88,fig=None,ax=None,mode="pin"):
+        R"""
+        scatter:
+        https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.scatter.html#matplotlib.axes.Axes.scatter
+        marker:
+        https://matplotlib.org/stable/api/markers_api.html#module-matplotlib.markers
+        "H" <_> hexagon2
+        "^"     triangle_up
+        "v"     triangle_down
+        "d" v^  thin_diamond
+        colors:
+        https://matplotlib.org/stable/gallery/color/named_colors.html#sphx-glr-gallery-color-named-colors-py
+        """
+        from matplotlib import colors
+        color_transparent = colors.to_rgba('w',alpha = 0.0)
+        #color_transparent = np.array(color_transparent)
+        #oop_check = 0.88
+        list_HC = data[:,2]>oop_check# -> honeycomb(HC) well
+        list_DF = data[:,2]<oop_check# -> honeycomb(HC) with defects
+        if ax is None:
+            fig,ax = plt.subplots(figsize=[10.,12.])#5:6 suit
+            #fig.set_figsize()
+        
+        if mode=="pin":
+            ax.scatter(data[list_HC,0],data[list_HC,1],c=None,facecolors=color_transparent,edgecolors='k',marker='H')#'w'
+            ax.scatter(data[list_DF,0],data[list_DF,1],c=None,facecolors=color_transparent,edgecolors='k',marker="^")
+            #plt.show()
+            ax.set_title(title_name)
+            ax.set_xlabel(xlabel_name)
+            ax.set_ylabel(ylabel_name)
+            #ax.set_yscale('log')
+            #ax.set_xlim(xlim)
+            ax.set_ylim([1,51])#[1,110]
+        elif mode=="depin":
+            ax.scatter(data[list_HC,0],data[list_HC,1],c=None,facecolors=color_transparent,edgecolors='k',marker='^')#'w'
+            ax.scatter(data[list_DF,0],data[list_DF,1],c=None,facecolors='k',edgecolors='k',marker="H")
+            #plt.show()        
+        if postfix is None:
+            return fig,ax
+        else:
+            png_filename=prefix+title_name+postfix
+            fig.savefig(png_filename)
+    
+    def get_diagram_data_mark_multi(self,data,title_name,xlabel_name,ylabel_name,prefix,
+                                        csv_postfix=None,oop_check = 0.88,mode="pin",df0=None):
+        R"""
+        scatter:
+        https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.scatter.html#matplotlib.axes.Axes.scatter
+        marker:
+        https://matplotlib.org/stable/api/markers_api.html#module-matplotlib.markers
+        "H" <_> hexagon2
+        "^"     triangle_up
+        "v"     triangle_down
+        "d" v^  thin_diamond
+        colors:
+        https://matplotlib.org/stable/gallery/color/named_colors.html#sphx-glr-gallery-color-named-colors-py
+        """
+        import pandas as pd
+        #1 classify and mark data
+        list_HC = data[:,2]>oop_check
+        list_DF = data[:,2]<oop_check
+        
+        if mode=="pin":
+            #list_HC -> honeycomb_part(HCP) well        -> 2
+            #list_DF -> honeycomb_part(HCP) with defects-> 1
+            data[list_HC,2] = 2
+            data[list_DF,2] = 1
+        elif mode=="depin":
+            #list_HC -> honeycomb_part(HCP) stable   -> 1
+            #list_DF -> honeycomb_part(HCP) unstable -> 0 hexagonal
+            data[list_HC,2] = 1
+            data[list_DF,2] = 0
+
+        #2 reorganize data as pandas.Dataframe
+        df = pd.DataFrame(data[:,:3])
+        #"Psi3Class":{"hex":0,"DF":1,"HC":2}
+        columns_name = [xlabel_name,ylabel_name,"Psi3Class(0Hex1DF2HC)"]
+        #columns_name = ["LinearCompressionRatio(1)","Utrap(kBT)","Psi3Class(0Hex1DF2HC)"]
+        df.columns = columns_name
+        if df0 is None:
+            df0 = df
+        else:
+            df0 = pd.concat([df0,df])
+        
+        #3 save data as .csv file
+        if csv_postfix is None:
+            return df0
+        else:
+            csv_filename=prefix+title_name+csv_postfix
+            pd.DataFrame.to_csv(df0,csv_filename)
+        
 
 def workflow_mysql_to_data_pin_hex_to_honeycomb_part1_random():
     R"""
@@ -1735,6 +2147,188 @@ def workflow_mysql_to_data_pin_hex_to_kagome_klt_2m_precise(account='tplab'):
     png_filename=prefix+'K_VS_T_CN4_as_value_precise'+postfix
     plt.savefig(png_filename)
     plt.close()
+
+def workflow_mysql_to_data_pin_hex_to_kagome_klt_2m_random_mark(account='tplab',table_name = 'pin_hex_to_kagome'):
+    R"""
+    Note: the format of table_name=
+    'pin_hex_to_kagome'
+    | simu_index | HarmonicK | LinearCompressionRatio | CoordinationNum4Rate | 
+    CoordinationNum6Rate | RandomSeed | Psi6Global |
+    seed=0~9
+
+    'pin_hex_to_kagome_klt_2m'
+    | SimuIndex | HarmonicK | LinearCompressionRatio | kT  | CoordinationNum3Rate | 
+    CoordinationNum4Rate | RandomSeed |
+    where kT = 1, seed=0,9
+    
+    https://matplotlib.org/stable/api/markers_api.html#module-matplotlib.markers
+    "H" <_> hexagon2
+    "^"     triangle_up
+    "v"     triangle_down
+    "d" v^  thin_diamond
+    example:
+    """
+    import numpy as np
+    #getDataToMysql
+    import opertateOnMysql as osql
+    #U_interaction=300*np.exp(-0.25)
+    #table_name = 'pin_hex_to_kagome'
+
+    cont='distinct LinearCompressionRatio'
+    con=' order by LinearCompressionRatio asc'#where SimuIndex<4686
+    lcrs=osql.getDataFromMysql(table_name=table_name,
+                                search_condition=con,select_content=cont)
+
+    cont='distinct HarmonicK'
+    con=' order by HarmonicK asc'
+    ks=osql.getDataFromMysql(table_name=table_name,
+                                search_condition=con,select_content=cont)
+
+    cont='distinct LinearCompressionRatio,HarmonicK'
+    con=' order by LinearCompressionRatio,HarmonicK asc'
+    lks=osql.getDataFromMysql(table_name=table_name,
+                                search_condition=con,select_content=cont)
+    record_lk46 = np.zeros((len(lks),4))#(lcr,k,cn4,cn3)
+    #record_lk36[:,0:2]=np.array(lks)   
+
+    count = 0
+    cont=' avg(CoordinationNum4Rate),avg(CoordinationNum6Rate) '
+    lcr_step=0.001 
+    for lcr in lcrs:
+        for k in ks:
+            lcr1 = np.array(lcr)
+            lcr_min=lcr1 - 0.5*lcr_step
+            lcr_max=lcr1 + 0.5*lcr_step
+            con=' where HarmonicK='+str(int(k[0]))+\
+                ' and LinearCompressionRatio >'+str(lcr_min[0])+' and LinearCompressionRatio <'+str(lcr_max[0])
+            cn46_avg=osql.getDataFromMysql(table_name=table_name,
+                                search_condition=con,select_content=cont)
+            cn46 = np.array(cn46_avg[0])
+            #print(math.isnan(psi36[0]))#(np.nan(psi36_avg[0])
+            if not cn46[0] is None:#math.isnan(psi36[0]):    
+                #if not (k[0]<101 and k[0]>97):   
+                #print(k)           
+                #record_lk36[count,2:] = psi36[0:2]
+                record_lk46[count,:] = [lcr[0],k[0],cn46[0],cn46[1]]
+                count = count + 1
+    record_lk46 = record_lk46[:count]
+    #data = record_lk3
+    
+    record_lk46[:,1] = 0.5*record_lk46[:,1]# k -> Utrap(kT)
+    return record_lk46
+
+def workflow_mysql_to_data_pin_hex_to_kagome_klt_2m_mark(account='tplab',table_name = 'pin_hex_to_kagome_klt_2m'):
+    R"""
+    Note: the format of table_name=
+    'pin_hex_to_kagome'
+    | simu_index | HarmonicK | LinearCompressionRatio | CoordinationNum4Rate | 
+    CoordinationNum6Rate | RandomSeed | Psi6Global |
+    seed=0~9
+
+    'pin_hex_to_kagome_klt_2m'
+    | SimuIndex | HarmonicK | LinearCompressionRatio | kT  | CoordinationNum3Rate | 
+    CoordinationNum4Rate | RandomSeed |
+    where kT = 1, seed=0,9
+    
+    https://matplotlib.org/stable/api/markers_api.html#module-matplotlib.markers
+    "H" <_> hexagon2
+    "^"     triangle_up
+    "v"     triangle_down
+    "d" v^  thin_diamond
+    example:
+    """
+    import numpy as np
+    #getDataToMysql
+    import opertateOnMysql as osql
+    #U_interaction=300*np.exp(-0.25)
+    #table_name = 'pin_hex_to_kagome'
+
+    cont='distinct LinearCompressionRatio,HarmonicK,CoordinationNum4Rate '
+    con=' where kT=1 order by LinearCompressionRatio,HarmonicK asc'
+    lks=osql.getDataFromMysql(table_name=table_name,
+                                search_condition=con,select_content=cont)
+    
+    record_lk4=np.array(lks)   
+
+    record_lk4[:,1] = 0.5*record_lk4[:,1]# k -> Utrap(kT)
+    return record_lk4
+    
+def workflow_mysql_to_data_depin_from_kagome_mark():
+    R"""
+    Note: the format of table_name=
+    'depin_from_kagome'
+    | simu_index | HarmonicK | LinearCompressionRatio 
+    | CoordinationNum4Rate | CoordinationNum6Rate | RandomSeed 
+    | Psi6Global |
+    """
+    data=osql.getDataFromMysql(table_name='depin_from_kagome')#,search_condition=' where HarmonicK <100'
+    data=np.array(data)
+
+    p46=data[:,3]#/data[:,4]
+    #p46=np.log10(p46)
+
+    sz = np.shape(data)
+    record_lklg4 = np.zeros((sz[0],3))
+    record_lklg4[:,0] = data[:,2]#lcr
+    record_lklg4[:,1] = data[:,1]*0.5#k
+    record_lklg4[:,2] = p46
+    list_lg3 = record_lklg4[:,1] < 21#U(kagome pin stable)~20
+    list_lcr = record_lklg4[:,0] < 0.905
+    list_r = np.logical_and(list_lg3,list_lcr)
+    return record_lklg4[list_r]
+
+def workflow_data_to_diagram_kagome_mark(account='tplab',save_mode="csv"):
+    R"""
+    Note: the format of table_name=
+    'pin_hex_to_kagome'
+    | simu_index | HarmonicK | LinearCompressionRatio | CoordinationNum4Rate | 
+    CoordinationNum6Rate | RandomSeed | Psi6Global |
+    seed=0~9
+
+    'pin_hex_to_kagome_klt_2m'
+    | SimuIndex | HarmonicK | LinearCompressionRatio | kT  | CoordinationNum3Rate | 
+    CoordinationNum4Rate | RandomSeed |
+    where kT = 1, seed=0,9
+
+    'depin_from_kagome'
+    | simu_index | HarmonicK | LinearCompressionRatio 
+    | CoordinationNum4Rate | CoordinationNum6Rate | RandomSeed 
+    | Psi6Global |
+    
+    https://matplotlib.org/stable/api/markers_api.html#module-matplotlib.markers
+    "H" <_> hexagon2
+    "^"     triangle_up
+    "v"     triangle_down
+    "d" v^  thin_diamond
+    example:
+    """
+    fig_name = 'diagram_KGM_mark'
+    record_lk36 = workflow_mysql_to_data_pin_hex_to_kagome_klt_2m_random_mark()
+    record_lk36_shallow = workflow_mysql_to_data_pin_hex_to_kagome_klt_2m_mark(table_name='pin_hex_to_kagome_klt_2m')
+    record_lklg3 = workflow_mysql_to_data_depin_from_kagome_mark()
+
+    mp = mysql_data_processor()
+    title = 'lcr VS k, CN4 as value'#, Uparticle='+str(int(U_interaction))
+    xlabel_name = 'Linear Compression Ratio (1)'
+    ylabel_name = 'Usub ($k_BT$)[Kagome]'
+    prefix='/home/'+account+'/Downloads/'
+
+    pin_check = 0.7
+    pin_check_s = 0.799
+    depin_check = 0.95
+    if save_mode=="pdf":
+        postfix = '_'+fig_name+'.pdf'
+        fig,ax = mp.draw_diagram_scatter_mark_multi(record_lk36,title, xlabel_name,ylabel_name,prefix,postfix=None,oop_check=pin_check)
+        fig,ax = mp.draw_diagram_scatter_mark_multi(record_lk36_shallow,title, xlabel_name,ylabel_name,prefix,None,pin_check_s,fig,ax)
+        mp.draw_diagram_scatter_mark_multi(record_lklg3,title, xlabel_name,ylabel_name,prefix,postfix,depin_check,fig,ax,"depin")
+    
+    elif save_mode=="csv":
+        postfix = '_'+fig_name+'.csv'
+        df0 = mp.get_diagram_data_mark_multi(record_lk36,title, xlabel_name,ylabel_name,prefix,csv_postfix=None,oop_check=pin_check)
+        df0 = mp.get_diagram_data_mark_multi(record_lk36_shallow,title, xlabel_name,ylabel_name,prefix,csv_postfix=None,oop_check=pin_check_s)
+        mp.get_diagram_data_mark_multi(record_lklg3,title, xlabel_name,ylabel_name,prefix,postfix,depin_check,"depin",df0)
+
+
 def workflow_mysql_to_data_depin_from_kagome_part_random():#[x]
     R"""
     Introduction:
@@ -2180,6 +2774,173 @@ def workflow_mysql_to_data_pin_hex_to_kagome_part_random_oop():
     workflow.get_data_from_txt("/home/tplab/Downloads/pin_hex_to_kagome_part_diagram_c")
     #workflow.save_as_txt("/home/tplab/Downloads/pin_hex_to_kagome_part_diagram_c")
     workflow.plot()
+
+def workflow_mysql_to_data_pin_hex_to_kagome_part_klt_2m_random_mark(account='tplab'):
+    R"""
+    Note: the format of table_name=
+    'pin_hex_to_kagome_part_klt'
+    'pin_hex_to_kagome_part_repeat'
+    simu_index | HarmonicK | LinearCompressionRatio | 
+    CoordinationNum4Rate | CoordinationNum3Rate | 
+    RandomSeed | Psi6Global | 
+    'pin_hex_to_kagome_part_klt_2m'
+    | SimuIndex | HarmonicK | LinearCompressionRatio | kT | 
+    CoordinationNum3Rate | CoordinationNum4Rate | RandomSeed | 
+    
+    https://matplotlib.org/stable/api/markers_api.html#module-matplotlib.markers
+    "H" <_> hexagon2
+    "^"     triangle_up
+    "v"     triangle_down
+    "d" v^  thin_diamond
+    example:
+    """
+    import numpy as np
+    #getDataToMysql
+    import opertateOnMysql as osql
+    #U_interaction=300*np.exp(-0.25)
+    table_name = 'pin_hex_to_kagome_part_repeat'
+
+    cont='distinct LinearCompressionRatio'
+    con=' order by LinearCompressionRatio asc'#where SimuIndex<4686
+    lcrs=osql.getDataFromMysql(table_name=table_name,
+                                search_condition=con,select_content=cont)
+
+    cont='distinct HarmonicK'
+    con=' order by HarmonicK asc'
+    ks=osql.getDataFromMysql(table_name=table_name,
+                                search_condition=con,select_content=cont)
+
+    cont='distinct LinearCompressionRatio,HarmonicK'
+    con=' order by LinearCompressionRatio,HarmonicK asc'
+    lks=osql.getDataFromMysql(table_name=table_name,
+                                search_condition=con,select_content=cont)
+    record_lk43 = np.zeros((len(lks),4))#(lcr,k,cn4,cn3)
+    #record_lk36[:,0:2]=np.array(lks)   
+
+    count = 0
+    cont=' avg(CoordinationNum4Rate),avg(CoordinationNum3Rate) '
+    lcr_step=0.001 
+    for lcr in lcrs:
+        for k in ks:
+            lcr1 = np.array(lcr)
+            lcr_min=lcr1 - 0.5*lcr_step
+            lcr_max=lcr1 + 0.5*lcr_step
+            con=' where HarmonicK='+str(int(k[0]))+\
+                ' and LinearCompressionRatio >'+str(lcr_min[0])+' and LinearCompressionRatio <'+str(lcr_max[0])
+            cn43_avg=osql.getDataFromMysql(table_name=table_name,
+                                search_condition=con,select_content=cont)
+            cn43 = np.array(cn43_avg[0])
+            #print(math.isnan(psi36[0]))#(np.nan(psi36_avg[0])
+            if not cn43[0] is None:#math.isnan(psi36[0]):    
+                if k[0]>101*2:   
+                    #print(k)           
+                    #record_lk36[count,2:] = psi36[0:2]
+                    record_lk43[count,:] = [lcr[0],k[0],cn43[0],cn43[1]]
+                    count = count + 1
+    record_lk43 = record_lk43[:count]
+    #data = record_lk3
+    
+    record_lk43[:,1] = 0.5*record_lk43[:,1]# k -> Utrap(kT)
+    return record_lk43
+    
+def workflow_mysql_to_data_depin_from_kagome_part_mark():
+    R"""
+    Note: the format of table_name=
+    table_name='depin_from_kagome_part_repeat'
+    simu_index | HarmonicK | LinearCompressionRatio | CoordinationNum4Rate 
+    | CoordinationNum3Rate | RandomSeed | Psi6Global
+    """
+    table_name='depin_from_kagome_part_repeat'
+
+    cont='distinct LinearCompressionRatio'
+    con=' order by LinearCompressionRatio asc'#where SimuIndex<4686
+    lcrs=osql.getDataFromMysql(table_name=table_name,
+                                search_condition=con,select_content=cont)
+
+    cont='distinct HarmonicK'
+    con=' order by HarmonicK asc'
+    ks=osql.getDataFromMysql(table_name=table_name,
+                                search_condition=con,select_content=cont)
+
+    cont='distinct LinearCompressionRatio,HarmonicK'
+    con=' order by LinearCompressionRatio,HarmonicK asc'
+    lks=osql.getDataFromMysql(table_name=table_name,
+                                search_condition=con,select_content=cont)
+    record_lk43 = np.zeros((len(lks),3))#(lcr,k,cn4)
+    #record_lk36[:,0:2]=np.array(lks)   
+
+    count = 0
+    cont=' avg(CoordinationNum4Rate) '#,avg(CoordinationNum3Rate) 
+    lcr_step=0.001 
+    for lcr in lcrs:
+        for k in ks:
+            lcr1 = np.array(lcr)
+            lcr_min=lcr1 - 0.5*lcr_step
+            lcr_max=lcr1 + 0.5*lcr_step
+            con=' where HarmonicK='+str(int(k[0]))+\
+                ' and LinearCompressionRatio >'+str(lcr_min[0])+' and LinearCompressionRatio <'+str(lcr_max[0])
+            cn43_avg=osql.getDataFromMysql(table_name=table_name,
+                                search_condition=con,select_content=cont)
+            cn43 = np.array(cn43_avg[0])
+            #print(math.isnan(psi36[0]))#(np.nan(psi36_avg[0])
+            if not cn43[0] is None:#math.isnan(psi36[0]):    
+                if k[0]<101*2:   #U(Kagome_part pin stable)~101
+                    #print(k)           
+                    #record_lk36[count,2:] = psi36[0:2]
+                    record_lk43[count,:] = [lcr[0],k[0],cn43[0]]
+                    count = count + 1
+    data = record_lk43[:count]
+    data[:,1] = data[:,1]*0.5#k
+    return data
+
+def workflow_data_to_diagram_kagome_part_mark(account='tplab',save_mode="csv"):
+    R"""
+    Note: the format of table_name=
+    'pin_hex_to_kagome_part_klt'
+    'pin_hex_to_kagome_part_repeat'
+    simu_index | HarmonicK | LinearCompressionRatio | 
+    CoordinationNum4Rate | CoordinationNum3Rate | 
+    RandomSeed | Psi6Global | 
+    'pin_hex_to_kagome_part_klt_2m'
+    | SimuIndex | HarmonicK | LinearCompressionRatio | kT | 
+    CoordinationNum3Rate | CoordinationNum4Rate | RandomSeed | 
+
+    'depin_from_kagome_part'
+    'depin_from_kagome_part_klt'
+    'depin_from_kagome_part_repeat'
+    simu_index | HarmonicK | LinearCompressionRatio | CoordinationNum4Rate 
+    | CoordinationNum3Rate | RandomSeed | Psi6Global
+    
+    https://matplotlib.org/stable/api/markers_api.html#module-matplotlib.markers
+    "H" <_> hexagon2
+    "^"     triangle_up
+    "v"     triangle_down
+    "d" v^  thin_diamond
+    example:
+    """
+    fig_name = 'diagram_KGP_mark'
+    record_lk36 = workflow_mysql_to_data_pin_hex_to_kagome_part_klt_2m_random_mark()
+    record_lk36shallow = workflow_mysql_to_data_pin_hex_to_kagome_part_klt_2m_random_mark()
+    record_lklg3 = workflow_mysql_to_data_depin_from_kagome_part_mark()
+
+    mp = mysql_data_processor()
+    title = 'lcr VS k, CN4 as value'#, Uparticle='+str(int(U_interaction))
+    xlabel_name = 'Linear Compression Ratio (1)'
+    ylabel_name = 'Usub ($k_BT$)[Kagome_part]'
+    prefix='/home/'+account+'/Downloads/'
+
+    pin_check = 0.66
+    depin_check = 0.93
+    if save_mode=="pdf":
+        postfix = '_'+fig_name+'.pdf'
+        fig,ax = mp.draw_diagram_scatter_mark_multi(record_lk36,title, xlabel_name,ylabel_name,prefix,postfix=None,oop_check=pin_check)
+        mp.draw_diagram_scatter_mark_multi(record_lklg3,title, xlabel_name,ylabel_name,prefix,postfix,depin_check,fig,ax,"depin")
+    
+    elif save_mode=="csv":
+        postfix = '_'+fig_name+'.csv'
+        df0 = mp.get_diagram_data_mark_multi(record_lk36,title, xlabel_name,ylabel_name,prefix,csv_postfix=None,oop_check=pin_check)
+        mp.get_diagram_data_mark_multi(record_lklg3,title, xlabel_name,ylabel_name,prefix,postfix,depin_check,"depin",df0)
+
 
 def workflow_mysql_to_data_depin_from_kagome_part_cycle(account='tplab'):
     R"""

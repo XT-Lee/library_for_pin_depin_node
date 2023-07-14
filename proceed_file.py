@@ -200,6 +200,48 @@ class proceed_gsd_file:
             file_txyz_npy = save_prefix+'txyz'
             np.save(file = file_txyz_npy,arr = self.txyz)
 
+class data_type_transformer:
+    def __init__(self):
+        pass 
+
+    def array_to_csv(self,txyz_stable,csv_prefix):
+        R"""
+        import numpy as np
+        import proceed_file as pf
+        #
+        prefix = '/home/tplab/xiaotian_file/lxt_code_py/4302_9/'
+        filename_txyz_stable = prefix+'txyz_stable.npy'
+        csv_prefix = '/home/tplab/Downloads/4302_9/'
+        txyz_stable = np.load(filename_txyz_stable)
+        trans = pf.data_type_transformer()
+        trans.array_to_csv(txyz_stable,csv_prefix)
+        """
+        import numpy as np
+        import pandas as pd
+        columns_name = ["time_step","particle_id", "x","y","z"]
+        #get frame-wise 
+        #list_framewise
+        frames,particles,dimensions=np.shape(txyz_stable)
+        t_id1_xyz_empty = np.zeros((frames,2+dimensions))#2+dimensions
+        frames_array = np.linspace(0,frames-1,frames)
+        list_particles = range(particles)
+        #organize the format from npy to csv
+        for id in list_particles:
+            t_id1_xyz_empty[:,0] = frames_array
+            t_id1_xyz_empty[:,1] = id
+            t_id1_xyz_empty[:,2:] = txyz_stable[:,id,:]
+            t_id1_xyz_pd = pd.DataFrame(t_id1_xyz_empty)
+            t_id1_xyz_pd.columns = columns_name
+            if id == 0:
+                t_id_xyz_pd = t_id1_xyz_pd
+                print(t_id_xyz_pd.tail())
+                #print(ts_id_dxy.tail())
+            else:#why 0-2000 rows with id = 1 too?
+                t_id_xyz_pd = pd.concat([t_id_xyz_pd,t_id1_xyz_pd])
+                print(t_id_xyz_pd.tail())
+
+        pd.DataFrame.to_csv(t_id_xyz_pd,csv_prefix+'t_id_xyz_4302_9.csv')
+
 class proceed_exp_file:
     R"""
     see particle_tracking.py to get trajectories of particles from a video.
