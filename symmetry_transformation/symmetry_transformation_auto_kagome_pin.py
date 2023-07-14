@@ -5,7 +5,7 @@ import numpy
 import hoomd.azplugins.multi_positions as mp
 from matplotlib import pyplot
 
-def workflow(index1,k1,step,k_end,linear_compression_ratio,seed_set=9):
+def workflow(index1,k1,step,k_end,linear_compression_ratio,seed_set=9,account='tplab'):
     R"""
     Introduction:
         The critical Linear Compression Ratio for kagome lattice is 0.866.
@@ -14,7 +14,7 @@ def workflow(index1,k1,step,k_end,linear_compression_ratio,seed_set=9):
     #set parameters
     rcut=1.0
     
-    trap_prefix='/home/tplab/hoomd-examples_0/'
+    trap_prefix='/home/'+account+'/hoomd-examples_0/'
     trap_filename=trap_prefix+"testkagome3-9-6"#data of trap position
     #caution: LCR > 0.75 !
 
@@ -28,10 +28,12 @@ def workflow(index1,k1,step,k_end,linear_compression_ratio,seed_set=9):
         kset=k1+step*(i-1.0)
         index=index1+(i-1.0)
         str_index=str(int(index))
-        log_prefix='/home/tplab/hoomd-examples_0/'
+        str_seed=str(int(seed_set))
+        str_index=str_index+"_"+str_seed
+        log_prefix='/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/'#'/home/'+account+'/hoomd-examples_0/'#'/home/tplab/hoomd-examples_0/'
         file_log=log_prefix+'log-output_auto'+str_index+'.log'
         file_gsd=log_prefix+'trajectory_auto'+str_index+'.gsd'
-        prefix='/home/tplab/Downloads/'
+        prefix='/home/'+account+'/Downloads/'
         result_filename=prefix+'index'+str_index
         png_filename=prefix+'index'+str_index+'.png'
 
@@ -55,7 +57,7 @@ def simulation1(linear_compression_ratio,trap_filename,kset,rcut,seed_set,file_l
         i: this is the i-th cycle time
     """
     #initialization
-    hoomd.context.initialize("");#--mode=cpu
+    hoomd.context.initialize("--mode=cpu");#--mode=cpu
     sys=hoomd.init.create_lattice(unitcell=hoomd.lattice.hex(a=3), n=[12,6]);
         #ex_render.render_disk_frame(sys.take_snapshot())
 

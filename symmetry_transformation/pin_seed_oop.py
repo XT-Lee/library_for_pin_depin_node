@@ -45,7 +45,8 @@ class workflow_uniform:
             str_index=str(int(index))
             str_seed=str(int(self.seed_set))
             str_index=str_index+"_"+str_seed
-            log_prefix='/home/'+self.account+'/hoomd-examples_0/'
+            #log_prefix='/home/'+self.account+'/hoomd-examples_0/'
+            log_prefix='/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/'
             file_log=log_prefix+'log-output_auto'+str_index+'.log'#log-output_auto3232_8.log
             file_gsd=log_prefix+'trajectory_auto'+str_index+'.gsd'#log-output_auto3232_8.gsd
             prefix='/home/'+self.account+'/Downloads/'

@@ -155,7 +155,7 @@ def workflow_simu_to_mysql_pin_hex_to_honeycomb_oop(account,index1,lcr,seed=9):
 
     return end_index
  
-def workflow_simu_to_mysql_pin_hex_to_honeycomb_oop_klt_2m(index1,lcr,kT=1.0,seed=9,account='tplab'):
+def workflow_simu_to_mysql_pin_hex_to_honeycomb_oop_klt_2m(index1,lcr,kT=1.0,seed=9,account='tplab',check=True):
     R"""
     INTRODUCTION:
 
@@ -207,22 +207,24 @@ def workflow_simu_to_mysql_pin_hex_to_honeycomb_oop_klt_2m(index1,lcr,kT=1.0,see
     kend=60.0
     trap_name = "testhoneycomb3-8-12"
     #get simulation results
-    import symmetry_transformation.pin_seed_oop as pin
-    
-    #wk = pin.workflow_uniform(index1,account,k1,stp,kend,lcr,kT,seed,trap_name,mode="--mode=cpu")
-    #end_index = wk.workflow()#
-    end_index = index1 +9#
-  
+    if not check:
+        import symmetry_transformation.pin_seed_oop as pin
+        wk = pin.workflow_uniform(index1,account,k1,stp,kend,lcr,kT,seed,trap_name,mode="--mode=gpu")
+        end_index = wk.workflow()
+    else:
+        end_index = index1 +9#
+
     #end_index =3565
     #end_index=sa_k.workflow(index1=index1,k1=k1,step=stp,k_end=kend,linear_compression_ratio=lcr,seed_set=seed)
     'get file index123'
 
     #step3
     #get analyzed data
-    
-    import data_analysis_cycle as da
-    filename_klp=da.saveIndexklTPsi36Seed(start_index=index1,end_index=end_index,k1=k1,step=stp,linear_compression_ratio=lcr,kT=kT,randomseed=seed,account=account)   	    	#filename_kl=da.saveIndexPsi(start_index=206,end_index=215,k1=k1,step=stp,linear_compression_ratio=0.79)
-    print('\n'+filename_klp)
+    if not check:
+        import data_analysis_cycle as da
+        filename_klp=da.saveIndexklTPsi36Seed(start_index=index1,end_index=end_index,k1=k1,step=stp,linear_compression_ratio=lcr,kT=kT,randomseed=seed,account=account)   	    	#filename_kl=da.saveIndexPsi(start_index=206,end_index=215,k1=k1,step=stp,linear_compression_ratio=0.79)
+        print('\n'+filename_klp)
+        'get file named index1 index2 kl'
     
     'get file named index1 index2 kl'
 
@@ -233,10 +235,10 @@ def workflow_simu_to_mysql_pin_hex_to_honeycomb_oop_klt_2m(index1,lcr,kT=1.0,see
         |simu_index | HarmonicK | LinearCompressionRatio | kT |
       Psi3Global | Psi6Global | RandomSeed | 
     """
-    
-    import opertateOnMysql as osql
-    osql.loadDataToMysql(path_to_file_name=filename_klp,table_name="pin_hex_to_honeycomb_klt_2m")#"/home/tplab/Downloads/193-205kl"
-    
+    if not check:
+        import opertateOnMysql as osql
+        osql.loadDataToMysql(path_to_file_name=filename_klp,table_name="pin_hex_to_honeycomb_klt_2m")#"/home/tplab/Downloads/193-205kl"
+        
     #step5
     #watch kT limitation while melting
     """
@@ -1111,20 +1113,20 @@ def workflow_simu_to_mysql_depin_from_kagome(index1,lcr,seed=9):#num
     (path_to_file_name=filename_kl,
     table_name='depin_from_kagome')
 
-def workflow_simu_to_mysql_pin_hex_to_kagome(index1,lcr,seed=9):#num
+def workflow_simu_to_mysql_pin_hex_to_kagome(index1,lcr,seed=9,account='tplab'):#num
     #set parameters
 
-    k1=100.0
-    stp=100.0
-    kend=1000.0
+    k1=40#100.0
+    stp=6#100.0
+    kend=94#1000.0
     #get simulation results
     import symmetry_transformation.symmetry_transformation_auto_kagome_pin as sa_k
-    end_index=sa_k.workflow(index1=index1,k1=k1,step=stp,k_end=kend,linear_compression_ratio=lcr,seed_set=seed)
+    end_index=sa_k.workflow(index1=index1,k1=k1,step=stp,k_end=kend,linear_compression_ratio=lcr,seed_set=seed,account=account)
     'get file index123'
 
     #get analyzed data and generate txt table
     import data_analysis_cycle as da
-    filename_kl=da.saveIndexCN4CN6SeedPsi6(start_index=index1,end_index=end_index,k1=k1,step=stp,linear_compression_ratio=lcr,randomseed=seed)
+    filename_kl=da.saveIndexCN4CN6SeedPsi6(start_index=index1,end_index=end_index,k1=k1,step=stp,linear_compression_ratio=lcr,randomseed=seed,account=account)
     #filename_kl=da.saveIndexPsi(start_index=206,end_index=215,k1=k1,step=stp,linear_compression_ratio=0.79)
     print('\n'+filename_kl)
     'get file named index1 index2 kl'
@@ -1132,7 +1134,7 @@ def workflow_simu_to_mysql_pin_hex_to_kagome(index1,lcr,seed=9):#num
     
     #loadDataToMysql
     R"""
-    Note: the format of table_name='depin_from_kagome'
+    Note: the format of table_name='pin_hex_to_kagome'
         simu_index | HarmonicK | LinearCompressionRatio | 
         CoordinationNum4Rate | CoordinationNum6Rate | RandomSeed |
         Psi6Global|
@@ -1534,7 +1536,7 @@ def workflow_simu_to_mysql_pin_hex_to_kagome_part_oop_kT(index1,lcr,kT=1.0,seed=
     
     return end_index
 
-def workflow_simu_to_mysql_pin_hex_to_kagome_oop_klt_2m(index1,lcr,kT=1.0,seed=9,account='tplab'):#[x]
+def workflow_simu_to_mysql_pin_hex_to_kagome_oop_klt_2m(index1,lcr,kT=1.0,seed=9,account='tplab',check=True):#[x]
     R"""
     INTRODUCTION:
     example4 :
@@ -1558,8 +1560,29 @@ def workflow_simu_to_mysql_pin_hex_to_kagome_oop_klt_2m(index1,lcr,kT=1.0,seed=9
             index_end=tt.workflow_simu_to_mysql_pin_hex_to_kagome_oop_klt_2m(index1=index1,lcr=lcr1,seed=seed,account='remote')
             index1 = index_end + 1
             lcr1 = lcr1 + 0.01
-    
-    
+    exp6:
+        import workflow_part as tt
+        import numpy as np
+        seed=9
+        index1=5483
+        list_lcr = np.linspace(0.8,0.91,12)
+        list_lcr[-1] = 0.866
+        for lcr1 in list_lcr:
+            print(index1,lcr1)#kagome pin precise
+            index_end=tt.workflow_simu_to_mysql_pin_hex_to_kagome_oop_klt_2m(index1=index1,lcr=lcr1,seed=seed,account='remote',check=False)
+            index1 = index1 + 10
+            lcr1 = lcr1 + 0.01
+    exp7:
+        import workflow_part as tt
+        import numpy as np
+        seed=0
+        index1=4718
+        list_lcr = np.linspace(0.851,0.861,6)
+        for lcr1 in list_lcr:
+            print(index1,lcr1)#kagome pin precise
+            index_end=tt.workflow_simu_to_mysql_pin_hex_to_kagome_oop_klt_2m(index1=index1,lcr=lcr1,seed=seed,account='remote',check=False)#
+            index1 = index1 + 10
+            lcr1 = lcr1 + 0.01
     """
     #step1
     #depin check
@@ -1576,24 +1599,28 @@ def workflow_simu_to_mysql_pin_hex_to_kagome_oop_klt_2m(index1,lcr,kT=1.0,seed=9
 
     #step2
     #set parameters
-    k1=100.0
-    stp=100.0
-    kend=1000.0
+    k1=41#40.0#100.0
+    stp=2#6.0#100.0
+    kend=59#94.0#1000.0
     trap_name = "testkagome3-11-6"
     #get simulation results
-    
-    import symmetry_transformation.pin_seed_oop as pin
-    wk = pin.workflow_uniform(index1,account,k1,stp,kend,lcr,kT,seed,trap_name,mode="--mode=cpu")
-    end_index = wk.workflow()
-    #end_index = index1 + 9
-    'get file index123'
+    if not check:
+        import symmetry_transformation.pin_seed_oop as pin
+        wk = pin.workflow_uniform(index1,account,k1,stp,kend,lcr,kT,seed,trap_name,mode="--mode=cpu")
+        end_index = wk.workflow()
+        #end_index = index1 + 9
+        'get file index123'
+    else:
+        end_index = index1 + 9
+        print(k1)
 
     #step3
     #get analyzed data
-    import data_analysis_cycle as da
-    filename_kl=da.saveIndexklTCN3CN4Seed(start_index=index1,end_index=end_index,k1=k1,step=stp,linear_compression_ratio=lcr,kT=kT,randomseed=seed,account=account)
-    print('\n'+filename_kl)
-    'get file named index1 index2 klt'
+    if not check:
+        import data_analysis_cycle as da
+        filename_kl=da.saveIndexklTCN3CN4Seed(start_index=index1,end_index=end_index,k1=k1,step=stp,linear_compression_ratio=lcr,kT=kT,randomseed=seed,account=account)
+        print('\n'+filename_kl)
+        'get file named index1 index2 klt'
 
     #step4
     #loadDataToMysql
@@ -1602,10 +1629,11 @@ def workflow_simu_to_mysql_pin_hex_to_kagome_oop_klt_2m(index1,lcr,kT=1.0,seed=9
         |SimuIndex|HarmonicK|LinearCompressionRatio|kT|
         CoordinationNum3Rate|CoordinationNum4Rate|RandomSeed|
     """
-    import opertateOnMysql as osql
-    osql.loadDataToMysql\
-    (path_to_file_name=filename_kl,
-    table_name='pin_hex_to_kagome_klt_2m')
+    if not check:
+        import opertateOnMysql as osql
+        osql.loadDataToMysql\
+        (path_to_file_name=filename_kl,
+        table_name='pin_hex_to_kagome_klt_2m')
     
     
     #step5

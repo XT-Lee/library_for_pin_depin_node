@@ -22,6 +22,55 @@
 	and others.
 
 ## log:
+- 20230713 edit trajectory_coarse_grain_general in points_analysis_2d.trajectory_module
+			add plot_bicolor_final_displacements_static in points_analysis_2d.trajectory_module
+			add bond_plot_for_ai, particle large, trap small[ongoing]
+			edit bond_plot_module.draw_points_with_given_bonds,plot_traps,
+			draw_points_with_given_bonds in points_analysis_2d.
+- 20230712 edit workflow_simu_to_mysql_pin_hex_to_kagome_oop_klt_2m precise  in workflow_part
+scatt.workflow_mysql_to_data_pin_hex_to_kagome_klt_2m('remote')
+- 20230711 edit plot_h_hp_cn3_scan_k_fast, add shallow honeycomb pin filename, in workflow_analysis.compare_diagram_dynamics
+			add save_cn3_decorate_to_csv, save_cn3_decorate_to_csv_unit in workflow_analysis.compare_diagram_dynamics
+			edit workflow_data_to_diagram_kagome_mark pin_check_s in  getDataAndDiagram
+- 20230710 add data_type_transformer.array_to_csv in proceed_file.
+			edit save_from_gsd_to_cn3 in data_analysis_cycle
+			edit record_lk36shallow = in getDataAndDiagram
+- 20230707 edit draw_polygon_patch_oop polygon_color in points_analysis_2d.static_points_analysis_2d.
+			edit trajectory_coarse_grain_general color_pin,color_inte in points_analysis_2d.trajectory_module
+- 20230706 edit points_analysis_2d.trajectory_module.		
+			plot_bicolor_final_displacements, tune color.
+			edit data_analysis_cycle.saveIndexklTCN3CN4Seed prefix_gsd -> prefix
+			edit workflow_part.workflow_simu_to_mysql_pin_hex_to_kagome_oop_klt_2m k1 stp kend
+- 20230703 edit save_from_gsd.bond_plot.draw_bonds_conditional_bond as draw_bonds_conditional_bond_oop
+			add show_final_frame.search_lcr_k in workflow_analysis[finish]
+			edit workflow_part.workflow_simu_to_mysql_pin_hex_to_kagome_oop_klt_2m
+			edit data_analysis_cycle.saveIndexklTCN3CN4Seed to redirect prefix_gsd.
+- 20230701 add show_final_frame.search_lcr_k in workflow_analysis[ongoing]
+- 20230619 diagram sseries finished.
+			edit workflow_part.workflow_simu_to_mysql_pin_hex_to_kagome
+			edit symmetry_transformation.symmetry_transformation_auto_kagome_pin
+			edit saveIndexCN4CN6SeedPsi6
+- 20230615 add get_diagram_data_mark_multi in getDataAndDiagram.mysql_data_processor
+			add workflow_data_to_diagram_honeycomb_mark,
+			workflow_mysql_to_data_depin_from_honeycomb_mark,
+			workflow_mysql_to_data_pin_hex_to_honeycomb_klt_2m_random_mark
+			in getDataAndDiagram
+			add workflow_data_to_diagram_kagome_mark,
+			workflow_mysql_to_data_depin_from_kagome1_mark,
+			workflow_mysql_to_data_pin_hex_to_kagome_klt_2m_random_mark
+			in getDataAndDiagram 
+			add workflow_data_to_diagram_kagome_part_mark,
+			workflow_mysql_to_data_depin_from_kagome_part1_mark,
+			workflow_mysql_to_data_pin_hex_to_kagome_part_klt_2m_random_mark
+			in getDataAndDiagram
+- 20230614 add draw_diagram_scatter_mark_multi in getDataAndDiagram.mysql_data_processor
+			add workflow_data_to_diagram_honeycomb_part_mark,
+			workflow_mysql_to_data_depin_from_honeycomb_part1_mark,
+			workflow_mysql_to_data_pin_hex_to_honeycomb_part_klt_2m_random_mark
+			in getDataAndDiagram
+- 20230613 add workflow_mysql_to_data_pin_hex_to_honeycomb_part_klt_2m_random_mark
+			in getDataAndDiagram
+- 20230612 redirect log_prefix to 2T disk in symmetry_transformation.pin_seed_oop.
 - 20230610 add showTables in opertateOnMysql
 - 20230609 add select_content in opertateOnMysql.getDataFromMysql
 			add workflow_mysql_to_data_pin_hex_to_honeycomb_klt_2m_random in getDataAndDiagram
@@ -49,6 +98,7 @@
 - 20230516 simu is forced to stop 
 - 20230515 add compare_diagram_dynamics.plot_cn3_scan_k_fast(rename as plot_hp_cn3_scan_k_fast)
 		    add compare_diagram_dynamics.plot_honey_cn3_scan_k
+- 20230512 edit workflow_simu_to_mysql_pin_hex_to_honeycomb_oop_klt_2m, check mode.[v]
 - 20230511 add compare_diagram_dynamics.plot_cn3_scan_lcr
 - 20230510 add compare_diagram.
 - 20230508 add workflow_analysis.compare_diagram

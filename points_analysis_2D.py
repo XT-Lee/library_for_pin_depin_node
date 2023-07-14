@@ -505,7 +505,7 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
         #else:
         #    return ax
 
-    def draw_polygon_patch_oop(self,fig=None,ax=None):
+    def draw_polygon_patch_oop(self,fig=None,ax=None,polygon_color='r'):
         R"""
         parameters:
             vertex_bonds_index: n rows of [start_point_index, end_point_index]
@@ -542,8 +542,8 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
                     p = PatchCollection(patches)#, alpha=0.4
                     ax.add_collection(p)
                     """
-                    set_color='r'
-                    ax.fill(list_points_xy[:,0],list_points_xy[:,1],facecolor=set_color,edgecolor=set_color)
+                    
+                    ax.fill(list_points_xy[:,0],list_points_xy[:,1],facecolor=polygon_color,edgecolor=polygon_color)
                 #plt.show()
                     
         """
@@ -1127,8 +1127,8 @@ index 10 is out of bounds for axis 0 with size 10
         self.draw_bonds = bond_plot_module_old()
         self.draw_bonds.restrict_axis_property_relative(self.points,x_unit=x_unit)
         if not axis_limit is None:
-            xlim = [0,axis_limit[0]]
-            ylim = [0,axis_limit[1]]
+            xlim = [-axis_limit[0],axis_limit[0]]#[0,axis_limit[0]]
+            ylim = [-axis_limit[1],axis_limit[1]]#[0,axis_limit[1]]
             self.draw_bonds.restrict_axis_limitation(xlim,ylim)
         self.draw_bonds.draw_points_with_conditional_bond(self.points,self.bond_length,bond_length_limmit=check)
         #self.draw_bonds.draw_bonds_conditional_bond(self.points,self.bond_length,bond_length_limmit=check,x_unit=x_unit)
@@ -2122,7 +2122,19 @@ class trajectory_module:
             ax0 = trm.trajectory_coarse_grain_general(None,2,[0,8],prefix,'trajectory_displacement',axs[0],fig)
             ax1 = trm.trajectory_coarse_grain_general(None,2,[8,104],prefix,'trajectory_displacement',axs[1],fig)
             ax2 = trm.trajectory_coarse_grain_general(None,2,[104,1427],prefix,'trajectory_displacement',axs[2],fig)
+        
+        
+        colors: 
+            link:https://matplotlib.org/stable/gallery/color/named_colors.html#sphx-glr-gallery-color-named-colors-py
+            color1
+                pinned,interstitial;'r''orange';scale=1, width=0.005
+            color2
+                pinned,interstitial;'orange''royalblue';scale=1, width=0.005
+                'orange''limegreen'
+        
         """
+        cp = 'r'   #color_pin
+        ci = 'darkorange'#color_interstitial
         import points_analysis_2D as pa
         #prefix = '/home/remote/Downloads/4302_9/'
         filename_txyz_stable = prefix+'txyz_stable.npy'
@@ -2146,9 +2158,13 @@ class trajectory_module:
             self.displacement_length = dr_1d
             self.get_first_minima_count_of_distribution()
             list_jump_bool = self.get_jump_frame(dr,1.0)
+            list_jump_bool[:].astype(int)
+            count_jump = np.sum(list_jump_bool.astype(int),axis=0)#(Nparticles*1)[time_of_jumps]
+            list_if_static = count_jump[:]<2
             if mode == "trajectory_displacement":
-                linewidth = 1.5 #linewidth:quiverwidth = 3:0.005, then widths are equal
-                width = 0.005 #set the same line width for plot & quiver
+                linewidth = 2.5 #linewidth:quiverwidth = 1.5:0.005, then widths are equal
+                width = 0.005*2/3*linewidth #set the same line width for plot & quiver
+                size = 20#set the size of circles for scatter
                 record_last_jump_xy = np.zeros((sz[1],4))#2
                 list_if_jump = np.ones((sz[1],)).astype(bool)#to check if the particle(id) truly jumps
             if ax is None:
@@ -2160,19 +2176,20 @@ class trajectory_module:
                     if not ('fend' in locals()):
                         fend = -1
                     #check
-                    count_jump = np.sum(list_jump_bool[:,id].astype(int))
-                    if count_jump<2:#to check if the particle(id) truly jumps
+                    #count_jump = np.sum(list_jump_bool[:,id].astype(int))
+                    if count_jump[id]<2:#to check if the particle(id) truly jumps
                         #print(id,'_',count_jump)
                         #list_if_jump[id]=False #remove static or pinned particles
                         record_last_jump_xy[id] = [txyz_stable[-1,id,0],txyz_stable[-1,id,1],txyz_stable[-1,id,0],txyz_stable[-1,id,1]]#to show static particles
                     else:
-                        last_jump_xy = self.plot_bicolor_trajectory(txyz_stable[list_jump_bool[:,id],id,:2],t_pin_bool[fend,id],ax=ax,width=linewidth)
+                        last_jump_xy = self.plot_bicolor_trajectory(txyz_stable[list_jump_bool[:,id],id,:2],t_pin_bool[fend,id],ax=ax,width=linewidth,color_pin = cp,color_inte = ci)
                         record_last_jump_xy[id] = last_jump_xy 
                 #simply accumulate hist will let 1st minima covered.
             #print(record_last_jump_xy[2,2:],record_last_jump_xy[2,:2])
             uv = record_last_jump_xy[:,2:]-record_last_jump_xy[:,:2]#txyz_stable[-1,:]-record_last_jump_xy
             lim = [[-18,18],[-18,18]]
-            self.plot_bicolor_final_displacements(uv,record_last_jump_xy[:,0:2],t_pin_bool[fend],list_if_jump,ax,limit=lim,width=width)#txyz_stable[-1,:]
+            self.plot_bicolor_final_displacements(uv,record_last_jump_xy[:,0:2],t_pin_bool[fend],list_if_jump,ax,limit=lim,width=width,color_pin=cp,color_inte=ci)#txyz_stable[-1,:]
+            self.plot_bicolor_final_displacements_static(record_last_jump_xy[:,0:2],t_pin_bool[fend],list_if_static,ax,limit=lim,size=size,color_pin=cp,color_inte=ci)
             #plt.show()
             
         else:#proceed trajectory for a single particle of the given id
@@ -2334,6 +2351,7 @@ class trajectory_module:
         #ax.scatter(pos[:,0],pos[:,1],c='k')
         ax.plot(txy[:,0],txy[:,1])#,c='k'
         ax.set_aspect('equal','box')
+        plt.show()
         #png_filename = 'points.png'
         #plt.savefig(prefix_write+png_filename)
     
@@ -2346,7 +2364,7 @@ class trajectory_module:
             fig.savefig(fname=png_filename)
         #ax.set_aspect('equal','box')
     
-    def plot_bicolor_trajectory(self,txy,t_pin_bool,ax=None,width=1):#,list_jump_bool
+    def plot_bicolor_trajectory(self,txy,t_pin_bool,ax=None,width=1,color_pin = 'r',color_inte = 'orange'):#,list_jump_bool
         R"""
         input:
             list_jump_bool: part of (Nframe,Nparticle)[bool]. TRUE for jump, FALSE for oscillation.
@@ -2368,16 +2386,16 @@ class trajectory_module:
             fig,ax = plt.subplots()
         #ax.scatter(pos[:,0],pos[:,1],c='k')
         if t_pin_bool:
-            color='r'
+            color=color_pin
         else:
-            color='orange'
+            color=color_inte
         ax.plot(txy[:-1,0],txy[:-1,1],c=color,linewidth=width)#
         ax.set_aspect('equal','box')
         
         last_jump_xy = txy[-2:].reshape((4,))#may have bug when shape(txy)=null [x]
         return last_jump_xy
 
-    def plot_bicolor_final_displacements(self,uv,xy,list_pin_true,list_if_jump,ax=None,x_unit='($\sigma$)',limit=None,width=0.01):#,png_filename=None
+    def plot_bicolor_final_displacements(self,uv,xy,list_pin_true,list_if_jump,ax=None,x_unit='($\sigma$)',limit=None,width=0.01,color_pin='r',color_inte='orange'):#,png_filename=None
         list_pin_false =  np.logical_not(list_pin_true)
         list_pin_true_1 = np.logical_and(list_pin_true,list_if_jump)
         list_pin_false_1 = np.logical_and(list_pin_false,list_if_jump)
@@ -2387,17 +2405,35 @@ class trajectory_module:
         if not limit is None:
             ax.set_xlim(limit[0])
             ax.set_ylim(limit[1])
-            ax.quiver(xy[list_pin_true_1,0],xy[list_pin_true_1,1],uv[list_pin_true_1,0],uv[list_pin_true_1,1],color='r',angles='xy', scale_units='xy', scale=1,width=width)#,width=0.01,color='r'
-            ax.quiver(xy[list_pin_false_1,0],xy[list_pin_false_1,1],uv[list_pin_false_1,0],uv[list_pin_false_1,1],color='orange',angles='xy', scale_units='xy', scale=1,width=width)
+            ax.quiver(xy[list_pin_true_1,0],xy[list_pin_true_1,1],uv[list_pin_true_1,0],uv[list_pin_true_1,1],color=color_pin,angles='xy', scale_units='xy', scale=1,width=width)#,width=0.01,color='r'
+            ax.quiver(xy[list_pin_false_1,0],xy[list_pin_false_1,1],uv[list_pin_false_1,0],uv[list_pin_false_1,1],color=color_inte,angles='xy', scale_units='xy', scale=1,width=width)
             #ax.scatter(final_positions[:,0],final_positions[:,1])#final_state
         else:
-            ax.quiver(xy[list_pin_true_1,0],xy[list_pin_true_1,1],uv[list_pin_true_1,0],uv[list_pin_true_1,1],color='r',angles='xy', scale_units='xy', scale=1,width=width)#,color='r'
-            ax.quiver(xy[list_pin_false_1,0],xy[list_pin_false_1,1],uv[list_pin_false_1,0],uv[list_pin_false_1,1],color='orange',angles='xy', scale_units='xy', scale=1,width=width)
+            ax.quiver(xy[list_pin_true_1,0],xy[list_pin_true_1,1],uv[list_pin_true_1,0],uv[list_pin_true_1,1],color=color_pin,angles='xy', scale_units='xy', scale=1,width=width)#,color='r'
+            ax.quiver(xy[list_pin_false_1,0],xy[list_pin_false_1,1],uv[list_pin_false_1,0],uv[list_pin_false_1,1],color=color_inte,angles='xy', scale_units='xy', scale=1,width=width)
         #ax.scatter(xye[:,0],xye[:,1],c='k')#init_state
         ax.set_title('displacement field ')#+'index:'+str(simu_index)
         ax.set_xlabel('x'+x_unit)
         ax.set_ylabel('y'+x_unit)
         ax.set_aspect('equal','box')
+    
+    def plot_bicolor_final_displacements_static(self,xy,list_pin_true,list_if_static,ax=None,limit=None,size=1,color_pin='r',color_inte='orange'):#,png_filename=None
+        list_pin_false =  np.logical_not(list_pin_true)
+        list_pin_true_1 = np.logical_and(list_pin_true,list_if_static)
+        list_pin_false_1 = np.logical_and(list_pin_false,list_if_static)
+        if ax is None:
+            fig,ax = plt.subplots()
+
+        if not limit is None:
+            ax.set_xlim(limit[0])
+            ax.set_ylim(limit[1])
+            ax.scatter(xy[list_pin_true_1,0],xy[list_pin_true_1,1],color=color_pin,s=size)
+            ax.scatter(xy[list_pin_false_1,0],xy[list_pin_false_1,1],color=color_inte,s=size)
+            #ax.scatter(final_positions[:,0],final_positions[:,1])#final_state
+        else:
+            ax.scatter(xy[list_pin_true_1,0],xy[list_pin_true_1,1],color=color_pin,s=size)
+            ax.scatter(xy[list_pin_false_1,0],xy[list_pin_false_1,1],color=color_inte,s=size)
+
         
         
 class mean_square_displacement:
@@ -3040,7 +3076,7 @@ class bond_plot_module_old:
             center = [0,0]
 
         #draw a figure with edges
-        if x_unit == '(sigma)':
+        if x_unit == '($\sigma$)':
             """
             plt.rcParams.update({
             "text.usetex": True,
@@ -3170,7 +3206,7 @@ class bond_plot_module_old:
         traps=np.multiply(traps,LinearCompressionRatio)
         if mode=='array':
             #x_scale = 200
-            self.ax.scatter(traps[:,0], traps[:,1],c='r',marker = 'x',zorder=3)#,s=x_scale
+            self.ax.scatter(traps[:,0], traps[:,1],c='r',zorder=3)#marker = 'x',s=x_scale
         elif mode=='map':
             """
             #get points
@@ -3333,7 +3369,7 @@ class bond_plot_module:
             0   1   2   3   
         """
         #if dis is None:
-        self.points = xy
+        """self.points = xy
         xmax = max(self.points[:,0]) #- 3
         ymax = max(self.points[:,1]) #- 3
         xmin = min(self.points[:,0]) #+ 3
@@ -3345,7 +3381,8 @@ class bond_plot_module:
         center_origin_distance = np.abs(np.dot(center,center))
         if  center_origin_distance < 1.0:# center is really close to origin
             center = [0,0]
-
+        self.ax.set_xlim(-dis+center[0],dis+center[0])#plt.xlim(-dis+center[0],dis+center[0])
+        self.ax.set_ylim(-dis+center[1],dis+center[1])#plt.ylim(-dis+center[1],dis+center[1])"""
         #draw a figure with edges
         if x_unit == '(sigma)':
             """
@@ -3377,8 +3414,6 @@ class bond_plot_module:
         plt.yticks(new_ticks,new_ticks.astype(str))
         """
         #restrict data region to show
-        self.ax.set_xlim(-dis+center[0],dis+center[0])#plt.xlim(-dis+center[0],dis+center[0])
-        self.ax.set_ylim(-dis+center[1],dis+center[1])#plt.ylim(-dis+center[1],dis+center[1])
         self.x_unit = x_unit
 
     def restrict_axis_limitation(self,xlim,ylim):
@@ -3386,7 +3421,7 @@ class bond_plot_module:
         self.ax.set_xlim(xlim[0],xlim[1])
         self.ax.set_ylim(ylim[0],ylim[1])
 
-    def draw_points_with_given_bonds(self,xy,list_bonds_index=None,particle_size=None):
+    def draw_points_with_given_bonds(self,xy,list_bonds_index=None,particle_size=None,bond_color='b',particle_color='k',bond_width=None):
         R"""
         Parameters:
             xy: particle positions of a frame, with no one removed.
@@ -3403,14 +3438,14 @@ class bond_plot_module:
         #add lines for edges
         for i in range(np.shape(list_bonds_index)[0]):
             pt1,pt2 = [self.points[list_bonds_index[i,0]],self.points[list_bonds_index[i,1]]]
-            line = plt.Polygon([pt1,pt2], closed=None, fill=None, edgecolor='b')
-            plt.gca().add_line(line)
+            line = plt.Polygon([pt1,pt2], closed=None, fill=None, edgecolor= bond_color,linewidth=bond_width)
+            self.ax.add_line(line)#plt.gca().add_line(line)
         self.ax.set_title("bond_length: vertices"+self.x_unit)  # Add a title to the axes
 
         if not particle_size is None:
-            self.ax.scatter(xy[:,0],xy[:,1],color='k',zorder=1,s=particle_size)
+            self.ax.scatter(xy[:,0],xy[:,1],color=particle_color,zorder=1,s=particle_size)
         else:
-            self.ax.scatter(xy[:,0],xy[:,1],color='k',zorder=1)
+            self.ax.scatter(xy[:,0],xy[:,1],color=particle_color,zorder=1,s=particle_size)
 
     def get_bonds_with_conditional_ridge_length(self,ridge_length,ridge_points,ridge_first_minima_left):       
         R"""
@@ -3446,7 +3481,7 @@ class bond_plot_module:
         """
         self.ax.scatter(xy_stable[nb_change,0],xy_stable[nb_change,1],color='orange',zorder=2)
             
-    def plot_traps(self,trap_filename="/home/tplab/hoomd-examples_0/testhoneycomb3-8-12-part1",LinearCompressionRatio=0.79,mode='map'):
+    def plot_traps(self,trap_filename="/home/tplab/hoomd-examples_0/testhoneycomb3-8-12-part1",LinearCompressionRatio=0.79,mode='map',trap_color='r',trap_size=1):
         R"""
         trap_filename:
                 '/home/remote/hoomd-examples_0/testhoneycomb3-8-12'
@@ -3459,7 +3494,7 @@ class bond_plot_module:
         traps=np.multiply(traps,LinearCompressionRatio)
         if mode=='array':
             #x_scale = 200
-            self.ax.scatter(traps[:,0], traps[:,1],c='r',marker = 'x',zorder=3)#,s=x_scale
+            self.ax.scatter(traps[:,0], traps[:,1],c=trap_color,zorder=3,s=trap_size)#,marker = 'x',s=x_scale
         elif mode=='map':
             """
             #get points
@@ -3510,7 +3545,7 @@ class bond_plot_module:
         'pip install latex' is necessary for plt.savefig()
         """
         self.fig.savefig(png_filename)#plt.savefig(png_filename)
-        plt.close() # closes the current active figure
+        plt.close(self.fig)#plt.close() # closes the current active figure
 
 class bond_plot_module_for_image:
     def __init__(self,image):

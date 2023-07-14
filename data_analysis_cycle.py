@@ -293,7 +293,7 @@ def saveIndexCN346PCairoSeed(start_index,end_index,k1,step,linear_compression_ra
     #print(record)
     return save_file_name
 
-def saveIndexCN4CN6SeedPsi6(start_index,end_index,k1,step,linear_compression_ratio,randomseed):
+def saveIndexCN4CN6SeedPsi6(start_index,end_index,k1,step,linear_compression_ratio,randomseed,account='tplab'):
     R"""
     This function will save a txt file named 'start index - end index kl', which contains
     n rows of data 
@@ -302,11 +302,11 @@ def saveIndexCN4CN6SeedPsi6(start_index,end_index,k1,step,linear_compression_rat
       Psi6Global]
     """
     diference_index=end_index-start_index+1
-    prefix='/home/tplab/Downloads/'
+    prefix='/home/'+account+'/Downloads/'#'/home/tplab/Downloads/'
     record=numpy.zeros((diference_index,7))
 
     for index in numpy.linspace(start_index,end_index,diference_index):
-        data_filename=prefix+'index'+str(index.astype(int))
+        data_filename=prefix+'index'+str(index.astype(int))+'_'+str(int(randomseed))
         obj_of_simu_index = pa.static_points_analysis_2d(filename=data_filename)
         
         
@@ -446,6 +446,7 @@ def saveIndexklTCN3CN4Seed(start_index,end_index,k1,step,linear_compression_rati
     """
     diference_index=end_index-start_index+1
     prefix='/home/'+account+'/Downloads/'
+    prefix_gsd='/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/'
     record=numpy.zeros((diference_index,7))
 
     for index in numpy.linspace(start_index,end_index,diference_index):
@@ -1251,8 +1252,9 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
                 png_filename2 = folder_name+"/" +'bond_plot_1st_minima_index'+str_index+'_'+str(int(i))+'.png'
             
             a_frame.get_first_minima_bond_length_distribution(lattice_constant=3)#,png_filename=png_filename1
-            a_frame.draw_bonds_conditional_bond(check=[0.4, a_frame.bond_first_minima_left], png_filename=png_filename2,
-                                            show_traps=show_traps,LinearCompressionRatio=trap_lcr,trap_filename=trap_filename)
+            a_frame.draw_bonds_conditional_bond_oop(check=[0.4, a_frame.bond_first_minima_left], png_filename=png_filename2,
+                                            LinearCompressionRatio=trap_lcr,trap_filename=trap_filename,
+                                            x_unit='($\sigma$)',axis_limit=[10,10])#show_traps=show_traps,
         
         if bond_plot_gr:
             if final_cut:
@@ -1405,8 +1407,9 @@ def save_from_gsd_to_cn3(simu_index=None,seed=None,frame_cut=0,
     example:
        
     """
-    prefix='/home/'+account+'/Downloads/'#'/home/tplab/Downloads/'
+    prefix='/home/'+account+'/Downloads/cn3-t/'#'/home/tplab/Downloads/'
     log_prefix='/home/'+account+'/hoomd-examples_0/'#'/home/tplab/hoomd-examples_0/'
+    #/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/
     #load time steps
     if seed is None:
         str_index=str(int(simu_index))

@@ -286,11 +286,72 @@ Show the difference between different conditions:
 Direct trap VS dual lattice;√
 Higher transformation ratio; faster transformation dynamics.
 """
-class show_transition_from_hex_to_honeycomb:
+class show_final_frame:
     def __init__(self):
+        pass
+    def list_tables(self):
+        import opertateOnMysql as osql
+        tables = osql.showTables()
+        for table in tables:
+            print(table[0])#+'\n'
+
+    def search_lcr_k(self,lcr1=0.8,k1=300):
+        import opertateOnMysql as osql
+        table_name = 'pin_hex_to_honeycomb_klt_2m'
+        
+        lcr_step = 0.001
+        lcr_min=lcr1 - 0.5*lcr_step
+        lcr_max=lcr1 + 0.5*lcr_step
+        
+        cont=' distinct SimuIndex '#, RandomSeed
+        con=' where HarmonicK='+str(int(k1))+\
+            ' and LinearCompressionRatio >'+str(lcr_min)+' and LinearCompressionRatio <'+str(lcr_max)#+\
+            #' order by RandomSeed asc'
+        simu_index_seed=osql.getDataFromMysql(table_name=table_name,
+                            search_condition=con,select_content=cont)
+        print(simu_index_seed)
+        t_filename = '/home/remote/hoomd-examples_0/testhoneycomb3-8-12'
         import data_analysis_cycle as dac
+        for index1 in simu_index_seed:
+            dac.save_from_gsd(simu_index=index1[0],seed=9,final_cut=True,
+            bond_plot=True,show_traps=True,trap_filename=t_filename,trap_lcr=lcr1,
+            account='remote')
+        return simu_index_seed    
+    
+    def draw_configurations(self,simu_index):
+        import points_analysis_2D as pa
+        prefix = 's'
+        filename = prefix + 'school'
+        pa.static_points_analysis_2d()
+
+    def show_lcr_k(self):
+        R"""
+        import workflow_analysis as wa
+        sf = wa.show_final_frame()
+        lcrs,ks = sf.show_lcr_k()
+        for lcr1 in lcrs:
+            sf.search_lcr_k(lcr1[0],k1=60)#500
+        """
+        import opertateOnMysql as osql
+        table_name = 'pin_hex_to_honeycomb_klt_2m'
+
+        cont='distinct LinearCompressionRatio'
+        con=' order by LinearCompressionRatio asc'#where SimuIndex<4686
+        lcrs=osql.getDataFromMysql(table_name=table_name,
+                                    search_condition=con,select_content=cont)
+
+        cont='distinct HarmonicK'
+        con=' order by HarmonicK asc'
+        ks=osql.getDataFromMysql(table_name=table_name,
+                                    search_condition=con,select_content=cont)
+        return lcrs,ks
+        
+class show_bonds_transition_from_hex_to_honeycomb:
+    def __init__(self):
+        """import data_analysis_cycle as dac
         daw = dac.data_analysis_workflow()
-        daw.get_bond_plot()
+        daw.get_bond_plot()"""
+        pass
     
     def get_bond_plot(self,directory,data_name=None,trap_filename=None,trap_lcr=None,io_only=False):
         R"""
@@ -345,6 +406,38 @@ class show_transition_from_hex_to_honeycomb:
             dpa.draw_bonds.plot_neighbor_change(txyz_stable,nb_change)
             dpa.draw_bonds.plot_traps(trap_filename,LinearCompressionRatio)
             """
+
+    def get_bond_trap_plot(self):
+        R"""
+        fig3a large particle, small traps.
+        """
+        import points_analysis_2D as pa
+        
+        index = [4620,5228,5288]
+        #seed = 9
+        lcr = [0.78,0.78,0.84]
+        #k = [500,60,60]
+        lim=[[0,20],[-10,10],[-10,10]]
+        prefix = '/media/tplab/93B8-B96D/lxt/Fig3_data/FIG3abc/'
+        trap_filename = prefix + 'testhoneycomb3-8-12.txt'
+        for i in range(3):
+            filename = prefix + 'index'+str(index[i])+'_9.txt'
+            save_filename = prefix + 'bond_index'+str(index[i])+'_9.pdf'
+            points = np.loadtxt(filename)
+
+            spa = pa.static_points_analysis_2d(points[:,:2],hide_figure=False)
+            spa.get_first_minima_ridge_length_distribution()
+            bpm = pa.bond_plot_module()
+            bpm.restrict_axis_property_relative(spa.points,'($\sigma$)')
+            list_bond_index = bpm.get_bonds_with_conditional_ridge_length(spa.voronoi.ridge_length,spa.voronoi.ridge_points,spa.ridge_first_minima_left)
+            bond_color = 'tan'#'bisque'#'gold'#'darkorange'
+            bpm.draw_points_with_given_bonds(spa.points,list_bond_index,200,bond_color,bond_color,bond_width=1)
+            bpm.plot_traps(LinearCompressionRatio=lcr[i], trap_filename=trap_filename,mode='array',trap_color='r',trap_size=10)
+            bpm.restrict_axis_limitation(lim[i],lim[i])
+            
+            bpm.save_figure(png_filename=save_filename)
+            #spa.draw_bonds_conditional_ridge_oop(check=[0,spa.ridge_first_minima_left], png_filename=save_filename, xy_stable=spa.points, nb_change=None, x_unit='($\sigma$)', 
+            #                                    LinearCompressionRatio=lcr[i], trap_filename=trap_filename, axis_limit=lim[i])
 
 class show_bond_image:
     R"""
@@ -666,7 +759,6 @@ class show_waiting_time_interstitial_motion:
         ax.set_xlabel('$dr(\sigma)$')
         #ax.set_aspect('equal','box')
         
-
 class show_polygon_dye:
     def __init__(self):
         pass
@@ -1780,7 +1872,7 @@ class compare_diagram_dynamics:
         csv_filename = prefix + 'h_lcr080seed9_scan_k.csv'
         pd.DataFrame.to_csv(df_return,csv_filename) 
 
-    def plot_h_hp_cn3_scan_k_fast(self,account = 'tplab'):
+    def plot_h_hp_cn3_scan_k_fast(self,account = 'remote'):
         """
         import workflow_analysis as wa
         spd = wa.compare_diagram_dynamics()#show_polygon_dye() 
@@ -1791,22 +1883,22 @@ class compare_diagram_dynamics:
         #lcr0.8 seed9 scan k
         fig,ax = plt.subplots()
 
-        n_coarse=10
+        n_coarse=10#10,must be odd
         self.get_data_cn3_scan_k_fast(ax,'lcr080seed9_scan_k.csv','-<',n_coarse)
-        self.get_data_cn3_scan_k_fast(ax,'h_lcr080seed9_scan_k.csv','-H',n_coarse)
+        self.get_data_cn3_scan_k_fast(ax,'h_lcr080seed9_scan_k.csv','-H',n_coarse,[0, 2, 5, 10,11,12])
         
         ax.legend(loc='lower right',ncol=2)#
         ax.set_xlabel("time(steps)")
         ax.set_ylabel("$CN_3(1)$")
         ax.set_title("scan lcr=0.8 seed=9 in diagram under honey & part")
         #account = 'tplab'#'remote'
-        prefix='/home/'+account+'/Downloads/'
-        png_filename = prefix+'cn3_honey_and_part_lcr080seed9_scan_k_plot_coarse.pdf'#_logx _select3
-        plt.show()
+        prefix='/home/'+account+'/Downloads/cn3-t/'
+        png_filename = prefix+'cn3_honey_and_part_lcr080seed9_scan_k_plot_coarse_shallow5.pdf'#_logx _select3
+        #plt.show()
         fig.savefig(png_filename)
         plt.close()
     
-    def get_data_cn3_scan_k_fast(self,ax,csv_filename,marker,n_coarse=None):
+    def get_data_cn3_scan_k_fast(self,ax,csv_filename,marker,n_coarse=None,list_rows = [0,2,5]):
         R"""
         ax:
             the axe to plot lines.
@@ -1822,7 +1914,7 @@ class compare_diagram_dynamics:
         "kT","Psi3", "Psi6","RandomSeed","record_filename"]
         """
         account = 'remote'
-        prefix='/home/'+account+'/Downloads/'#+'cn3t/'
+        prefix='/home/'+account+'/Downloads/cn3-t/'
         csv_fname = prefix + csv_filename#'lcr080seed9_scan_k.csv'
         #get data
         import pandas as pd
@@ -1833,7 +1925,7 @@ class compare_diagram_dynamics:
         list_k = df_return["HarmonicK"].values
         frame_cut = 2000
         #fig,ax = plt.subplots()
-        for i in [0,2,5]:#[0,2,5]:#range(n_fname)：
+        for i in list_rows:#[0,2,5]:#range(n_fname)：
             file_name_npy = list_record_filename[i]
             record_cn = np.load(file_name_npy)
             
@@ -1842,6 +1934,51 @@ class compare_diagram_dynamics:
             else:
                 list_index,record_cn_coarse = self.data_decorating(record_cn[:frame_cut,4],n_coarse)
                 ax.plot(record_cn[list_index,0],record_cn_coarse,marker,label=str(list_k[i]/2))#semilogx
+
+    def save_cn3_decorate_to_csv(self,account = 'remote'):
+        import pandas as pd
+        n_coarse=10#10,must be odd
+        record_pd = self.save_cn3_decorate_to_csv_unit('lcr080seed9_scan_k.csv','-<',n_coarse)
+        record_pd = self.save_cn3_decorate_to_csv_unit('h_lcr080seed9_scan_k.csv','-H',n_coarse,[0, 2, 5, 10,11,12],record_pd)
+    
+        xlabel="time(steps)"
+        ylabel="$CN_3(1)$"
+        title="scan lcr=0.8 seed=9 in diagram under honey & part"
+        #account = 'tplab'#'remote'
+
+        prefix='/home/'+account+'/Downloads/cn3-t/'
+        csv_fname = prefix+'cn3_honey_and_part_lcr080seed9_scan_k_plot_coarse_shallow10.csv'#_logx _select3
+        pd.DataFrame.to_csv(record_pd,csv_fname)
+
+    def save_cn3_decorate_to_csv_unit(self,csv_filename,marker,n_coarse=None,list_rows = [0,2,5],record_pd=None):
+        import pandas as pd
+        account = 'remote'#'tplab'#
+        prefix='/home/'+account+'/Downloads/cn3-t/'
+
+        csv_fname = prefix + csv_filename#'lcr080seed9_scan_k.csv'
+
+        df_return = pd.read_csv(csv_fname)
+        list_simuindex = df_return["SimuIndex"].values    
+        list_record_filename = df_return["record_filename"].values        
+        #plot
+        n_fname = len(list_record_filename)
+        list_k = df_return["HarmonicK"].values
+        frame_cut = 2000
+        if record_pd is None:
+            record_pd = pd.DataFrame([])
+        for i in list_rows:#[0,2,5]:#range(n_fname)：
+            file_name_npy = list_record_filename[i]
+            record_cn = np.load(file_name_npy)
+            #cn_k data
+            list_index,record_cn_coarse = self.data_decorating(record_cn[:frame_cut,4],n_coarse)
+            #column name
+            label=str(list_simuindex[i])+'_'+str(list_k[i]/2)
+            if i == 12:
+                record_pd['t(step)'] = record_cn[list_index,0]
+            record_pd[label] = record_cn_coarse
+        #pd.concat([,])
+        return record_pd
+        
 
     def plot_hp_cn3_scan_seed(self):
         #trial 2

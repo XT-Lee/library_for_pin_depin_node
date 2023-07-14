@@ -92,9 +92,13 @@ def getDataFromMysql(path_to_save_file=None,table_name='',search_condition='',se
     mysql_conn.close()
 
 def showTables(search_condition=''):
+    R"""
+    #show tables with p as head, se as tail
+    show tables like ‘p%’ ‘%se’;
+    """
     mysql_conn = connectToMysql()
 
-    sql = 'show tables'+search_condition+';'
+    sql = 'show tables '+search_condition+';'
     try:
         with mysql_conn.cursor() as cursor:
             cursor.execute(sql)
