@@ -247,7 +247,7 @@ def saveIndexCN346Seed(start_index,end_index,k1,step,linear_compression_ratio,ra
     #print(record)
     return save_file_name
 
-def saveIndexCN346PCairoSeed(start_index,end_index,k1,step,linear_compression_ratio,randomseed):
+def saveIndexCN346PCairoSeed(start_index,end_index,k1,step,linear_compression_ratio,randomseed,account='tplab'):
     R"""
     This function will save a txt file named 'start index - end index kl', which contains
     n rows of data 
@@ -256,11 +256,11 @@ def saveIndexCN346PCairoSeed(start_index,end_index,k1,step,linear_compression_ra
         CoordinationNum6Rate | PCairo | RandomSeed ]
     """
     diference_index=end_index-start_index+1
-    prefix='/home/tplab/Downloads/'
+    prefix='/home/'+account+'/Downloads/'
     record=numpy.zeros((diference_index,8))
 
     for index in numpy.linspace(start_index,end_index,diference_index):
-        data_filename=prefix+'index'+str(index.astype(int))
+        data_filename=prefix+'index'+str(index.astype(int))+'_'+str(int(randomseed))
         dis_egct = 2*linear_compression_ratio*3*1.01
         obj_of_simu_index = pa.static_points_analysis_2d(filename=data_filename,dis_edge_cut=dis_egct)
         
@@ -280,15 +280,16 @@ def saveIndexCN346PCairoSeed(start_index,end_index,k1,step,linear_compression_ra
 
         record[(index-start_index).astype(int),5]=ccn[6]
 
-        import workflow_analysis as wa
-        cp = wa.show_cairo_order_parameter()
-        record[(index-start_index).astype(int),6]=cp.compute_cairo_order_parameter(ccn[3],ccn[4])
+        #import workflow_analysis as wa
+        pcairo1 = obj_of_simu_index.get_cairo_order_parameter(ccn[3],ccn[4])
+        #cp = wa.show_cairo_order_parameter()
+        record[(index-start_index).astype(int),6]=pcairo1#cp.compute_cairo_order_parameter(ccn[3],ccn[4])
 
         record[(index-start_index).astype(int),7]=randomseed
 
         
         
-    save_file_name=prefix+str(start_index)+'-'+str(end_index)+'klcn346'
+    save_file_name=prefix+str(start_index)+'-'+str(end_index)+'klcn346'+'seed'+str(randomseed)
     numpy.savetxt(save_file_name,record)
     #print(record)
     return save_file_name
@@ -1033,7 +1034,7 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
                     psik_plot=None,
                     neighbor_cloud=False,
                     coordination_number=False,lattice_constant=3,
-                    coordination_number3_plot=False,
+                    p_cairo=False,
                     bond_plot=False,bond_plot_gr=False,show_traps=False,trap_filename=None,trap_lcr=None,
                     gr=False,
                     sk=False,log_sk=False,
@@ -1218,6 +1219,8 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
             CN4 % shows the proportion of kagome.
             CN6 % shows the proportion of hexagonal.
             CN5/7 % shows the proportion of disclination.
+
+            record_cn: Nframes of [time_step, CN0, CN1,..., CN12]
             """
             #print('index '+str(i))
             #print(snap.particles.position[137])
@@ -1227,12 +1230,9 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
             if not "record_cn" in locals():#check if the variable exists
                 #load CN_k s
                 record_cn = numpy.zeros((gsd_data.num_of_frames,numpy.shape(ccn)[1]+1))
-                record_cn[:,0] = time_steps#range(10)##gsd frame is different from log frame for period set 100 vs 2e3
+                record_cn[:,0] = range(10)#time_steps##gsd frame is different from log frame for period set 100 vs 2e3
             #print(numpy.shape(ccn)[1])
             record_cn[i,1:numpy.shape(ccn)[1]+1] = ccn#[0:numpy.shape(ccn)[1]-1]
-        
-        if coordination_number3_plot:
-            pass
 
         if bond_plot:
             if final_cut:
@@ -1355,7 +1355,47 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
         png_filename = prefix +'T_VS_Psi_k_'+'index'+str_index+'.png'
         plt.savefig(png_filename)
         plt.close()
-    if coordination_number:
+    if p_cairo:
+        if not "record_pcairo" in locals():#check if the variable exists
+            #record_pcairo: Nframes of [time_step, cn3, cn4, pcairo]
+            record_pcairo = numpy.array(record_cn[:,:4])
+            record_pcairo[:,1] = record_cn[:,4]
+            record_pcairo[:,2] = record_cn[:,5]
+            record_pcairo[:,3] = 0
+
+        for i in range(gsd_data.num_of_frames):
+            record_pcairo[i,3] = a_frame.get_cairo_order_parameter(record_cn[i,4],record_cn[i,5])#ccn[3],ccn[4])
+
+        fig,ax = plt.subplots()
+        if frame_cut == 0:
+            ax.plot(record_cn[:,0],record_cn[:,4],label='CN_3')
+            ax.plot(record_cn[:,0],record_cn[:,5],label='CN_4')
+            ax.plot(record_cn[:,0],record_cn[:,7],label='CN_6')
+            ax.plot(record_cn[:,0],record_pcairo[:,3],label='Pcairo')
+            png_filename = prefix +'T_VS_Pcairo'+'index'+str_index+'egcut'+'.png'
+        
+        plt.legend()
+        plt.title('CN_k '+'index:'+str_index)
+        plt.xlabel('time(steps)')
+        plt.ylabel('Order Parameter(1)')
+        #plt.show()
+        plt.savefig(png_filename)
+        record_filename = prefix +'T_VS_Pcairo_cut'+'index'+str_index+'.txt'
+        numpy.savetxt(record_filename,record_cn)#numpy.savetxt(record_filename,record_cn)
+        plt.close()
+
+        scp = pa.show_cairo_order_parameter()
+        fig,ax = scp.plot_diagram()
+        #fig,ax = plt.subplots()
+        if frame_cut == 0:
+            ax.plot(record_cn[:,4],record_cn[:,5],'r',)
+            #ax.plot(record_cn[:,0],record_pcairo[:,3],label='Pcairo')
+            png_filename = prefix +'trajectory_Pcairo'+'index'+str_index+'egcut'+'.png'
+
+        plt.savefig(png_filename)
+        plt.close()
+
+    if False:#coordination_number:
         #txt_filename = prefix +'T_VS_CN_k_tcut'+'index'+str_index+'egcut'+'.txt'
         #numpy.savetxt(txt_filename,record_cn)
         plt.figure()
@@ -1392,6 +1432,7 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
         record_filename = prefix +'T_VS_CN_k_cut'+'index'+str_index+'.txt'
         numpy.save(record_filename,record_cn)#numpy.savetxt(record_filename,record_cn)
         plt.close()
+    
 
 def save_from_gsd_to_cn3(simu_index=None,seed=None,frame_cut=0,
                     final_cut=False,

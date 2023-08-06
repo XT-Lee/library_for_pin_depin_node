@@ -22,6 +22,38 @@
 	and others.
 
 ## log:
+- 20230807 edit get_cost_function_cluster_ml
+- 20230806 edit get_cost_function_cluster_ml
+- 20230804 add polygon_analyzer_ml to reorganize get_conditional_bonds_and_simplices_ml and get_cost_function_cluster_ml
+			add __init__() to relink vertices of rational ridge length in points_analysis_2d.static_points_analysis_2d.polygon_analyzer_ml
+			edit two modes in points_analysis_2d.static_points_analysis_2d.polygon_analyzer_ml.get_conditional_bonds_and_simplices_ml
+- 20230803 edit get_cost_function_cluster_ml
+- 20230731 edit record_vertices_cluster[vertex_id, cluster_id], not initialize cluster_id as -1 but range(n_vertices)
+			in points_analysis_2d.static_points_analysis_2d.get_conditional_bonds_and_simplices_ml.
+			caution: edges not cut ! [x] in points_analysis_2d.static_points_analysis_2d.get_cost_function_cluster_ml.
+			codes are finished but not checked [x]
+- 20230730 edit get_conditional_bonds_and_simplices_ml in points_analysis_2d.static_points_analysis_2d[on going]
+- 20230729 add account, filename_seed in data_analysis_cycle.saveIndexCN346PCairoSeed
+			add account in workflow_part.workflow_simu_to_mysql_pin_hex_to_cairo_egct_uniform
+			add get_conditional_bonds_and_simplices_ml in points_analysis_2d.static_points_analysis_2d
+			add get_cost_function_cluster_ml in points_analysis_2d.static_points_analysis_2d
+- 20230728 edit steps set option in pin_seed_oop.workflow_uniform.__init__().
+			edit pcairo1 in data_analysis_cycle.saveIndexCN346PCairoSeed
+			solve passing over month bug in computeTime.getTimeCost
+- 20230727 add example for get_trajectory_data in proceed_file.proceed_gsd_file
+			rename function __init_state_launch as __launch_init_state in pin_seed_oop.
+- 20230726 edit str_index=str(int(simu_index)) in data_analysis_cycle.save_from_gsd 
+			edit get_trajectory_data, add simu_index1 in proceed_file.proceed_gsd_file
+			edit scp = pa.show_cairo_order_parameter(), overplot 'r+' in data_analysis_cycle.save_from_gsd(if p_cairo)
+- 20230725 add introduction for compute_cairo_order_parameter in workflow_analysis.show_cairo_order_parameter.
+			add get_cairo_order_parameter in points_analysis_2d.static_points_analysis_2d. link to show_cairo_order_parameter.
+			move and edit show_cairo_order_parameter from workflow_analysis to  points_analysis_2d.
+- 20230724 add plot_bond_ridge_rank_idea 
+			in points_analysis_2d.static_points_analysis_2d, 
+			which is an idea of bond plot, 
+			bond_length_rank vs ridge_length_rank.
+			add get_bonds_with_machine_learning_idea
+			in points_analysis_2d.bond_plot_module [ongoing]
 - 20230713 edit trajectory_coarse_grain_general in points_analysis_2d.trajectory_module
 			add plot_bicolor_final_displacements_static in points_analysis_2d.trajectory_module
 			add bond_plot_for_ai, particle large, trap small[ongoing]

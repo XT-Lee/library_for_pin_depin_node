@@ -8,7 +8,8 @@ class workflow_uniform:
     R"""
         Introduction
     """
-    def __init__(self,index1,account='tplab',k1=100.0,step=100.0,k_end=1000.0,linear_compression_ratio=1.0,kT=1.0,seed_set=9,trap_name="testkagome_cycle3-4-6",mode="--mode=cpu"):
+    def __init__(self,index1,account='tplab',k1=100.0,step=100.0,k_end=1000.0,linear_compression_ratio=1.0,kT=1.0,seed_set=9,
+                trap_name="testkagome_cycle3-4-6",mode="--mode=cpu",period=1e3,steps=2e6+1):
         #set parameters
         self.account = account
         self.index_start = index1
@@ -20,6 +21,8 @@ class workflow_uniform:
         self.seed_set = seed_set
         self.trap_name = trap_name
         self.mode=mode
+        self.period = period
+        self.steps = steps
         #this should be set independently!
         self.set_init_state_parameters(pin_from_hex=True)
 
@@ -74,7 +77,7 @@ class workflow_uniform:
         """
         #initialization
         hoomd.context.initialize(self.mode);#--mode=cpu
-        self.__init_state_launch()
+        self.__launch_init_state()
             #ex_render.render_disk_frame(self.sys.take_snapshot())
 
         #set particles
@@ -92,18 +95,18 @@ class workflow_uniform:
         all = hoomd.group.all();
         hoomd.md.integrate.langevin(group=all, kT=self.kT, seed=seed_set);
         
-        period=1000#to analyze data, the period should be the same!
+        #period=1000#to analyze data, the period should be the same!
         #given period, the last frame in .log and .gsd is not the real last frame!
         #if the fluctuation in system is large, period must be set small!
         hoomd.analyze.log(filename=file_log,
                         quantities=['potential_energy', 'temperature'],
-                        period=period,
+                        period=self.period,
                         overwrite=True)
         
-        hoomd.dump.gsd(file_gsd, period=period, group=all, overwrite=True)
+        hoomd.dump.gsd(file_gsd, period=self.period, group=all, overwrite=True)
 
         #run the system
-        hoomd.run(2e6+1)#+1 to let the last period be record.
+        hoomd.run(self.steps)#+1 to let the last period be record.
         #eg. 0-100 is for 101~200 steps while 0-100-200 is for 201 steps
 
         #save simulated points as 'index123_seed.txt'
@@ -129,7 +132,7 @@ class workflow_uniform:
             self.pin_from_gsd = True
             self.init_gsd = init_gsd
 
-    def __init_state_launch(self):
+    def __launch_init_state(self):
         if self.pin_from_hex:
             self.__init_state_pin_from_hex()
         if self.pin_from_gsd:

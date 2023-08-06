@@ -85,7 +85,7 @@ class proceed_gsd_file:
                 id=simu_index.index('_')
                 self.simu_index = simu_index[0:id]
         else :
-            self.simu_index = simu_index
+            self.simu_index = int(simu_index)
             if not seed is None:
                 simu_index = str(int(simu_index))+'_'+str(int(seed))
             prefix_gsd = '/home/'+account+'/hoomd-examples_0/trajectory_auto'
@@ -106,7 +106,7 @@ class proceed_gsd_file:
         #self.N = self.snap.particles.N
         return positions
         
-    def get_trajectory_data(self,save_prefix = None):
+    def get_trajectory_data(self,save_prefix = None,simu_index=None):
         R"""
         introduction:
             transform gsd file into an array [Nframes,Nparticles,3],
@@ -116,6 +116,19 @@ class proceed_gsd_file:
         return:
             txyz [Nframes,Nparticles,3] or
             (npy file)[Nframes,Nparticles,3]
+        example:
+            import numpy as np
+            import opertateOnMysql as osql
+            tb_name = 'pin_hex_to_cairo_egct'
+            #SimuIndex | HarmonicK | LinearCompressionRatio | CoordinationNum3Rate | CoordinationNum4Rate | CoordinationNum6Rate | PCairo     | RandomSeed
+            cont = ' SimuIndex '
+            list_index = osql.getDataFromMysql(table_name=tb_name,select_content=cont)
+            list_index = np.array(list_index)
+            import proceed_file as pf
+            save_prefix = '/home/tplab/Downloads/'
+            for index1 in list_index:
+                pgf = pf.proceed_gsd_file(simu_index=index1[0])#,seed=9
+                pgf.get_trajectory_data(save_prefix)
         """
         frame = 0
         snapi = self.trajectory.read_frame(frame)
@@ -128,7 +141,10 @@ class proceed_gsd_file:
         self.txyz = pos_list
 
         if not save_prefix is None:
-            file_txyz_npy = save_prefix+'txyz'
+            if simu_index is None:
+                file_txyz_npy = save_prefix+'txyz'
+            else:
+                file_txyz_npy = save_prefix+'txyz_'+str(simu_index)
             np.save(file = file_txyz_npy,arr = self.txyz)
         
     def get_trajectory_stable_data(self,save_prefix = None):

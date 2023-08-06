@@ -2148,6 +2148,73 @@ def workflow_mysql_to_data_pin_hex_to_kagome_klt_2m_precise(account='tplab'):
     plt.savefig(png_filename)
     plt.close()
 
+def workflow_mysql_to_data_pin_hex_to_kagome_klt_2m_precise_random(account='tplab'):
+    R"""
+
+    Note: the format of table_name='pin_hex_to_kagome_klt_2m'
+    | SimuIndex | HarmonicK | LinearCompressionRatio | kT | 
+    CoordinationNum3Rate | CoordinationNum4Rate | RandomSeed | 
+    
+    FIGURE scatter  HarmonicK vs KBT, Psi6 as value 
+
+    import getDataAndScatter as scatt
+    scatt.workflow_mysql_to_data_pin_hex_to_kagome_klt_2m_precise(account='remote')
+
+    select * from 
+    pin_hex_to_kagome_klt_2m 
+    where kT =1 and SimuIndex > 4717 and SimuIndex < 4778 
+    order by LinearCompressionRatio, HarmonicK;
+
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+    #getDataToMysql
+    import opertateOnMysql as osql
+    U_interaction=300*np.exp(-0.25)
+
+    index_start = 4718
+    index_end = 4777
+    count_index = index_end-index_start+1
+    record = np.zeros((count_index,4))
+    cont=' avg(LinearCompressionRatio), avg(HarmonicK), avg(CoordinationNum4Rate),std(CoordinationNum4Rate) '
+
+    count=0
+    #scatter cycle
+    for i in np.linspace(index_start,index_end,count_index):
+        con=' where SimuIndex = '+str(int(i))+' '
+        data=osql.getDataFromMysql(table_name='pin_hex_to_kagome_klt_2m',search_condition=con,select_content=cont)
+        data=np.array(data)
+        record[count,:]=data#[lcrset,kset,m4,std4]
+        count+=1
+
+    prefix='/home/'+account+'/Downloads/'
+    postfix = '_pin_hex_to_kagome_klt_2m_precise_random.png'
+    data = record
+    plt.figure()
+    #plot k VS T, CN4 as value
+    plt.scatter(data[:,0],data[:,1]*0.5,c=data[:,2])# LCR VS K, CN4 as value
+    #plt.show()
+    plt.title('k VS lcr, CN4 as value, Uparticle='+str(int(U_interaction)) )
+    plt.xlabel('LinearCompressionRatio(1)')
+    plt.ylabel('U trap (kBT)[Kagome]')
+    plt.colorbar()
+    png_filename=prefix+'K_VS_lcr_CN4_as_value_precise'+postfix
+    plt.show()
+    plt.savefig(png_filename)
+    plt.close()
+
+    plt.figure()
+    #plot k VS T, CN4 as value
+    plt.scatter(data[:,0],data[:,1]*0.5,c=data[:,3])# LCR VS K, CN4 as value
+    #plt.show()
+    plt.title('k VS lcr, CN4std as value, Uparticle='+str(int(U_interaction)) )
+    plt.xlabel('LinearCompressionRatio(1)')
+    plt.ylabel('U trap (kBT)[Kagome]')
+    plt.colorbar()
+    png_filename=prefix+'K_VS_lcr_CN4_as_value_precise_std'+postfix
+    plt.savefig(png_filename)
+    plt.close()
+
 def workflow_mysql_to_data_pin_hex_to_kagome_klt_2m_random_mark(account='tplab',table_name = 'pin_hex_to_kagome'):
     R"""
     Note: the format of table_name=

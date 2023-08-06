@@ -1142,9 +1142,11 @@ class show_dual_lattice:
         ax.set_ylim(limit[1])
         """
             
-class show_cairo_order_parameter:
+class see_cairo_order_parameter:
     def __init__(self) -> None:
-        pass
+        import points_analysis_2D as pa
+        self.sc = pa.show_cairo_order_parameter()
+
     def compute_theoretical_diagram(self):
         R"""
         output:
@@ -1177,6 +1179,8 @@ class show_cairo_order_parameter:
         R"""
         output:
             p: order_parameter_for_cairo
+        introduction:
+            p_cairo = (cn3 + cn4)*min(cn3/2cn4,2cn4/cn3)
         """
         p1 = cn3+cn4
         if p1<=1:

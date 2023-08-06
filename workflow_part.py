@@ -2464,8 +2464,8 @@ def workflow_simu_to_mysql_pin_hex_to_cairo_egct(index1,lcr,seed=9):#[x]
     stp=100.0#10.0#
     kend=1000.0#90.0#
     #get simulation results
-    #import symmetry_transformation.symmetry_transformation_auto_cairo_pin as sa_c
-    #end_index=sa_c.workflow(index1=index1,k1=k1,step=stp,k_end=kend,linear_compression_ratio=lcr,seed_set=seed)
+    import symmetry_transformation.symmetry_transformation_auto_cairo_pin as sa_c
+    end_index=sa_c.workflow(index1=index1,k1=k1,step=stp,k_end=kend,linear_compression_ratio=lcr,seed_set=seed)
     end_index=index1+9
     'get file index123'
 
@@ -2484,6 +2484,66 @@ def workflow_simu_to_mysql_pin_hex_to_cairo_egct(index1,lcr,seed=9):#[x]
     """
     import opertateOnMysql as osql
     osql.loadDataToMysql(path_to_file_name=filename_kl,table_name=table_name)#"/home/tplab/Downloads/193-205kl"
+
+    return end_index
+
+def workflow_simu_to_mysql_pin_hex_to_cairo_egct_uniform(index1,lcr,seed=9,check=False,account='remote'):
+    R"""
+    Parameters:
+        initial state: hex3-16-8
+        traps:cairo3-6-6
+        safe lcr: [0.6,0.80]
+        critical lcr: 0.681
+    Examples:
+
+    Example2:
+        import workflow_part as tt
+        seed=9#no randomseed saved in txt
+        #pin sequence-GPU
+        index1=2153
+        lcr1=0.60#less than 0.60 is dangerous! some particles may not effected by trap!
+        while lcr1<0.805:
+            tt.workflow_simu_to_mysql_pin_hex_to_cairo_egct(index1=index1,lcr=lcr1,seed=seed)
+            index1=index1+10
+            lcr1=lcr1+0.01
+            """
+    #set parameters
+    table_name = "pin_hex_to_cairo_egct2lcra"
+
+    k1=0.0#100.0#
+    stp=10.0#100.0#
+    kend=90.0#1000.0#
+
+    trap_filename="testcairo3-6-6"
+    #get simulation results
+    #import symmetry_transformation.symmetry_transformation_auto_cairo_pin as sa_c
+    if check:
+        end_index=index1+9
+    else:
+        import symmetry_transformation.pin_seed_oop as sa_c
+        #wk=sa_c.workflow_uniform(index1=index1,account=account,k1=k1,step=stp,k_end=kend,linear_compression_ratio=lcr,
+        #                                seed_set=seed,trap_name=trap_filename,period=20,steps=2e4)
+        #end_index=wk.workflow()
+        end_index=index1+9
+    'get file index123'
+
+    #get analyzed data and generate txt table
+    if not check:
+        import data_analysis_cycle as da
+        filename_kl=da.saveIndexCN346PCairoSeed(start_index=index1,end_index=end_index,k1=k1,step=stp,linear_compression_ratio=lcr,randomseed=seed,account=account)
+        print('\n'+filename_kl)
+        'get file named index1 index2 kl'
+        
+    #loadDataToMysql
+    R"""
+    Note: the format of table_name='pin_hex_to_cairo_egct2lcra'
+        [ simu_index | HarmonicK | LinearCompressionRatio | 
+        CoordinationNum3Rate | CoordinationNum4Rate | 
+        CoordinationNum6Rate | PCairo | RandomSeed ]
+    """
+    if not check:
+        import opertateOnMysql as osql
+        osql.loadDataToMysql(path_to_file_name=filename_kl,table_name=table_name)#"/home/tplab/Downloads/193-205kl"
 
     return end_index
 

@@ -397,6 +397,10 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
             plt.savefig(png_filename)
         plt.close()
 
+    def scan_conditional_bonds_and_simplices_ml(self,png_filename=None,mode='global_scan'):
+        ml = polygon_analyzer_ml(self.voronoi,self.ridge_first_minima_left)
+        ml.scan_conditional_bonds_and_simplices_ml(mode,png_filename)
+
     def get_conditional_bonds_and_simplices(self,long_bond_cutoff=6):
         R"""
         return:
@@ -407,7 +411,6 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
         method:
             vertices cluster method: find the shortest ridges and link the related vertices.
         """
-
         list_short_ridge_bool = self.voronoi.ridge_length[:] <= self.ridge_first_minima_left
         list_short_bonds = self.voronoi.ridge_points[np.logical_not(list_short_ridge_bool)]#[start_point_index, end_point_index]
         """
@@ -502,8 +505,13 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
             self.draw_bonds.plot_neighbor_change(xy_stable,nb_change)
         if not png_filename is None:
             self.draw_bonds.save_figure(png_filename)
-        #else:
-        #    return ax
+    
+    def plot_bond_ridge_rank_idea(self):
+        R"""
+        bond plot, bond_length_rank vs ridge_length_rank,
+        to see if when bond be longer, the ridge be shorter.
+        """
+        pass
 
     def draw_polygon_patch_oop(self,fig=None,ax=None,polygon_color='r'):
         R"""
@@ -690,8 +698,16 @@ index 10 is out of bounds for axis 0 with size 10
             self.count_coordination[i]+=1
         #print(self.count_coordination)
         self.count_coordination_ratio=self.count_coordination/sum(self.count_coordination)
-        #print(self.count_coordination_ratio)
-        #return self.__coordination_bond
+    
+    def get_cairo_order_parameter(self,cn3,cn4):
+        R"""
+        output:
+            p: order_parameter_for_cairo
+        introduction:
+            p_cairo = (cn3 + cn4)*min(cn3/2cn4,2cn4/cn3)
+        """
+        sca = show_cairo_order_parameter()
+        return sca.compute_cairo_order_parameter(cn3,cn4)
 
     def search_neighbor_id(self,id):
         #cut edge to remove CN012
@@ -3469,6 +3485,22 @@ class bond_plot_module:
         list_bond_index = bond_length[list_bond_bool,0:2]
         return list_bond_index
 
+    def get_bonds_with_machine_learning_idea(self,bond_length,ridge_length):
+        R"""
+        Machine learning based Clustering algorithm：
+        cost function = normalized Ncluster + normalized sum(deviation of cluster i ) 
+        scan r within [p(r) first minima, ] (Nparticle,σ2(particle)) as the normalizing parameters.
+        （如果只是大团簇剪枝，就是HCS_clustering_algorithm）
+        初始粒子团簇不应该标0，应该是0-n-1，然后每次向下取团簇编号。
+        （要规定由短到长合并团簇吗？那就是PH算法）
+        这样随着r-ridge增大，团簇数从n-1开始下降，总方差从0开始上升。综合方法可以处理p(r) 粗糙，1st minima难找问题吗？
+        （由短到长合并团簇，不依赖分布？(Nparticle,id rank)*(Nridge,length rank)）能解决稀疏团簇和密集团簇互不干扰吗？
+        （监测σ2(cluster i)随Nmerge的异常增长，让不同cluster互不干扰。）
+        从0开始的团簇编号，意味着0号团簇全是开放结构，是边缘，应该被切边。（ridge法没切长bond，bond法去超长bond？）
+        """
+
+        pass
+
     def plot_neighbor_change(self,xy_stable,nb_change):
         R"""
         txyz_stable:array[Nframes,Nparticles,xyz]
@@ -4289,9 +4321,370 @@ class dynamical_facilitation_module:
         print(np.shape(points_selected))
         return points_selected
 
-class polygon_analyzer:
-    def __init__(self,points,bonds,faces):
+class polygon_analyzer_ml:
+    def __init__(self,voronoi,ridge_first_minima_left,ridge_length_cutoff=5.0):
         R"""
-        
+        description:
+            reorganize voronoi from static_points_analysis_2d, 
+            remove ridges whose length are too long to to reasonable,
+            and rearrange the indices to relink the ridges and vertices reasonable.
+        parameters:
+            self.voronoi: from static_points_analysis_2d, not tuned.
+            self.voronoi.vertices[self.voronoi.ridge_vertices[:,0],:] #position of vertices
+            self.voronoi.ridge_length#ridge_row -> [ridge_length]
+            self.voronoi.ridge_points#ridge_row -> [start_point_row,end_point_row]
+            self.voronoi.ridge_vertices#ridge_row -> [start_vertex_row,end_vertex_row]
         """
+        self.voronoi = voronoi
+
+        self.ridge_first_minima_left = ridge_first_minima_left
+        #ridge cut operation, to remove those whose ridge_lengths are too to to be reasonable
+        list_rational_ridge_bool = self.voronoi.ridge_length < ridge_length_cutoff
+        self.ridge_length = self.voronoi.ridge_length[list_rational_ridge_bool]#value, right
+        ridge_vertices = self.voronoi.ridge_vertices[list_rational_ridge_bool]#vertices index ?
+        list_vertices_index = np.unique(ridge_vertices)
+        self.vertices = self.voronoi.vertices[list_vertices_index]#vertices position, right
+        
+        #transform from old index to new index
+        """
+        list_rational_ridge_bool -> 0,1,2,3..len(self.ridge_length)
+        list_vertices_index -> 0,1,2,3..len(self.vertices)
+        ridge_vertices: row:ridge_index [vertex_index1,vertex_index2]
+
+        vertices_index_old_new = np.zeros((len(list_vertices_index),2))
+        vertices_index_old_new[:,0] = list_vertices_index
+        vertices_index_old_new[:,1] = range(len(list_vertices_index))
+        """
+        vertices_index_old_new = np.array(list_vertices_index)
+        
+        #ridge_vertices_temp = np.zeros(np.shape(ridge_vertices))#vertices index ?
+        ridge_vertices_temp = -np.ones(np.shape(ridge_vertices))
+        #ridge_vertices_temp[:,:] = -ridge_vertices_temp[:,:]
+        for j in range(2):
+            for i in range(np.shape(ridge_vertices)[0]):
+                row = np.where(vertices_index_old_new[:]==ridge_vertices[i,j] )
+                ridge_vertices_temp[i,j] = row[0]#int(row)
+        self.ridge_vertices = ridge_vertices_temp
+        #self.ridge_points = self.voronoi.ridge_points[list_rational_ridge_bool]#points index ?
+
+    def scan_conditional_bonds_and_simplices_ml(self,scan_mode='local_scan',png_filename=None,cost_mode='mean_var'):#[x]
+        R"""
+        input:
+        ----------
+            mode:
+                'local_scan', scan a small range of ridge_length around self.ridge_first_minima_left,
+                 forming vertices' clusters group, to check the overlap of local minima of cost and
+                 ridge_first_minima_left.
+                'global_scan', scan all the ridge_length to form vertices' clusters group, 
+                to calculate the global minima of cost.
+            png_filename:
+                to save figure of ridge_length vs cost.
+
+        return:
+        ----------
+            list_short_ridge_rank
+            record_costs
+
+        parameters:
+        ----------
+            vertex_bonds_index: n rows of [start_point_index, end_point_index]
+            list_simplex_cluster: n_vertices rows of [simplex_id, cluster_id],
+                where delaunay.simplices[simplex_id], 
+                and cluster_id is the cluster the simplex belonging to
+        method:
+        ----------
+            vertices cluster method: find the shortest ridges and link the related vertices.
+        
+        typical ridge length:
+        ----------
+            lattice     | bond_length   | ridge_length  | ratio
+            hex         | 1             | sqrt(3)/3     | bl*lcr*rl 
+            honeycomb   | 1             | sqrt(3)       |
+            kagome      | 1             | 2/3*sqrt(3)   |
+
+        """
+        #organize_start
+        ridge_length_sorted = np.sort(self.ridge_length)#small to large
+        #ridge_length_rank#short to long, rank 0,1,2...
+        list_short_ridge_bool = self.ridge_length[:] <= self.ridge_first_minima_left
+        short_ridge_length_rank = np.sum(list_short_ridge_bool.astype(int)) - 1
+        n_ridges = np.shape(list_short_ridge_bool)[0]
+        ridge_length_rank_ratio = (short_ridge_length_rank+1)/n_ridges
+        #scan a range around self.ridge_first_minima_left
+        if scan_mode =='local_scan':
+            scan_range_relative = 0.1
+        elif scan_mode =='global_scan':
+            scan_range_relative = 1.0
+        scan_ridge_length_rank_min = (ridge_length_rank_ratio - scan_range_relative)*n_ridges
+        scan_ridge_length_rank_min = self.check_scan_ridge_length_rank(scan_ridge_length_rank_min,n_ridges)
+        scan_ridge_length_rank_max = (ridge_length_rank_ratio + scan_range_relative)*n_ridges
+        scan_ridge_length_rank_max = self.check_scan_ridge_length_rank(scan_ridge_length_rank_max,n_ridges)
+        list_short_ridge_rank = np.linspace(scan_ridge_length_rank_min,scan_ridge_length_rank_max-1,scan_ridge_length_rank_max-scan_ridge_length_rank_min)
+        list_short_ridge_rank = list_short_ridge_rank.astype(int)
+        
+        record_costs = np.zeros( (np.shape(list_short_ridge_rank)[0],3) )
+        ridge_rank_min_cost = 0
+        min_cost = 1
+        for ridge_rank in list_short_ridge_rank:
+            ridge_first_minima_ml = ridge_length_sorted[ridge_rank] + 1e-5
+            #use ridge_first_minima_ml replace self.ridge_first_minima_left
+            #get n_clusters and sum(variance_cluster)
+            list_polygon_rate  = self.get_conditional_bonds_and_simplices_ml(ridge_first_minima_ml)
+            #self.vertex_bonds_index #short bonds index offered by ridge comapre method 
+            #self.list_simplex_cluster #[vertex_id,cluster_id]
+            index1 = int(ridge_rank-list_short_ridge_rank[0])
+            if cost_mode == 'sum_var':
+                record_costs[index1,0],record_costs[index1,1],record_costs[index1,2] \
+                    = self.get_cost_function_cluster_ml_method_sum_var()
+            elif cost_mode == 'mean_var':
+                record_costs[index1,0],record_costs[index1,1],record_costs[index1,2] \
+                    = self.get_cost_function_cluster_ml_method_mean_var()
+            #refresh the minima of cost
+            if record_costs[index1,0]<min_cost:
+               ridge_rank_min_cost = ridge_rank
+               min_cost = record_costs[index1,0]
+        print('ridge_length = ',np.round(ridge_length_sorted[ridge_rank_min_cost],3),' is best\n')
+
+        if not png_filename is None:
+            fig,ax = plt.subplots()
+            ax.plot(ridge_length_sorted,record_costs[:,0],'r',label='cost')#,legend
+            ax.plot(ridge_length_sorted,record_costs[:,1],'g',label='$r(n_{cluster})$')#n_cluster_norm
+            if cost_mode == 'sum_var':
+                ax.plot(ridge_length_sorted,record_costs[:,2],'b',label='$r(\Sigma \sigma^2)$')#sum_var_norm
+            elif cost_mode == 'mean_var':
+                ax.plot(ridge_length_sorted,record_costs[:,2],'b',label='$r(\langle \sigma^2 \rangle)$')#mean_var_norm
+                #'$r(\overline{\sigma^2})$' looks ugly
+            ax.scatter(ridge_length_sorted[short_ridge_length_rank],record_costs[int(short_ridge_length_rank-list_short_ridge_rank[0]),0],c='k')
+            #prefix = '/home/remote/Downloads/'
+            #png_filename = 'costs.png'
+            ax.legend()
+            ax.set_xlabel('ridge_length(1)')
+            ax.set_xlabel('cost(1)')
+            fig.savefig(png_filename)#prefix+
+
+        return list_short_ridge_rank,record_costs
+
+    def get_conditional_bonds_and_simplices_ml(self,ridge_first_minima_ml):#[x]
+        R"""
+        return:
+            vertex_bonds_index: n rows of [start_point_index, end_point_index]
+            list_simplex_cluster: n_vertices rows of [simplex_id, cluster_id],
+                where delaunay.simplices[simplex_id], 
+                and cluster_id is the cluster the simplex belonging to
+        method:
+            vertices cluster method: find the shortest ridges and link the related vertices.
+            pandas.array
+            self.voronoi.vertices[self.voronoi.ridge_vertices[:,0],:] #position of vertices
+            self.voronoi.ridge_length#ridge_row -> [ridge_length]
+            self.voronoi.ridge_points#ridge_row -> [start_point_row,end_point_row]
+            self.voronoi.ridge_vertices#ridge_row -> [start_vertex_row,end_vertex_row]
+        """
+        list_short_ridge_bool = self.ridge_length[:] <= ridge_first_minima_ml
+        #list_short_bonds = self.ridge_points[np.logical_not(list_short_ridge_bool)]#[start_point_index, end_point_index]
+        list_ridge_vertices_index = self.ridge_vertices[list_short_ridge_bool]
+        list_vertices_index = np.unique(list_ridge_vertices_index)
+        n_vertices_in_cluster = np.shape(list_vertices_index)[0]#count the vertices of short ridge to form cluster
+        n_vertices_reasonable = np.shape(self.vertices)[0]#count all the rational vertices
+        
+        #record_vertices_cluster: n_vertices rows of [vertex_id, cluster_id],
+        #where vertex_id belongs to list_vertices
+        #when cluster_id=-1, the vertex has not been included by any cluster.
+        record_vertices_cluster = np.ones((n_vertices_in_cluster,2))
+        record_vertices_cluster[:,1]=range(n_vertices_in_cluster)#watch initial value, 0,1,2...
+        record_vertices_cluster[:,0]=list_vertices_index
+        #cluster_id = 0
+        for i in range(n_vertices_in_cluster):
+            vertex_id = list_vertices_index[i]
+            #print("cluster_id\n",cluster_id)
+            list_linked = np.where(list_ridge_vertices_index[:,:]==vertex_id)
+            list_linked_vertices_pair = list_ridge_vertices_index[list_linked[0]]
+            #print("vertices_pair\n",list_linked_vertices_pair)
+            list_vertex_id_of_cluster1 = np.unique(list_linked_vertices_pair)
+            cluster_id = list_vertex_id_of_cluster1[0]#set the cluster_id to merge cluster1
+            for j in list_vertex_id_of_cluster1:
+                record_id = record_vertices_cluster[:,0]==j#find the row_index for vertex_id
+                #new cluster merge old one by refreshing a list of vertices in old cluster
+                contradictory_cluster_id = record_vertices_cluster[record_id,1]
+                list_bool_of_cluster_to_merge= (record_vertices_cluster[:,1]==contradictory_cluster_id)
+                record_vertices_cluster[list_bool_of_cluster_to_merge,1]=cluster_id
+            #cluster_id +=1
+        #statistics for clusters
+        list_cluster_id = np.unique(record_vertices_cluster[:,1])
+        
+        #if polygon_statistics:
+        count_polygon = np.zeros((n_vertices_reasonable,2))#(10,2)
+        for i in list_cluster_id:
+            list_cluster_i = record_vertices_cluster[record_vertices_cluster[:,1]==i,0]
+            n_complex_i = np.shape(list_cluster_i)[0]
+            count_polygon[n_complex_i,0]=n_complex_i+2#[x]frame=1421,polygon=10;1609,12
+            count_polygon[n_complex_i,1]+=1
+        count_polygon[0,0]=2
+        count_polygon[1,0]=3
+        count_polygon[1,1]+= n_vertices_reasonable - n_vertices_in_cluster
+
+        n_cluters_and_vertex = n_vertices_reasonable - n_vertices_in_cluster + len(list_cluster_id)#n_polygon also
+        check_1 = False
+        if check_1:
+            print('n_cluters_and_vertex','n_polygon')
+            print(n_cluters_and_vertex,sum(count_polygon[:,1]))
+            np.sum(np.logical_not(list_short_ridge_bool).astype(int))#np.shape(list_short_bonds)[0]
+        #print("polygon_n, count\n",count_polygon)
+        count_polygon_relative = np.array(count_polygon)
+        #n_polygons = sum(count_polygon[:,1])
+        count_polygon_relative[:,1] = count_polygon[:,1]/n_vertices_reasonable \
+                                        *(count_polygon[:,0]-2)*100#see one simplex as one weight, unit=100%
+        #print("polygon_n, count%\n",count_polygon_relative)
+        check_2 = True
+        if check_2:
+            count_max = np.max(count_polygon[:,1])
+            row_domain = np.where(count_polygon[:,1]==count_max)
+            print('domain polygon, domain_rate% ','n rest vertices')
+            print(count_polygon_relative[row_domain],n_vertices_reasonable - n_vertices_in_cluster)
+        self.count_polygon_number = count_polygon #[polygon_name, count_polygons]
+
+        #self.vertex_bonds_index = list_short_bonds#short bonds index offered by ridge comapre method 
+        self.list_simplex_cluster = record_vertices_cluster #n_vertices rows of [vertex_id, cluster_id],
+        
+        return count_polygon_relative#n_cluters_and_vertex#
+        
+    def check_scan_ridge_length_rank(self,scan_ridge_length_rank,n_ridges):
+        if scan_ridge_length_rank < 0:
+            scan_ridge_length_rank = 0
+        elif scan_ridge_length_rank > n_ridges:
+            scan_ridge_length_rank = n_ridges
+        else:
+            scan_ridge_length_rank = int(scan_ridge_length_rank)
+        return scan_ridge_length_rank
+
+    def get_cost_function_cluster_ml_method_sum_var(self):#,list_cluster_ids,vertex_cluster_positions[x]
+        R"""
+        introduction:
+            cost = normalized_n_clusters + normalized_sum_variance_n_clusters
+            
+            self.vertex_bonds_index #short bonds index offered by ridge comapre method 
+            self.list_simplex_cluster #[vertex_id,cluster_id]
+        return:
+            cost    
+        """
+        vertex_positions = np.array(self.vertices)
+        #get n_clusters_norm
+        n_vertices = np.shape(vertex_positions)[0]
+        n_clusters_0 = n_vertices
+        n_clusters = sum(self.count_polygon_number[:,1])#edges not cut ! [x]
+        n_clusters_norm = n_clusters/n_clusters_0
+        #get sum_var_norm
+        sum_var_0 = np.var(vertex_positions[:,0])+np.var(vertex_positions[:,1])
+        sum_var_0 = sum_var_0 *n_vertices#consider the contribution of each vertex
+        list_cluster_ids_unique = np.unique( self.list_simplex_cluster[:,1])
+        list_var_of_clusters = np.zeros((len(list_cluster_ids_unique),))#this is too large but okay anyway.
+        #[here a new i array should be set to match cluster ids]
+        for i in range(len(list_cluster_ids_unique)):
+            cluster_id = list_cluster_ids_unique[i]
+            list_vertices_indices_bool = self.list_simplex_cluster[:,1] == cluster_id#list_bool
+            list_vertices_indices = np.array(self.list_simplex_cluster[list_vertices_indices_bool,0]).astype(int)
+            n_vertices_in_cluster_id = len(list_vertices_indices)#np.sum .astype(int)
+            list_var_of_clusters[i] = np.var(vertex_positions[list_vertices_indices,0])+np.var(vertex_positions[list_vertices_indices,1])
+            list_var_of_clusters[i] = list_var_of_clusters[i] * n_vertices_in_cluster_id#consider the contribution of each vertex
+        sum_var = np.sum(list_var_of_clusters)
+        sum_var_norm = sum_var/sum_var_0
+        cost = n_clusters_norm + sum_var_norm
+        #print(n_clusters,n_clusters_norm,np.round(sum_var_norm,2))
+        return cost,n_clusters_norm,sum_var_norm
+
+    def get_cost_function_cluster_ml_method_mean_var(self):#
+        vertex_positions = np.array(self.vertices)
+        #get n_clusters_norm
+        n_vertices = np.shape(vertex_positions)[0]
+        n_clusters_0 = n_vertices
+        n_clusters = sum(self.count_polygon_number[:,1])
+        n_clusters_norm = n_clusters/n_clusters_0
+        #get var_norm
+        var_0 = np.var(vertex_positions[:,0])+np.var(vertex_positions[:,1])
+        list_cluster_ids_unique = np.unique( self.list_simplex_cluster[:,1])
+        list_var_of_clusters = np.zeros((len(list_cluster_ids_unique),))#this is too large but okay anyway.
+        #[here a new i array should be set to match cluster ids]
+        for i in range(len(list_cluster_ids_unique)):
+            cluster_id = list_cluster_ids_unique[i]
+            list_vertices_indices_bool = self.list_simplex_cluster[:,1] == cluster_id#list_bool
+            list_vertices_indices = np.array(self.list_simplex_cluster[list_vertices_indices_bool,0]).astype(int)
+            list_var_of_clusters[i] = np.var(vertex_positions[list_vertices_indices,0])+np.var(vertex_positions[list_vertices_indices,1])
+        mean_var = np.sum(list_var_of_clusters)/n_clusters#mean cluster+vertex
+        #np.mean(list_var_of_clusters)#mean cluster
+        mean_var_norm = mean_var/var_0
+        cost = n_clusters_norm + mean_var_norm
+        #print(n_clusters,n_clusters_norm,np.round(sum_var_norm,2))
+        return cost,n_clusters_norm,mean_var_norm
+
+
+class show_cairo_order_parameter:
+    def __init__(self) -> None:
         pass
+    def compute_theoretical_diagram(self):
+        R"""
+        output:
+            record: [cn3,cn4,order_parameter_for_cairo]
+        example:
+            import workflow_analysis as wa
+            ca = wa.show_cairo_order_parameter()
+            xyc = ca.compute()
+            ca.plot_diagram(xyc)
+        """
+        num_x = 99
+        list_num = np.linspace(0.01,0.99,num_x)
+        num_scan = 0.5*num_x*(num_x+1)
+        record = np.zeros((int(num_scan),3))
+        count = 0
+        for cn3 in list_num:
+            for cn4 in list_num:
+                p1 = cn3+cn4
+                if p1<=1:
+                    cn4_normal = cn4*2
+                    r34 = cn3/cn4_normal
+                    r43 = cn4_normal/cn3
+                    p2 = np.minimum(r34,r43)
+                    p = p1*p2
+                    record[count] = [cn3,cn4,p]
+                    count = count + 1
+        return record
+    
+    def compute_cairo_order_parameter(self,cn3,cn4):
+        R"""
+        output:
+            p: order_parameter_for_cairo
+        introduction:
+            p_cairo = (cn3 + cn4)*min(cn3/2cn4,2cn4/cn3)
+        """
+        p1 = cn3+cn4
+        if p1<=1:
+            cn4_normal = cn4*2
+            r0 = cn3*cn4
+            if r0>0:
+                r34 = cn3/cn4_normal
+                r43 = cn4_normal/cn3
+                p2 = np.minimum(r34,r43)
+                p = p1*p2
+            else:
+                p = 0
+        else:
+            print('error: cn3+cn4>1')
+            p = -1
+                    
+        return p
+
+    def plot_diagram(self,account='remote',fig=None,ax=None,save=False):
+        if ax is None:
+            fig,ax = plt.subplots()
+        xyc = self.compute_theoretical_diagram()
+        #ax.scatter(pos[:,0],pos[:,1],c='k')
+        scat = ax.scatter(xyc[:,0],xyc[:,1],c=xyc[:,2])
+        ax.set_aspect('equal','box')
+        ax.set_xlabel('cn3(1)')
+        ax.set_ylabel('cn4(1)')
+        ax.set_title('order_parameter_for_cairo')
+        fig.colorbar(scat,ax=ax)
+        if save:
+            prefix = "/home/"+account+"/Downloads/"
+            png_filename=prefix+'test_order_parameter_for_cairo.png'
+            plt.savefig(png_filename)
+        else:
+            return fig,ax

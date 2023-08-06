@@ -26,11 +26,15 @@ def getTimeCost(t1,t2):
         dt_h=dt_h+24
         dt_d=dt_d-1
 
-    if dt_d>0:
+    if dt_d>0.9:
         print("start",t1.tm_mday,":",t1.tm_hour,":",t1.tm_min,":",t1.tm_sec)
         print("end  ",t2.tm_mday,":",t2.tm_hour,":",t2.tm_min,":",t2.tm_sec)
         print("cost ",dt_d,":",dt_h,":",dt_m,":",dt_s)
-    else:
+    elif dt_d<-0.1:
+        print("start",t1.tm_hour,":",t1.tm_min,":",t1.tm_sec)
+        print("end  ",t2.tm_hour,":",t2.tm_min,":",t2.tm_sec)
+        print("cost ",dt_h+30,":",dt_m,":",dt_s)
+    elif dt_d<0.1:
         print("start",t1.tm_hour,":",t1.tm_min,":",t1.tm_sec)
         print("end  ",t2.tm_hour,":",t2.tm_min,":",t2.tm_sec)
         print("cost ",dt_h,":",dt_m,":",dt_s)
