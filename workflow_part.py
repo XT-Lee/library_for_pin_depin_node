@@ -1583,6 +1583,18 @@ def workflow_simu_to_mysql_pin_hex_to_kagome_oop_klt_2m(index1,lcr,kT=1.0,seed=9
             index_end=tt.workflow_simu_to_mysql_pin_hex_to_kagome_oop_klt_2m(index1=index1,lcr=lcr1,seed=seed,account='remote',check=False)#
             index1 = index1 + 10
             lcr1 = lcr1 + 0.01
+    exp8:
+        import workflow_part as tt
+        import numpy as np
+        seed=4
+        index1=5723
+        list_lcr = np.linspace(0.841,0.849,5)
+        for lcr1 in list_lcr:
+            print(index1,lcr1)#kagome pin precise
+            index_end=tt.workflow_simu_to_mysql_pin_hex_to_kagome_oop_klt_2m\
+                (index1=index1,lcr=lcr1,seed=seed,account='remote',check=False)#
+            index1 = index1 + 10
+            lcr1 = lcr1 + 0.01
     """
     #step1
     #depin check
@@ -1599,9 +1611,9 @@ def workflow_simu_to_mysql_pin_hex_to_kagome_oop_klt_2m(index1,lcr,kT=1.0,seed=9
 
     #step2
     #set parameters
-    k1=41#40.0#100.0
+    k1=21#41#40.0#100.0
     stp=2#6.0#100.0
-    kend=59#94.0#1000.0
+    kend=39#59#94.0#1000.0
     trap_name = "testkagome3-11-6"
     #get simulation results
     if not check:

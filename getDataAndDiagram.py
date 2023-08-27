@@ -2199,7 +2199,7 @@ def workflow_mysql_to_data_pin_hex_to_kagome_klt_2m_precise_random(account='tpla
     plt.ylabel('U trap (kBT)[Kagome]')
     plt.colorbar()
     png_filename=prefix+'K_VS_lcr_CN4_as_value_precise'+postfix
-    plt.show()
+    #plt.show()
     plt.savefig(png_filename)
     plt.close()
 
@@ -2211,7 +2211,7 @@ def workflow_mysql_to_data_pin_hex_to_kagome_klt_2m_precise_random(account='tpla
     plt.xlabel('LinearCompressionRatio(1)')
     plt.ylabel('U trap (kBT)[Kagome]')
     plt.colorbar()
-    png_filename=prefix+'K_VS_lcr_CN4_as_value_precise_std'+postfix
+    png_filename=prefix+'K_VS_lcr_CN4std_as_value_precise'+postfix
     plt.savefig(png_filename)
     plt.close()
 

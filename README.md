@@ -22,6 +22,10 @@
 	and others.
 
 ## log:
+- 20230826 edit example in workflow_part.workflow_simu_to_mysql_pin_hex_to_kagome_oop_klt_2m
+			add particle_decorate.py
+- 20230814 edit workflow_part.workflow_simu_to_mysql_pin_hex_to_kagome_oop_klt_2m
+			edit control_table
 - 20230807 edit get_cost_function_cluster_ml
 - 20230806 edit get_cost_function_cluster_ml
 - 20230804 add polygon_analyzer_ml to reorganize get_conditional_bonds_and_simplices_ml and get_cost_function_cluster_ml
