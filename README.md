@@ -14,6 +14,8 @@
 - data analysis module:
 	points_analysis_2D,
 	particle_tracking.
+	particle_decorate
+	data_decorate
 - application scripts:
 	workflow_part,
 	workflow_analysis,
@@ -22,6 +24,44 @@
 	and others.
 
 ## log:
+- 20231123 add cut_edge_of_positions_manual in points_analysis_2D.static_points_analysis_2d
+- 20231122 edit simulation_controller.simulation_controller_traps.generate_initial_state_hexagonal_particle_honeycomb_trap
+			add simulation_controller.simulation_controller_traps.generate_initial_state_hexagonal_particle_honeycomb_trap_scan_k
+- 20231120 edit get_trajectory_data in proceed_file.proceed_gsd_file
+			edit test_simulation
+- 20231117 add generate_type10_part,generate_type10 in  workflow_analysis.archimedean_tilings.
+			add set_new_gsd_file_2types in system_parameters_generators.initial_state_generator.
+- 20231116 add archimedean_tilings in  workflow_analysis.
+			add generate_type11_part,generate_type11 in  workflow_analysis.archimedean_tilings.
+- 20231115 add show_bonds_transition_from_hex_to_kagome in workflow_analysis.
+			edit draw_points_with_given_bonds in points_analysis_2D.bond_plot_module for matplotlib update.
+- 20231113 add symmetry_transformation_v4_3 to adjust the new hoomd.
+- 20231107 add get_cn3_vs_u_sub_low_depin,txt_to_data_low_depin in workflow_analysis.controller_get_honey_cn3_vs_u_sub.
+			add in workflow_analysis.controller_get_honey_part_cn3_vs_u_sub
+			add saveIndexkTCN4CN3depin in data_analysis_cycle
+- 20231106 add saveIndexkTCN4CN3SeedsPsi6 in data_analysis_cycle
+- 20231027 add extend_traps_to_9boxes in workflow_analysis.workflow_temp
+- 20231026 edit cut_edge_of_positions_by_box in points_analysis_2D.static_points_analysis_2d
+- 20231025 add cut_edge_of_positions_by_box in points_analysis_2D.static_points_analysis_2d
+- 20231019 add search_and_get_trajectory, search_and_get_single_final_frame in workflow_analysis.workflow_file_to_result.
+			get_bond_trap_plot_param_compare
+- 20231017 edit compute_energy_particle_wise in points_analysis_2D.energy_computer. 
+- 20231016 decouple get_extended_positions_from_points and get_extended_positions in proceed_file.proceed_gsd_file
+			add compute_energy_particle_wise. in .
+- 20231014 add interact_mode in points_analysis_2D.energy_computer.compute_distance
+- 20231013 edit read_a_frame, adding dimension, in proceed_file.proceed_gsd_file.
+			add get_extended_positions in proceed_file.proceed_gsd_file
+- 20231012 edit the introduction of workflow_analysis.
+			add data_retriever.
+			add energy_computer to calculate the free energy of a system in in points_analysis_2d.
+- 20231010 add array_to_xyz in proceed_file.data_type_transformer.
+- 20230907 add plot_to_check_trans_ratio,plot_to_check_act_ratio,plot_to_check_act_share_ratio in workflow_analysis.show_pin_interstitial_order_parameter.
+			add get_pin_depin_event in points_analysis_2d.dynamical_facilitation_module
+- 20230906 add show_pin_interstitial_order_parameter in workflow_analysis
+			add data_decorate
+			add data_decorator in data_decorate
+			add coarse_grainize_data_log,coarse_grainize_and_average_data_log in data_decorate.data_decorator
+- 20230905 add get_interstitial_bool in points_analysis_2d.dynamical_facilitation_module
 - 20230826 edit example in workflow_part.workflow_simu_to_mysql_pin_hex_to_kagome_oop_klt_2m
 			add particle_decorate.py
 - 20230814 edit workflow_part.workflow_simu_to_mysql_pin_hex_to_kagome_oop_klt_2m

@@ -522,7 +522,7 @@ def saveIndexkTCN4CN3SeedPsi6(start_index,end_index,kt1,step,linear_compression_
       Psi6Global]
     """
     diference_index=end_index-start_index+1
-    prefix='/home/tplab/Downloads/'
+    prefix='/home/remote/Downloads/'#'/home/tplab/Downloads/'
     record=numpy.zeros((diference_index,8))
 
     for index in numpy.linspace(start_index,end_index,diference_index):
@@ -559,6 +559,93 @@ def saveIndexkTCN4CN3SeedPsi6(start_index,end_index,kt1,step,linear_compression_
         """
 
     save_file_name=prefix+str(start_index)+'-'+str(end_index)+'klt43'
+    numpy.savetxt(save_file_name,record)
+    #print(record)
+    return save_file_name
+
+def saveIndexkTCN4CN3SeedsPsi6(start_index,end_index,kt1,step,linear_compression_ratio,kset,randomseed):
+    R"""
+    This function will save a txt file named 'start index - end index kl', which contains
+    n rows of data 
+    [ simu_index | HarmonicK | LinearCompressionRatio | kT |
+    CoordinationNum4Rate | CoordinationNum3Rate | RandomSeed |
+      Psi6Global]
+    """
+    diference_index=end_index-start_index+1
+    prefix='/home/remote/Downloads/'#'/home/tplab/Downloads/'
+    record=numpy.zeros((diference_index,8))
+
+    for index in numpy.linspace(start_index,end_index,diference_index):
+        data_filename=prefix+'index'+str(index.astype(int))+"_"+str(randomseed)
+        obj_of_simu_index = pa.static_points_analysis_2d(filename=data_filename)
+        
+        
+        record[(index-start_index).astype(int),0]=index
+
+        record[(index-start_index).astype(int),1]=kset
+
+        record[(index-start_index).astype(int),2]=linear_compression_ratio
+        
+        record[(index-start_index).astype(int),3]=kt1+step*(index-start_index)
+        
+        obj_of_simu_index.get_coordination_number_conditional()
+        ccn=obj_of_simu_index.count_coordination_ratio
+        record[(index-start_index).astype(int),4]=ccn[4]
+
+        record[(index-start_index).astype(int),5]=ccn[3]
+
+        record[(index-start_index).astype(int),6]=randomseed
+
+        #png_filename=prefix+'index'+str(index)+'Psi6.png'
+        obj_of_simu_index.get_bond_orientational_order(k_set=6)#plot=True
+        record[(index-start_index).astype(int),7]=obj_of_simu_index.Psi_k_global_cut_edge
+
+        """
+        log_prefix='/home/tplab/hoomd-examples_0/'
+        str_index=str(int(index))
+        str_seed=str(int(randomseed))
+        str_index=str_index+"_"+str_seed
+        record[(index-start_index).astype(int),7]=log_prefix+'trajectory_auto'+str_index+'.gsd'
+        """
+
+    save_file_name=prefix+str(start_index)+'-'+str(end_index)+'klt43'+'_'+str(randomseed)
+    numpy.savetxt(save_file_name,record)
+    #print(record)
+    return save_file_name
+
+def saveIndexkTCN4CN3depin(start_index,end_index,kt_set,step,linear_compression_ratio,k1):
+    R"""
+    This function will save a txt file named 'start index - end index kl', which contains
+    n rows of data 
+    [ simu_index | HarmonicK | LinearCompressionRatio | kT |
+    CoordinationNum4Rate | CoordinationNum3Rate | RandomSeed |
+      Psi6Global]
+    """
+    diference_index=end_index-start_index+1
+    prefix_read='/home/tplab/Downloads/'
+    prefix_save='/home/remote/Downloads/'
+    record=numpy.zeros((diference_index,6))
+
+    for index in numpy.linspace(start_index,end_index,diference_index):
+        data_filename=prefix_read+'index'+str(index.astype(int))
+        obj_of_simu_index = pa.static_points_analysis_2d(filename=data_filename)
+        
+        
+        record[(index-start_index).astype(int),0]=index
+
+        record[(index-start_index).astype(int),1]=k1+step*(index-start_index)
+
+        record[(index-start_index).astype(int),2]=linear_compression_ratio
+        
+        record[(index-start_index).astype(int),3]=kt_set
+        
+        obj_of_simu_index.get_coordination_number_conditional()
+        ccn=obj_of_simu_index.count_coordination_ratio
+        record[(index-start_index).astype(int),4]=ccn[4]
+
+        record[(index-start_index).astype(int),5]=ccn[3]
+
+    save_file_name=prefix_save+str(start_index)+'-'+str(end_index)+'klt43'
     numpy.savetxt(save_file_name,record)
     #print(record)
     return save_file_name
@@ -1035,7 +1122,7 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
                     neighbor_cloud=False,
                     coordination_number=False,lattice_constant=3,
                     p_cairo=False,
-                    bond_plot=False,bond_plot_gr=False,show_traps=False,trap_filename=None,trap_lcr=None,
+                    bond_plot=False,bond_plot_gr=False,show_traps=False,trap_filename=None,trap_lcr=None,list_traps=None,
                     gr=False,
                     sk=False,log_sk=False,
                     msd=False,single_particle=False,
@@ -1083,8 +1170,12 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
         account='remote',)
     """
     import freud
-    prefix='/home/'+account+'/Downloads/'#'/home/tplab/Downloads/'
-    log_prefix='/home/'+account+'/hoomd-examples_0/'#'/home/tplab/hoomd-examples_0/'
+    prefix = "/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/"
+    log_prefix=prefix
+    #prefix='/home/'+account+'/Downloads/'#'/home/tplab/Downloads/'
+    #log_prefix='/home/'+account+'/hoomd-examples_0/'#'/home/tplab/hoomd-examples_0/'
+    #/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/testhoneycomb3-8-12-part1
+        
     #load time steps
     if seed is None:
         str_index=str(int(simu_index))
@@ -1094,9 +1185,10 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
         file_gsd = log_prefix+'trajectory_auto'+str_index+'.gsd'#+'_'+str(seed)
         gsd_data = pf.proceed_gsd_file(filename_gsd_seed=file_gsd,account=account)
         
-    file_log=log_prefix+'log-output_auto'+str_index+'.log'#+'_'+str(seed)
+    """file_log=log_prefix+'log-output_auto'+str_index+'.log'#+'_'+str(seed)
     log_data = numpy.genfromtxt(fname=file_log, skip_header=True)
-    time_steps = log_data[:,0]
+    time_steps = log_data[:,0]"""
+    time_steps = 0#just in case
 
     
     #print(gsd_data.num_of_frames)
@@ -1164,82 +1256,45 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
         gsd_data.plot_trajectory()
     
     for i in range(gsd_data.num_of_frames):
-        if final_cut:
-            i = gsd_data.num_of_frames-1#i=9#!!! 23
-        
-        a_frame = pa.static_points_analysis_2d(points=gsd_data.read_a_frame(i))#hide_figure=False
-        snap = gsd_data.trajectory.read_frame(i)
-        
-        if save_result_txt:
-            result_filename=prefix+'index'+str_index 
-            points=snap.particles.position[:]#temp
-            numpy.savetxt(result_filename,points)#temp
+        if i < 0:
+            pass
+        else:
 
-
-        if displacement_field:
-            png_filename1 = prefix +'Displacement_Field_xy_'+'index'+str_index+'_'+str(int(i))+'.png'
-            gsd_data.get_displacement_field_xy(i,plot=True,png_filename=png_filename1)#
-            png_filename2 = prefix +'Displacement_Field_hist_log_'+'index'+str_index+'_'+str(int(i))+'.png'
-            gsd_data.get_displacement_field_distribution(i,log_mode=True,png_filename=png_filename2)
-            png_filename3 = prefix +'Displacement_Field_hist_'+'index'+str_index+'_'+str(int(i))+'.png'
-            gsd_data.get_displacement_field_distribution(i,png_filename=png_filename3)
-            
-        if psik:
-            if not "record_psik" in locals():#check if the variable exists
-                #load Psi_k s
-                record_psik = numpy.zeros((gsd_data.num_of_frames,3))#[time_steps,psi3,psi6]
-                record_psik[:,0] = time_steps#[0:25]*20
-            a_frame.get_bond_orientational_order(k_set=3)
-            record_psik[i,1] = a_frame.Psi_k_global_cut_edge
-            a_frame.get_bond_orientational_order(k_set=6)
-            record_psik[i,2] = a_frame.Psi_k_global_cut_edge
-
-        if  not psik_plot is None:
-            png_filename_psik = prefix +'bond_orientational_order_'+str(int(psik_plot))+'_'+'index'+str_index+'_'+str(int(i))+'.png'
-            a_frame.get_bond_orientational_order(k_set=psik_plot,plot=True,png_filename=png_filename_psik)
-
-        if neighbor_cloud:
-            folder_name=prefix+"record_"+str_index#+"/"
-            #check if the folder exists
-            isExists=os.path.exists(folder_name)
-            if isExists:
-                pass
-            else:
-                os.makedirs(folder_name)
-            png_filename = folder_name+"/"+'neighbor_cloud_1st_minima_index'+str_index+'_'+str(int(i))+'.png'
-            #a_frame.get_neighbor_cloud(png_filename=png_filename)
-            a_frame.get_neighbor_cloud_method_1st_minima_bond(png_filename=png_filename)
-
-        if coordination_number:
-            R"""
-            CN0 % should be 0 for all the particles must be linked by bond.
-            CN1 % is likely to be edge?
-            CN2 % in body(edge-cutted) shows the mechanical unstability
-            CN3 % shows the proportion of honeycomb.
-            CN4 % shows the proportion of kagome.
-            CN6 % shows the proportion of hexagonal.
-            CN5/7 % shows the proportion of disclination.
-
-            record_cn: Nframes of [time_step, CN0, CN1,..., CN12]
-            """
-            #print('index '+str(i))
-            #print(snap.particles.position[137])
-            a_frame.get_coordination_number_conditional(lattice_constant=lattice_constant)#cut edge to remove CN012
-            ccn = a_frame.count_coordination_ratio#[time_steps,psi3,psi6]
-            ccn = numpy.transpose(ccn)
-            if not "record_cn" in locals():#check if the variable exists
-                #load CN_k s
-                record_cn = numpy.zeros((gsd_data.num_of_frames,numpy.shape(ccn)[1]+1))
-                record_cn[:,0] = range(10)#time_steps##gsd frame is different from log frame for period set 100 vs 2e3
-            #print(numpy.shape(ccn)[1])
-            record_cn[i,1:numpy.shape(ccn)[1]+1] = ccn#[0:numpy.shape(ccn)[1]-1]
-
-        if bond_plot:
             if final_cut:
-                #bond_plot+trap_plot
-                png_filename1 = prefix +'bond_hist_index'+str_index+'_'+str(int(i))+'.png'
-                png_filename2 = prefix +'bond_plot_1st_minima_index'+str_index+'_'+str(int(i))+'.png'
-            else:
+                i = gsd_data.num_of_frames-1#i=9#!!! 23
+            list_points = numpy.logical_not(list_traps)
+            a_frame = pa.static_points_analysis_2d(points=gsd_data.trajectory[i].particles.position[list_points,0:2])#gsd_data.read_a_frame(i),hide_figure=False
+            
+            
+            if save_result_txt:
+                result_filename=prefix+'index'+str_index 
+                points=snap.particles.position[:]#temp
+                numpy.savetxt(result_filename,points)#temp
+
+
+            if displacement_field:
+                png_filename1 = prefix +'Displacement_Field_xy_'+'index'+str_index+'_'+str(int(i))+'.png'
+                gsd_data.get_displacement_field_xy(i,plot=True,png_filename=png_filename1)#
+                png_filename2 = prefix +'Displacement_Field_hist_log_'+'index'+str_index+'_'+str(int(i))+'.png'
+                gsd_data.get_displacement_field_distribution(i,log_mode=True,png_filename=png_filename2)
+                png_filename3 = prefix +'Displacement_Field_hist_'+'index'+str_index+'_'+str(int(i))+'.png'
+                gsd_data.get_displacement_field_distribution(i,png_filename=png_filename3)
+                
+            if psik:
+                if not "record_psik" in locals():#check if the variable exists
+                    #load Psi_k s
+                    record_psik = numpy.zeros((gsd_data.num_of_frames,3))#[time_steps,psi3,psi6]
+                    record_psik[:,0] = time_steps#[0:25]*20
+                a_frame.get_bond_orientational_order(k_set=3)
+                record_psik[i,1] = a_frame.Psi_k_global_cut_edge
+                a_frame.get_bond_orientational_order(k_set=6)
+                record_psik[i,2] = a_frame.Psi_k_global_cut_edge
+
+            if  not psik_plot is None:
+                png_filename_psik = prefix +'bond_orientational_order_'+str(int(psik_plot))+'_'+'index'+str_index+'_'+str(int(i))+'.png'
+                a_frame.get_bond_orientational_order(k_set=psik_plot,plot=True,png_filename=png_filename_psik)
+
+            if neighbor_cloud:
                 folder_name=prefix+"record_"+str_index#+"/"
                 #check if the folder exists
                 isExists=os.path.exists(folder_name)
@@ -1247,102 +1302,163 @@ def save_from_gsd(simu_index=None,seed=None,frame_cut=0,
                     pass
                 else:
                     os.makedirs(folder_name)
-                #bond_plot+trap_plot
-                png_filename1 = folder_name+"/" +'bond_hist_index'+str_index+'_'+str(int(i))+'.png'
-                png_filename2 = folder_name+"/" +'bond_plot_1st_minima_index'+str_index+'_'+str(int(i))+'.png'
-            
-            a_frame.get_first_minima_bond_length_distribution(lattice_constant=3)#,png_filename=png_filename1
-            a_frame.draw_bonds_conditional_bond_oop(check=[0.4, a_frame.bond_first_minima_left], png_filename=png_filename2,
-                                            LinearCompressionRatio=trap_lcr,trap_filename=trap_filename,
-                                            x_unit='($\sigma$)',axis_limit=[10,10])#show_traps=show_traps,
-        
-        if bond_plot_gr:
-            if final_cut:
-                #bond_plot+trap_plot
-                png_filename1 = prefix +'bond_gr_index'+str_index+'_'+str(int(i))+'.png'
-                png_filename2 = prefix +'bond_plot_gr_1st_minima_index'+str_index+'_'+str(int(i))+'.png'
-            else:
-                folder_name=prefix+"record_"+str_index#+"/"
-                #check if the folder exists
-                isExists=os.path.exists(folder_name)
-                if isExists:
-                    pass
+                png_filename = folder_name+"/"+'neighbor_cloud_1st_minima_index'+str_index+'_'+str(int(i))+'.png'
+                #a_frame.get_neighbor_cloud(png_filename=png_filename)
+                a_frame.get_neighbor_cloud_method_1st_minima_bond(png_filename=png_filename)
+
+            if coordination_number:
+                R"""
+                CN0 % should be 0 for all the particles must be linked by bond.
+                CN1 % is likely to be edge?
+                CN2 % in body(edge-cutted) shows the mechanical unstability
+                CN3 % shows the proportion of honeycomb.
+                CN4 % shows the proportion of kagome.
+                CN6 % shows the proportion of hexagonal.
+                CN5/7 % shows the proportion of disclination.
+
+                record_cn: Nframes of [time_step, CN0, CN1,..., CN12]
+                """
+                #print('index '+str(i))
+                #print(snap.particles.position[137])
+                a_frame.get_coordination_number_conditional(lattice_constant=lattice_constant)#cut edge to remove CN012
+                ccn = a_frame.count_coordination_ratio#[time_steps,psi3,psi6]
+                ccn = numpy.transpose(ccn)
+                if not "record_cn" in locals():#check if the variable exists
+                    #load CN_k s
+                    record_cn = numpy.zeros((gsd_data.num_of_frames,numpy.shape(ccn)[1]+1))
+                    record_cn[:,0] = range(10)#time_steps##gsd frame is different from log frame for period set 100 vs 2e3
+                #print(numpy.shape(ccn)[1])
+                record_cn[i,1:numpy.shape(ccn)[1]+1] = ccn#[0:numpy.shape(ccn)[1]-1]
+
+            if bond_plot:
+                if final_cut:
+                    #bond_plot+trap_plot
+                    png_filename1 = prefix +'bond_hist_index'+str_index+'_'+str(int(i))+'.png'
+                    png_filename2 = prefix +'bond_plot_1st_minima_index'+str_index+'_'+str(int(i))+'.png'
                 else:
-                    os.makedirs(folder_name)
-                #bond_plot+trap_plot
-                #png_filename1 = folder_name+"/" +'bond_hist_index'+str_index+'_'+str(int(i))+'.png'
-                png_filename2 = folder_name+"/" +'bond_plot_1st_minima_index'+str_index+'_'+str(int(i))+'.png'
+                    folder_name=prefix+"record_"+str_index#+"/"
+                    #check if the folder exists
+                    isExists=os.path.exists(folder_name)
+                    if isExists:
+                        pass
+                    else:
+                        os.makedirs(folder_name)
+                    #bond_plot+trap_plot
+                    png_filename1 = folder_name+"/" +'bond_hist_index'+str_index+'_'+str(int(i))+'.png'
+                    png_filename2 = folder_name+"/" +'bond_plot_1st_minima_index'+str_index+'_'+str(int(i))+'.png'
+                #a_frame is static_points_analysis_2d
+                #a_frame.get_first_minima_bond_length_distribution(lattice_constant=3)#,png_filename=png_filename1
+                spa = a_frame
+                pa.bond_plot_module()
+                a_frame.get_first_minima_bond_length_distribution()
+                #a_frame.get_first_minima_ridge_length_distribution()
+                bpm = pa.bond_plot_module()
+                bpm.restrict_axis_property_relative(spa.points,'($\sigma$)')
+                #list_bond_index = bpm.get_bonds_with_conditional_ridge_length(spa.voronoi.ridge_length,spa.voronoi.ridge_points,spa.ridge_first_minima_left)
+                list_bond_index = bpm.get_bonds_with_conditional_bond_length(spa.bond_length,[0.9,spa.bond_first_minima_left])
+                #color_name: https://www.cssportal.com/html-colors/x11-colors.php
+                bond_color = 'k'#'gold'#'mediumseagreen'#'tan'#'bisque'#'gold'#'darkorange'
+                bpm.draw_points_with_given_bonds(spa.points,list_bond_index,50,bond_color,bond_color,bond_width=1)#200
+                bpm.plot_traps(LinearCompressionRatio=1.0, trap_filename=trap_filename,mode='map',trap_color='r',trap_size=10)#array
+                semibox = gsd_data.trajectory[0].configuration.box[0:2]/2
+                bpm.restrict_axis_limitation([-semibox[0],semibox[0]],[-semibox[1],semibox[1]])
+                save_filename = png_filename2
+                bpm.save_figure(png_filename=save_filename)
+                """
+                a_frame.draw_bonds_conditional_bond_oop(check=[0.4, a_frame.bond_first_minima_left], png_filename=png_filename2,
+                                                LinearCompressionRatio=trap_lcr,trap_filename=trap_filename,
+                                                x_unit='($\sigma$)',axis_limit=[10,10])#show_traps=show_traps,
             
-            rdf = freud.density.RDF(bins=150, r_max=15.0,r_min=1.0)#
-            rdf.compute(system=snap)
-            a_frame.draw_radial_distribution_function_and_first_minima(rdf,lattice_constant=3,png_filename=png_filename1)#
-            a_frame.draw_bonds_conditional_bond(check=[0.4, a_frame.bond_first_minima_left], png_filename=png_filename2,
-                                            show_traps=show_traps,LinearCompressionRatio=trap_lcr,trap_filename=trap_filename)
-            """
-            rdf = freud.density.RDF(bins=150, r_max=15.0)#
-            rdf.compute(system=snap)
-            #print(rdf.bin_centers) print(rdf.bin_counts)
-            rdf.plot()
-            fig_type = 'gr'
-            data_filename=prefix+fig_type+'_index'+str_index+'_'+str(int(i))+'.png'
-            plt.savefig(data_filename)
-            plt.close()
-            """
-            """
-            #checked right
-            import gsd.hoomd
-            import freud
-            traj = gsd.hoomd.open('/home/tplab/hoomd-examples_0/trajectory_auto5208_9.gsd')
-            rdf = freud.density.RDF(bins=50,r_max=10)
-            rdf.compute(system=traj[-1])
-            r =rdf.bin_centers
-            y = rdf.rdf
-            import matplotlib.pyplot as plt
-            fig,ax = plt.subplots()
-            rdf.plot(ax=ax)
-            plt.savefig('/home/tplab/Downloads/gr.png')
-            """
-    
-        if sk:
-            sk = freud.diffraction.DiffractionPattern()
-            sk.compute(system=snap)
-            if log_sk:
-                fig_type = 'log_sk'        
+                """
+                
+            if bond_plot_gr:
+                if final_cut:
+                    #bond_plot+trap_plot
+                    png_filename1 = prefix +'bond_gr_index'+str_index+'_'+str(int(i))+'.png'
+                    png_filename2 = prefix +'bond_plot_gr_1st_minima_index'+str_index+'_'+str(int(i))+'.png'
+                else:
+                    folder_name=prefix+"record_"+str_index#+"/"
+                    #check if the folder exists
+                    isExists=os.path.exists(folder_name)
+                    if isExists:
+                        pass
+                    else:
+                        os.makedirs(folder_name)
+                    #bond_plot+trap_plot
+                    #png_filename1 = folder_name+"/" +'bond_hist_index'+str_index+'_'+str(int(i))+'.png'
+                    png_filename2 = folder_name+"/" +'bond_plot_1st_minima_index'+str_index+'_'+str(int(i))+'.png'
+                
+                rdf = freud.density.RDF(bins=150, r_max=15.0,r_min=1.0)#
+                rdf.compute(system=snap)
+                a_frame.draw_radial_distribution_function_and_first_minima(rdf,lattice_constant=3,png_filename=png_filename1)#
+                a_frame.draw_bonds_conditional_bond(check=[0.4, a_frame.bond_first_minima_left], png_filename=png_filename2,
+                                                show_traps=show_traps,LinearCompressionRatio=trap_lcr,trap_filename=trap_filename)
+                """
+                rdf = freud.density.RDF(bins=150, r_max=15.0)#
+                rdf.compute(system=snap)
+                #print(rdf.bin_centers) print(rdf.bin_counts)
+                rdf.plot()
+                fig_type = 'gr'
                 data_filename=prefix+fig_type+'_index'+str_index+'_'+str(int(i))+'.png'
-                ax = sk.plot(vmin=0.01,vmax=1)
-            else:
-                fig_type = 'sk'        
-                data_filename=prefix+fig_type+'_index'+str_index+'_'+str(int(i))+'.png'
+                plt.savefig(data_filename)
+                plt.close()
+                """
+                """
+                #checked right
+                import gsd.hoomd
+                import freud
+                traj = gsd.hoomd.open('/home/tplab/hoomd-examples_0/trajectory_auto5208_9.gsd')
+                rdf = freud.density.RDF(bins=50,r_max=10)
+                rdf.compute(system=traj[-1])
+                r =rdf.bin_centers
+                y = rdf.rdf
+                import matplotlib.pyplot as plt
                 fig,ax = plt.subplots()
-                im = ax.pcolormesh(sk.k_values,sk.k_values,sk.diffraction,cmap='afmhot')#im = 
+                rdf.plot(ax=ax)
+                plt.savefig('/home/tplab/Downloads/gr.png')
+                """
+        
+            if sk:
+                sk = freud.diffraction.DiffractionPattern()
+                snap = gsd_data.trajectory.read_frame(i)
+                sk.compute(system=snap)
+                if log_sk:
+                    fig_type = 'log_sk'        
+                    data_filename=prefix+fig_type+'_index'+str_index+'_'+str(int(i))+'.png'
+                    ax = sk.plot(vmin=0.01,vmax=1)
+                else:
+                    fig_type = 'sk'        
+                    data_filename=prefix+fig_type+'_index'+str_index+'_'+str(int(i))+'.png'
+                    fig,ax = plt.subplots()
+                    im = ax.pcolormesh(sk.k_values,sk.k_values,sk.diffraction,cmap='afmhot')#im = 
+                    #ax.colorbar().remove()
+                    fig.colorbar(im)
+                    ax.axis('equal')
+                """
+                #method1
+                ax = sk.plot()
+                ax.pcolormesh(sk.k_values,sk.k_values,sk.diffraction,cmap='afmhot')
+
+                #method2
+                fig,ax = plt.subplots()
+                #print(sk.k_values)
+                X, Y = numpy.meshgrid(sk.k_values, sk.k_values)
+                im = ax.pcolormesh(X,Y,sk.diffraction,cmap='summer')#'afmhot' im = 
+                #https://matplotlib.org/stable/tutorials/colors/colormaps.html
+                # ?highlight=afmhot
                 #ax.colorbar().remove()
                 fig.colorbar(im)
                 ax.axis('equal')
-            """
-            #method1
-            ax = sk.plot()
-            ax.pcolormesh(sk.k_values,sk.k_values,sk.diffraction,cmap='afmhot')
-
-            #method2
-            fig,ax = plt.subplots()
-            #print(sk.k_values)
-            X, Y = numpy.meshgrid(sk.k_values, sk.k_values)
-            im = ax.pcolormesh(X,Y,sk.diffraction,cmap='summer')#'afmhot' im = 
-            #https://matplotlib.org/stable/tutorials/colors/colormaps.html
-            # ?highlight=afmhot
-            #ax.colorbar().remove()
-            fig.colorbar(im)
-            ax.axis('equal')
-            """
-            plt.savefig(data_filename)
-            plt.close()
-            #ax.pcolormesh(X, Y, Z,cmap="plasma",)
-            """
-            maybe that the loglog map is not suitable for my sk.
-            linear colorbar is the right choice
-            """
-        if final_cut:
-            break
+                """
+                plt.savefig(data_filename)
+                plt.close()
+                #ax.pcolormesh(X, Y, Z,cmap="plasma",)
+                """
+                maybe that the loglog map is not suitable for my sk.
+                linear colorbar is the right choice
+                """
+            if final_cut:
+                break
     if psik:
         plt.figure()
         plt.plot(record_psik[:,0],record_psik[:,1],label='Psi_3')#psi3

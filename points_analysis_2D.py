@@ -1,6 +1,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.lines as lines
 from scipy.spatial import Voronoi
 from scipy.spatial import  Delaunay
 from scipy.spatial import  distance
@@ -965,6 +966,62 @@ index 10 is out of bounds for axis 0 with size 10
 
         self.edge_cut_positions_list = np.where(list_xy)
         self.edge_cut_positions_bool = list_xy # T for body, F for edge.
+    
+    def cut_edge_of_positions_by_xylimit(self,xmin,xmax,ymin,ymax):
+        R"""
+        Variables:
+            effective_lattice_constant： the distance between a particle and its neighbor
+            edge_cut_positions_list: list the rows of particles' positions at given snapshot.
+        """
+        
+        #That directly using 'and' has been banned, so 'logical_and' is necessary
+        list_xmin = self.points[:,0] > xmin
+        list_xmax = self.points[:,0] < xmax
+        list_ymin = self.points[:,1] > ymin
+        list_ymax = self.points[:,1] < ymax
+        list_x = np.logical_and(list_xmin,list_xmax)
+        list_y = np.logical_and(list_ymin,list_ymax)
+        list_xy = np.logical_and(list_x,list_y)
+
+        self.edge_cut_positions_list = np.where(list_xy)
+        self.edge_cut_positions_bool = list_xy # T for body, F for edge.
+
+    def cut_edge_of_positions_by_box(self,points,box):
+        R"""
+        Variables:
+            points:n rows of [x,y]
+            box:[LX,LY,LZ,RX,RY,RZ]
+            inbox_positions_list: self.
+            inbox_positions_bool: self.
+        """
+        
+        #sz = len(self.init_positions)#np.size
+        #xy = self.init_positions
+        xmax = box[0]/2.0
+        ymax = box[1]/2.0
+        xmin = -box[0]/2.0
+        ymin = -box[1]/2.0
+        
+        #That directly using 'and' has been banned, so 'logical_and' is necessary
+        list_xmin = points[:,0] > xmin
+        list_xmax = points[:,0] < xmax
+        list_ymin = points[:,1] > ymin
+        list_ymax = points[:,1] < ymax
+        list_x = np.logical_and(list_xmin,list_xmax)
+        list_y = np.logical_and(list_ymin,list_ymax)
+        list_xy = np.logical_and(list_x,list_y)
+
+        self.inbox_positions_list = np.where(list_xy)
+        self.inbox_positions_bool = list_xy # T for body, F for edge.
+
+        #get the position of vertices of box
+        position_box = np.zeros((5,2))
+        position_box[0] = [xmin,ymin]
+        position_box[1] = [xmax,ymin]
+        position_box[2] = [xmax,ymax]
+        position_box[3] = [xmin,ymax]
+        position_box[4] = [xmin,ymin]#back to origin
+        self.position_box = position_box
 
     def get_bond_orientational_order(self,plot=False,png_filename=None,k_set=6):
         R"""
@@ -1140,7 +1197,7 @@ index 10 is out of bounds for axis 0 with size 10
         LinearCompressionRatio=0.79
         trap_filename="/home/tplab/hoomd-examples_0/testhoneycomb3-8-12-part1"
         """
-        self.draw_bonds = bond_plot_module_old()
+        self.draw_bonds = bond_plot_module()
         self.draw_bonds.restrict_axis_property_relative(self.points,x_unit=x_unit)
         if not axis_limit is None:
             xlim = [-axis_limit[0],axis_limit[0]]#[0,axis_limit[0]]
@@ -3453,15 +3510,17 @@ class bond_plot_module:
         self.points = xy
         #add lines for edges
         for i in range(np.shape(list_bonds_index)[0]):
-            pt1,pt2 = [self.points[list_bonds_index[i,0]],self.points[list_bonds_index[i,1]]]
-            line = plt.Polygon([pt1,pt2], closed=None, fill=None, edgecolor= bond_color,linewidth=bond_width)
+            bondx,bondy = [self.points[list_bonds_index[i],0],self.points[list_bonds_index[i],1]]
+            line = lines.Line2D(bondx,bondy,color= bond_color,linewidth=bond_width)
+            #pt1,pt2 = [self.points[list_bonds_index[i,0]],self.points[list_bonds_index[i,1]]]
+            #line = plt.Polygon([pt1,pt2], closed=None, fill=None, edgecolor= bond_color,linewidth=bond_width)
             self.ax.add_line(line)#plt.gca().add_line(line)
         self.ax.set_title("bond_length: vertices"+self.x_unit)  # Add a title to the axes
 
         if not particle_size is None:
             self.ax.scatter(xy[:,0],xy[:,1],color=particle_color,zorder=1,s=particle_size)
         else:
-            self.ax.scatter(xy[:,0],xy[:,1],color=particle_color,zorder=1,s=particle_size)
+            self.ax.scatter(xy[:,0],xy[:,1],color=particle_color,zorder=1)#,s=particle_size
 
     def get_bonds_with_conditional_ridge_length(self,ridge_length,ridge_points,ridge_first_minima_left):       
         R"""
@@ -3482,7 +3541,7 @@ class bond_plot_module:
         list_longer = bond_length[:,2] > bond_length_limmit[0]
         list_shorter = bond_length[:,2] < bond_length_limmit[1]
         list_bond_bool = np.logical_and(list_longer,list_shorter)
-        list_bond_index = bond_length[list_bond_bool,0:2]
+        list_bond_index = bond_length[list_bond_bool,0:2].astype(int)
         return list_bond_index
 
     def get_bonds_with_machine_learning_idea(self,bond_length,ridge_length):
@@ -3577,7 +3636,7 @@ class bond_plot_module:
         'pip install latex' is necessary for plt.savefig()
         """
         self.fig.savefig(png_filename)#plt.savefig(png_filename)
-        plt.close(self.fig)#plt.close() # closes the current active figure
+        plt.close('all')#self.fig,plt.close() # closes the current active figure
 
 class bond_plot_module_for_image:
     def __init__(self,image):
@@ -3955,22 +4014,6 @@ class dynamical_facilitation_module:
         print(sz)
         dr = np.sqrt(dr2[:,0]+dr2[:,1])
     
-    def get_activation_event(self,trajectory,ta,a):#[x]
-        R"""
-        input:
-            trajectory: 
-        output:
-
-        """
-        dt = 0
-        t = 0
-        sz = np.size(trajectory)#(Nframe,Ndimension)
-        tt = ta/2 - dt
-        uv = trajectory[t+tt] - trajectory[t-tt]
-        dr2 = uv*uv
-        dr = np.sqrt(dr2[:,0]+dr2[:,1])
-        abs(dr[t+tt] - dr[t-tt])
-
     def coarse_grain(self):#[x]
         pass
 
@@ -4183,19 +4226,29 @@ class dynamical_facilitation_module:
         self.bond_length[:,0:2]=self.voronoi.ridge_points
         self.bond_length[:,2]=self.bond_length_temp.diagonal()
         """
-    def get_pin_bool(self,reference_positions,txyz,result_prefix=None,r_trap=1):
+    
+    def get_pin_bool(self,reference_positions,txyz,result_prefix=None,r_trap=1,ispin=True):
         R"""
         Input: 
             reference_positions: (Ntrap,2)[x,y]
             txyz:(Nframe,Nparticle,2)[x,y]
         Output: 
-            reference_occupation: save .npy file recording list_reference_occupation
-                (Nframe,Nparticle)[bool] means particle_id at frame_i is pinned or not.
+            list_pin_bool: save .npy file recording list_pin_bool
+                (Nframe,Nparticle)[bool] means particle_id at frame_i is pinned at reference_position or not.
         Variables:
             bond_length_temp: (Nframe,Nparticle,)[frame:int, reference_point: int, occupied:bool]        
 
         example:
-            
+            import points_analysis_2D as pa
+            import numpy as np
+            dfm = pa.dynamical_facilitation_module()
+            lcr = 0.81
+            file_txyz = '/home/remote/Downloads/4302_9/txyz.npy'
+            file_reference_points = '/home/remote/hoomd-examples_0/testhoneycomb3-8-12'
+            txyz = np.load(file_txyz)
+            reference_points = np.loadtxt(file_reference_points)
+            reference_points_lcr = np.multiply(lcr,reference_points) 
+            dfm.get_pin_bool(reference_points_lcr,txyz)
         """
         txy = txyz[:,:,:2]
         reference_positions = reference_positions[:,:2]
@@ -4213,8 +4266,186 @@ class dynamical_facilitation_module:
         print('size of list_reference_occupation:')
         print(np.shape(list_pin_bool))
         if not result_prefix is None:
-            result_filename = result_prefix+'t_pin_bool'
+            if ispin:
+                result_filename = result_prefix+'t_pin_bool'
+            else:
+                result_filename = result_prefix+'t_interstitial_bool'
             np.save(result_filename,list_pin_bool)
+        return list_pin_bool
+    
+    def get_pin_id_bool(self,reference_positions,txyz,result_prefix=None,r_trap=0.5):
+        R"""
+        Input: 
+            reference_positions: (Ntrap,2)[x,y]
+            txyz:(Nframe,Nparticle,2)[x,y]
+        Output: 
+            list_pin_bool: save .npy file recording list_pin_bool
+                (Nframe,Nparticle)[bool] means particle_id at frame_i is pinned at reference_position or not.
+        Variables:
+            bond_length_temp: (Nframe,Nparticle,)[frame:int, reference_point: int, occupied:bool]        
+
+        example:
+        """
+        txy = txyz[:,:,:2]
+        reference_positions = reference_positions[:,:2]
+        sz_txy = np.shape(txy)
+        sz_ref = np.shape(reference_positions)
+        list_pin_id_bool = np.zeros((sz_txy[0],sz_txy[1],sz_ref[0]))
+        for frame in range(sz_txy[0]):
+            xy = txy[frame]
+            bond_length_temp = distance.cdist(xy,reference_positions,'euclidean')
+            #bond_length_sort = np.sort(bond_length_temp,axis=1)
+            #print(self.bond_length_temp)
+            list_pin_bool_1 = bond_length_temp[:,:]<r_trap# 0 for free; 1 for pin
+            #print(ref_dis)
+            list_pin_id_bool[frame] = list_pin_bool_1
+        print('size of list_reference_occupation:')
+        print(np.shape(list_pin_id_bool))
+        if not result_prefix is None:
+            result_filename = result_prefix+'t_pin_id_bool'
+            np.save(result_filename,list_pin_id_bool)
+        return list_pin_id_bool
+
+    def get_interstitial_bool(self,reference_positions,txyz,result_prefix=None,r_trap=1):
+        R"""
+            for a triangle whose edge length A is 1, the center-vertex distance Rcv is sqrt(3)/3=0.577.
+            if A is 3, Rcv is sqrt(3)=1.73, Rcv-1 is 0.73. so r_trap=1 is slightly too large 
+        example:
+            import points_analysis_2D as pa
+            import numpy as np
+            dfm = pa.dynamical_facilitation_module()
+            lcr = 0.81
+            file_txyz = '/home/remote/Downloads/4302_9/txyz.npy'#_stable
+            file_reference_points = '/home/remote/hoomd-examples_0/testhoneycomb3-8-12'
+            txyz = np.load(file_txyz)
+            reference_points = np.loadtxt(file_reference_points)
+            reference_points_lcr = np.multiply(lcr,reference_points) 
+            result_prefix='/home/remote/Downloads/4302_9/pin_check/'
+            rt=0.5
+            t_pin_bool = dfm.get_pin_bool(reference_points_lcr,txyz,result_prefix,r_trap=rt)
+            t_interstitial_bool = dfm.get_interstitial_bool(reference_points_lcr,txyz,result_prefix,r_trap=rt)
+            #t_pin_bool = np.load(result_prefix+'t_pin_bool.npy')
+            #t_interstitial_bool = np.load(result_prefix+'t_interstitial_bool.npy')
+            #check the overlap of pinning and interstitial particles. calculate the transformation ratio too.
+            t_transition_bool = t_interstitial_bool.astype(int) + t_pin_bool.astype(int)
+            if max(t_transition_bool.all())>1:
+                print('overlap of pinning and interstitial particles!')
+            sz_list = np.shape(t_transition_bool)
+            t_trans_count = np.sum(t_transition_bool,axis=1)
+
+            import matplotlib.pyplot as plt
+            fig,ax = plt.subplots()
+            ax.plot(t_trans_count/sz_list[1])
+            png_filename = '/home/remote/Downloads/4302_9/pin_check/t_trans_ratio_allpart_r05.jpg'
+            plt.savefig(png_filename)
+            plt.close()
+        """
+        ref_pos = static_points_analysis_2d(reference_positions)
+        dual_pt = ref_pos.voronoi.vertices
+        list_interstitial_bool = self.get_pin_bool(dual_pt,txyz,result_prefix,r_trap,ispin=False)
+        return list_interstitial_bool
+
+    def get_trans_ratio(self,t_state_bool):
+        sz_list = np.shape(t_state_bool)
+        t_trans_count = np.sum(t_state_bool,axis=1)
+        t_trans_ratio = t_trans_count/sz_list[1]
+        return t_trans_ratio
+
+    def get_activation_event(self,t_state_bool,dt=1):
+        R"""
+        input:
+            t_state_bool: (Nframe,Nparticle) t_pin_bool or t_state_bool
+        output:
+            t_act_bool: (Nframe-dt,Nparticle)
+            
+            dt = 0
+            t = 0
+            sz = np.size(trajectory)#(Nframe,Ndimension)
+            tt = ta/2 - dt
+            uv = trajectory[t+tt] - trajectory[t-tt]
+            dr2 = uv*uv
+            dr = np.sqrt(dr2[:,0]+dr2[:,1])
+            abs(dr[t+tt] - dr[t-tt])
+        """
+        """
+        #method1:
+        t_act_bool = t_state_bool[dt:] - t_state_bool[:-dt]
+        sz_list = np.shape(t_act_bool)
+        t_trans_count = np.sum(t_act_bool,axis=1)
+        t_trans_ratio = t_trans_count/sz_list[1]
+        #method2:xor, count any changes, including positive and negative ones.
+        t_act_bool = np.logical_xor(t_state_bool[dt:],t_state_bool[:-dt]) 
+        sz_list = np.shape(t_act_bool)
+        t_trans_count = np.sum(t_act_bool,axis=1)
+        t_trans_ratio = t_trans_count/sz_list[1]
+        """
+        #method3:xor, count positive changes.
+        t_act_bool = t_state_bool[dt:] - t_state_bool[:-dt]
+        t_act_bool = t_act_bool[:,:] == 1
+        sz_list = np.shape(t_act_bool)
+        t_trans_count = np.sum(t_act_bool,axis=1)
+        t_trans_ratio = t_trans_count/sz_list[1]
+        return t_trans_ratio
+
+    def get_pin_depin_event(self,t_state_id_bool,dt=1):
+        R"""
+        input:
+            t_state_bool: (Nframe,Nparticle) t_pin_bool or t_state_bool
+        output:
+            t_act_bool: (Nframe-dt,Nparticle)
+            
+            dt = 0
+            t = 0
+            sz = np.size(trajectory)#(Nframe,Ndimension)
+            tt = ta/2 - dt
+            uv = trajectory[t+tt] - trajectory[t-tt]
+            dr2 = uv*uv
+            dr = np.sqrt(dr2[:,0]+dr2[:,1])
+            abs(dr[t+tt] - dr[t-tt])
+        """
+        """
+        #method1:
+        t_act_bool = t_state_bool[dt:] - t_state_bool[:-dt]
+        sz_list = np.shape(t_act_bool)
+        t_trans_count = np.sum(t_act_bool,axis=1)
+        t_trans_ratio = t_trans_count/sz_list[1]
+        #method2:xor, count any changes, including positive and negative ones.
+        t_act_bool = np.logical_xor(t_state_bool[dt:],t_state_bool[:-dt]) 
+        sz_list = np.shape(t_act_bool)
+        t_trans_count = np.sum(t_act_bool,axis=1)
+        t_trans_ratio = t_trans_count/sz_list[1]
+        """
+        #method3:xor, count positive changes.
+        t_act_bool = t_state_id_bool[dt:] - t_state_id_bool[:-dt]
+        sz_list = np.shape(t_act_bool)
+
+        t_pin_id_bool = t_act_bool[:,:] == 1
+        t_depin_id_bool = t_act_bool[:,:] == -1
+
+        t_pin_bool=np.sum(t_pin_id_bool,axis=2)
+        t_pin_count=np.sum(t_pin_bool,axis=1)
+        t_pin_ratio=t_pin_count/sz_list[1]
+        t_depin_bool=np.sum(t_depin_id_bool,axis=2)
+        t_depin_count=np.sum(t_depin_bool,axis=1)
+        t_depin_ratio=t_depin_count/sz_list[1]
+        
+        return t_pin_ratio,t_depin_ratio
+    
+    def plot_transition_state(self,t_trans_ratio,t_pin_ratio,t_interstitial_ratio):
+        #import matplotlib.pyplot as plt
+        fig,ax = plt.subplots()
+        dt=0
+        np.linspace(dt,2000,2001-dt)
+        ax.semilogx(t_trans_ratio,label='trans_ratio')#semilogy,plot
+        ax.semilogx(t_pin_ratio,label='pin_ratio')
+        ax.semilogx(t_interstitial_ratio,label='inter_ratio')
+        plt.legend()
+        #plt.title('CN_k '+'index:'+str_index)
+        plt.xlabel('time(steps)')
+        plt.ylabel('trans_ratio(1)')
+        png_filename = '/home/remote/Downloads/4302_9/pin_check/t_trans_pin_inter_ratio_allpart_r05.jpg'
+        plt.savefig(png_filename)
+        plt.close()
 
     def plot_reference_occupation(self,reference_positions,reference_occupation,prefix=None):
         sz = np.shape(reference_occupation)
@@ -4688,3 +4919,238 @@ class show_cairo_order_parameter:
             plt.savefig(png_filename)
         else:
             return fig,ax
+
+class energy_computer:
+    R"""
+    Introduction:
+        input particle positions, substrate array, to calculate the free energy of the system.
+    steps of operation:
+        1. define_system_manual or define_system_from_gsd
+        2. compute_energy(extended_positions)
+        3. use self.energy_mechanical
+
+    example:
+        import proceed_file as pf
+        import points_analysis_2D as pa
+        import numpy as np
+        record_energy = np.zeros((2001,3))
+        filename_trap='/home/remote/hoomd-examples_0/testhoneycomb3-8-12-part1'
+        pos_traps = np.loadtxt(filename_trap)
+        gsd_data = pf.proceed_gsd_file(None,'remote',4302,9)
+        gsd_data.get_trajectory_data()
+        frames = range(2001)
+        for frame_id in frames:#[0,1,10,100,1000,2000]:
+            extended_positions = gsd_data.get_extended_positions(frame_id)
+            points = gsd_data.txyz[frame_id,:,0:2]
+            nps = len(points)
+            #filename_array = "/home/remote/Downloads/index4302_9"
+            en = pa.energy_computer()
+            en.define_system_manual(points,300,0.25,15,pos_traps,0.81,700,1)
+            en.compute_energy(extended_positions)
+            record_energy[frame_id,0] = en.energy_pin
+            record_energy[frame_id,1] = en.energy_interaction
+            record_energy[frame_id,2] = en.energy_mechanical
+            #print(frame_id)
+            #print(en.energy_pin/nps)
+            #print(en.energy_interaction/nps)
+            #print(en.energy_mechanical/nps)#the mechanical energy is increasing?
+        np.savetxt('/home/remote/Downloads/energy_per_particle_index4302_9.txt',record_energy)#energy_index4302_9.txt
+        #np.savetxt('/home/remote/Downloads/energy_index4302_9.txt',record_energy)
+
+    """
+    def __init__(self):
+        pass
+
+    def define_system_manual(self,xy,a_yukawa,kappa,r_cut_interaction,traps,lcr,k,r_cut_trap):#box,
+        #self.box = box
+        self.xy = xy
+        self.a_yukawa = a_yukawa
+        self.kappa = kappa
+        self.r_cut_interaction = r_cut_interaction
+        self.traps = traps*lcr
+        self.lcr = lcr
+        self.k = k
+        self.r_cut_trap = r_cut_trap
+
+    def define_system_from_gsd(self,simu_index,seed,account):
+        import proceed_file as pf
+        prefix='/home/'+account+'/Downloads/'#'/home/tplab/Downloads/'
+        log_prefix='/home/'+account+'/hoomd-examples_0/'#'/home/tplab/hoomd-examples_0/'
+        #load time steps
+        if seed is None:
+            str_index=str(int(simu_index))
+            gsd_data = pf.proceed_gsd_file(simu_index=simu_index)
+        else:
+            str_index=str(int(simu_index))+'_'+str(seed)
+            file_gsd = log_prefix+'trajectory_auto'+str_index+'.gsd'#+'_'+str(seed)
+            gsd_data = pf.proceed_gsd_file(filename_gsd_seed=file_gsd,account=account)
+            
+        file_log=log_prefix+'log-output_auto'+str_index+'.log'#+'_'+str(seed)
+        log_data = np.genfromtxt(fname=file_log, skip_header=True)
+        time_steps = log_data[:,0]
+        iframes = 0
+        nframes=gsd_data.num_of_frames
+        af = gsd_data.trajectory.read_frame(iframes)
+        pos_list = np.zeros([nframes,af.particles.N,3])#gsd_data.trajectory[0].particles.N,
+        while iframes < nframes:
+            af = gsd_data.trajectory.read_frame(iframes)
+            pos_list[iframes] = af.particles.position
+            iframes = iframes + 1
+        af.configuration.box
+        pass
+
+    def compute_energy(self,extended_positions):
+        R"""
+        Intro:
+            including two parts of energy: 
+            1 of particle-particle interaction and 
+            2 particle-trap interaction.
+        question:
+            how to define entropy and hence compute free energy?
+            for orthogonal system, F = - ln(Z) / beta 
+        """
+        list_interaction_distance = self.compute_distance(extended_positions,self.r_cut_interaction,True) 
+        list_trap_distance = self.compute_distance(self.traps,self.r_cut_trap)
+        
+        list_energy_interaction_step1 = self.a_yukawa*np.exp(-self.kappa*list_interaction_distance)
+        list_energy_interaction_step2 = np.divide(list_energy_interaction_step1,2*list_interaction_distance)
+        # the 2 at denominator are used to calculate particle-wise energy only once, no overlaps. 
+        list_energy_pin = 0.5*self.k*( np.square(list_trap_distance) - self.r_cut_trap*self.r_cut_trap)
+
+        self.energy_interaction = np.sum(list_energy_interaction_step2)
+        self.energy_pin = np.sum(list_energy_pin)
+        self.energy_mechanical = self.energy_interaction + self.energy_pin
+    
+    def compute_energy_particle_wise(self,extended_positions):#[ongoing]
+        R"""
+        Intro:
+            including two parts of energy: 
+            1 of particle-particle interaction and 
+            2 particle-trap interaction.
+        result:
+            self.energy_inter_pin_mecha: [Nparticles,3],containing energy_interaction,energy_pin,energy_mechanical
+        question:
+            how to define entropy and hence compute free energy?
+            for orthogonal system, F = - ln(Z) / beta 
+        """
+        list_interaction_distance = self.compute_distance(extended_positions,self.r_cut_interaction,True,True) 
+        list_trap_distance = self.compute_distance(self.traps,self.r_cut_trap,False,True)
+        
+        n_particles = len(list_interaction_distance)#trap_d = len(list_trap_distance)
+        self.energy_inter_pin_mecha = np.zeros((n_particles,3))
+        for j in range(n_particles):
+            list_energy_interaction_step1 = self.a_yukawa*np.exp(-self.kappa*list_interaction_distance[j])
+            list_energy_interaction_step2 = np.divide(list_energy_interaction_step1,2*list_interaction_distance[j])
+            # the 2 at denominator are used to calculate particle-wise energy only once, no overlaps. 
+            list_energy_pin = 0.5*self.k*( np.square(list_trap_distance[j]) - self.r_cut_trap*self.r_cut_trap)
+
+            self.energy_inter_pin_mecha[j,0] = np.sum(list_energy_interaction_step2)
+            self.energy_inter_pin_mecha[j,1] = np.sum(list_energy_pin)
+            self.energy_inter_pin_mecha[j,2] = self.energy_inter_pin_mecha[j,0] + self.energy_inter_pin_mecha[j,1]
+
+    def compute_distance(self,reference_positions,r_cut,interact_mode=False,particle_wise_mode=False):
+        R"""
+        Introduction:
+            compute the distance between positions and reference_positions.
+            list_dis: a (1,n) array containing the distances within r_cut. 
+        """
+        reference_positions = reference_positions[:,0:2]#force 3d array to be 2d array
+        self.list_interparticle_distance=distance.cdist(self.xy, reference_positions, 'euclidean')
+        check_if_effective_interaction = self.list_interparticle_distance[:,:]<r_cut
+        if interact_mode:
+            d_particle = 0.99
+            # the diameter of particles, 
+            # check to prevent the problem of
+            # f(x)/x -> f(0)/0
+            check_if_effective_interaction2 = self.list_interparticle_distance > d_particle
+            check_if_effective_interaction = np.logical_and(check_if_effective_interaction,check_if_effective_interaction2)
+
+        if particle_wise_mode:
+            list_dis_value = self.get_distance_particle_wise(check_if_effective_interaction)
+        else:#array mode
+            list_dis_value = self.get_distance_as_array(check_if_effective_interaction)
+                
+        return list_dis_value
+
+    def get_distance_as_array(self,check_if_effective_interaction):
+        for i in range(len(check_if_effective_interaction)):
+            list_dis_value_one_row = self.list_interparticle_distance[i,check_if_effective_interaction[i]]#if it is true?
+            #print(list_dis)
+            if i==0:
+                list_dis_value = list_dis_value_one_row
+            else:
+                list_dis_value = np.concatenate((list_dis_value,list_dis_value_one_row))
+        return list_dis_value
+
+    def get_distance_particle_wise(self,check_if_effective_interaction):
+        
+        for i in range(len(check_if_effective_interaction)):
+            list_dis_value_one_row = self.list_interparticle_distance[i,check_if_effective_interaction[i]]#if it is true?
+            #print(list_dis)
+            if i==0:
+                list_dis_value = [list_dis_value_one_row]
+            else:
+                list_dis_value.append(list_dis_value_one_row)
+        return list_dis_value
+
+    def plot_energy_vs_t(self,data):
+        data = data[:,:]/256
+        fig,ax = plt.subplots()
+        times = np.linspace(0,2000,2001)
+        ax.semilogx(times,data[:,0],label='energy_pin')
+        #ax.semilogx(times,data[:,1],label='energy_inter')
+        #ax.semilogx(times,data[:,2],label='energy_mecha')
+        plt.legend()
+        plt.title('energy_per_particle')
+        plt.xlabel('time(steps)')
+        plt.ylabel('energy($k_BT$)')
+        png_filename = '/home/remote/Downloads/4302_9/energy_vs_t.png'
+        plt.savefig(png_filename)
+        plt.close()
+
+    def check_case(self):
+        R"""
+        bugs:
+        1 denominators are zero. fixed.
+        2 not multiply lcr yet. fixed
+
+        #case 1: sparse square, to test pin        
+        box = np.array([18,18,1,0,0,0],'float64')
+        points = np.array([[0,0],[3,0],[0,3],[3,3]],'float64')
+        pos_traps = points
+        gsd_data = pf.proceed_gsd_file(None,'remote',4302,9)
+        extended_positions = gsd_data.get_extended_positions_from_points(box,points)
+        en = pa.energy_computer()
+        en.define_system_manual(points,300,0.25,15.0,pos_traps,1.0,200.0,1.0)
+        en.compute_energy(extended_positions)
+        print(en.energy_pin)
+        print(en.energy_interaction)
+        print(en.energy_mechanical)
+
+        #case2: sparse triangle, to test far from trap and 3 typical bonds.        
+        test = 100*np.exp(-0.75)
+        print(test)
+        box = np.array([24,24,1,0,0,0],dtype='float64')
+        points = np.array([[0,0],[3,0],[1.5,1.5*np.sqrt(3)]],dtype='float64')
+        pos_traps = np.array([[10,10],[13,0],[15,10*np.sqrt(3)]])
+        gsd_data = pf.proceed_gsd_file(None,'remote',4302,9)
+        extended_positions = gsd_data.get_extended_positions_from_points(box,points)
+        en = pa.energy_computer()
+        en.define_system_manual(points,300,0.25,15.0,pos_traps,1.0,200.0,1.0)
+        """
+        lcr=0.79
+        index1=4302#5238
+        seed=9
+        r_trap=0.5
+        simu_index = str(index1)+'_'+str(seed)
+        file_txyz = '/home/remote/Downloads/'+simu_index+'/txyz.npy'#_stable
+        file_reference_points = '/home/remote/hoomd-examples_0/testhoneycomb3-8-12'
+        #/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/testhoneycomb3-8-12-part1
+        # '/home/remote/hoomd-examples_0/testhoneycomb3-8-12'
+        txyz = np.load(file_txyz)
+        reference_points = np.loadtxt(file_reference_points)
+        reference_points_lcr = np.multiply(lcr,reference_points) 
+
+        #small test system
+        xy=[[0,0],[3,0],[1.5,1.5*np.sqrt(3)]]
+        pass

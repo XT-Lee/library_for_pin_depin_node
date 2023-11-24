@@ -1,13 +1,32 @@
+import points_analysis_2D as pa
 import numpy as np
 import matplotlib.pyplot as plt
 import numpy
 import os
+import math
 
+R"""
+Introduction:
+    the workflow of data proceeding.
+    1. import data_retriever, to get the index of simulation you want to know.
+    2. import proceed_file, to transform the type of file you prefer.
+    3. import workflow_analysis or data_analysis_cycle, to use it as a control table to proceed data.
+    4. import points_analysis_2D, if a new analysis method is in need of programming. 
+Examples:
+    #1
+    import data_retriever as dr
+    se = dr.search_engine_for_simulation_database()
+    se.get_table_names()
+    #2
+    import workflow_analysis as wa
+    bds = wa.show_bonds_transition_from_hex_to_honeycomb()
+    bds.get_bond_trap_plot_unit()
+"""
 class get_msd_from_gsd:
     def __init__(self):
         pass
     def get_msd(self,simu_index=5208,seed=9,account='remote'):
-        import points_analysis_2D as pa
+        
         self.prefix = "/home/"+account+"/Downloads/"
         self.str_index = str(int(simu_index))+'_'+str(int(seed))
         self.create_folder()
@@ -20,7 +39,7 @@ class get_msd_from_gsd:
         file_txyz_npy = self.prefix+'txyz_stable.npy'#_stable
         txyz_stable = np.load(file_txyz_npy)
         """
-        import points_analysis_2D as pa
+        
         dpa = pa.dynamic_points_analysis_2d(txyz_stable)
         dpa.plot_trajectory_single_particle(10)
         """
@@ -47,7 +66,7 @@ class get_displacement_field:
         pass
 
     def get_displacement_field_1():
-        import points_analysis_2D as pa
+        
         #gsd_data = pa.proceed_gsd_file(account='remote',simu_index=5208,seed=9)
         
         save_prefix = "/home/remote/Downloads/5208_9/"
@@ -72,7 +91,7 @@ class get_displacement_field:
         np.save(filename_npy,txyz_stable_tuned)
     
     def get_displacement_field_normal(self,save_prefix):
-        import points_analysis_2D as pa
+        
         #gsd_data = pa.proceed_gsd_file(account='remote',simu_index=5208,seed=9)
         
         #save_prefix = "/home/remote/Downloads/5208_9/"
@@ -88,7 +107,7 @@ class get_displacement_field:
         uv = df.get_displacement_field_xy(plot=True,png_filename=png_filename)
 
     def get_displacement_field_dedrift():
-        import points_analysis_2D as pa
+        
         #gsd_data = pa.proceed_gsd_file(account='remote',simu_index=5208,seed=9)
         
         save_prefix = "/home/remote/Downloads/5208_9/"
@@ -117,7 +136,7 @@ class get_displacement_field:
 
 class check_box:
     def __init__(self):
-        import points_analysis_2D as pa
+        
         gsd_data = pa.proceed_gsd_file(account='remote',simu_index=5208,seed=9)
         
         lx = gsd_data.box[0]
@@ -286,6 +305,81 @@ Show the difference between different conditions:
 Direct trap VS dual lattice;√
 Higher transformation ratio; faster transformation dynamics.
 """
+class workflow_file_to_data:
+    def __init__(self):
+        pass
+    def search_and_get_single_final_frame(self,table_name='pin_hex_to_honeycomb_part_klt_2m', lcr1=0.8, k1=300, kt1=1):
+        R"""
+        example:
+            import workflow_analysis as wa
+            import numpy as np
+            wfr = wa.workflow_file_to_data()
+            list_lcr = np.linspace(0.77,0.84,8)#0.77
+            for lcr1 in list_lcr:
+                data = wfr.search_and_get_single_final_frame(lcr1=lcr1,k1=100)
+                print(lcr1)
+                print(np.shape(data))
+        """
+        import data_retriever
+        se = data_retriever.search_engine_for_simulation_database()
+        """se.get_table_names()"""
+        self.index1 = se.search_single_simu_by_lcr_k(table_name, lcr1, k1, kt1)
+        seed=9
+        #| SimuIndex | HarmonicK | LinearCompressionRatio | kT   | Psi3     | Psi6     | RandomSeed |
+        file_name = '/home/remote/Downloads/index'+str(self.index1)+'_'+str(seed)
+        data = np.loadtxt(file_name)
+        return data
+    
+    def search_and_get_single_trajectory(self,table_name='pin_hex_to_honeycomb_part_klt_2m', lcr1=0.8, k1=300, kt1=1):
+        import data_retriever
+        se = data_retriever.search_engine_for_simulation_database()
+        """se.get_table_names()"""
+        index1 = se.search_single_simu_by_lcr_k(table_name, lcr1, k1, kt1)
+        seed=9
+        #| SimuIndex | HarmonicK | LinearCompressionRatio | kT   | Psi3     | Psi6     | RandomSeed |
+        import proceed_file as pf
+        gsd_data = pf.proceed_gsd_file(None,'remote',index1,seed)
+        gsd_data.get_trajectory_data()
+        return gsd_data.txyz
+    def what_others(self):
+        import points_analysis_2D as pa
+        import numpy as np
+        import proceed_file as pf
+        gsd_data = pf.proceed_gsd_file(None,'remote',4302,9)
+        gsd_data.get_trajectory_data()
+
+        record_energy = np.zeros((2001,256,3))
+        filename_trap='/home/remote/hoomd-examples_0/testhoneycomb3-8-12-part1'
+        pos_traps = np.loadtxt(filename_trap)
+
+        for frame_id in [0,1,10,100,1000,2000]:
+            extended_positions = gsd_data.get_extended_positions(frame_id)
+            points = gsd_data.txyz[frame_id,:,0:2]
+            nps = len(points)
+            #filename_array = "/home/remote/Downloads/index4302_9"
+            en = pa.energy_computer()
+            en.define_system_manual(points,300,0.25,15,pos_traps,0.81,700,1)
+            en.compute_energy_particle_wise(extended_positions)
+            en.compute_energy(extended_positions)
+            print(frame_id)
+            print(en.energy_interaction)
+            print(en.energy_pin)
+            #record_energy[frame_id] = en.energy_inter_pin_mecha
+            print(frame_id)
+            print(np.sum(en.energy_inter_pin_mecha[:,0]))
+            print(np.sum(en.energy_inter_pin_mecha[:,1]))
+            """record_energy[frame_id,0] = en.energy_pin
+            record_energy[frame_id,1] = en.energy_interaction
+            record_energy[frame_id,2] = en.energy_mechanical
+            print(frame_id)
+            print(en.energy_pin)
+            print(en.energy_interaction)
+            print(en.energy_mechanical)"""
+            """print(en.energy_pin/nps)
+            print(en.energy_interaction/nps)
+            print(en.energy_mechanical/nps)"""#the mechanical energy is increasing?
+        #np.savetxt('/home/remote/Downloads/energy_index4302_9.txt',record_energy)
+
 class show_final_frame:
     def __init__(self):
         pass
@@ -319,7 +413,7 @@ class show_final_frame:
         return simu_index_seed    
     
     def draw_configurations(self,simu_index):
-        import points_analysis_2D as pa
+        
         prefix = 's'
         filename = prefix + 'school'
         pa.static_points_analysis_2d()
@@ -375,7 +469,7 @@ class show_bonds_transition_from_hex_to_honeycomb:
         """
         #write a routine class
         import pandas as pd
-        import points_analysis_2D as pa
+        
         file_txyz_stable = directory + 'txyz_stable.npy'
         txyz_stable = numpy.load(file_txyz_stable)
         dpa = pa.dynamic_points_analysis_2d(txyz_stable,mode='simu')
@@ -411,17 +505,17 @@ class show_bonds_transition_from_hex_to_honeycomb:
         R"""
         fig3a large particle, small traps.
         """
-        import points_analysis_2D as pa
+        
         
         index = [4620,5228,5288]
         #seed = 9
         lcr = [0.78,0.78,0.84]
         #k = [500,60,60]
         lim=[[0,20],[-10,10],[-10,10]]
-        prefix = '/media/tplab/93B8-B96D/lxt/Fig3_data/FIG3abc/'
-        trap_filename = prefix + 'testhoneycomb3-8-12.txt'
+        prefix = '/media/remote/32E2D4CCE2D49607/file_lxt/Fig3_data/FIG3abc/'#'/media/tplab/93B8-B96D/lxt/Fig3_data/FIG3abc/'
+        trap_filename = prefix + 'testhoneycomb3-8-12'#.txt
         for i in range(3):
-            filename = prefix + 'index'+str(index[i])+'_9.txt'
+            filename = prefix + 'index'+str(index[i])+'_9'#.txt
             save_filename = prefix + 'bond_index'+str(index[i])+'_9.pdf'
             points = np.loadtxt(filename)
 
@@ -430,7 +524,8 @@ class show_bonds_transition_from_hex_to_honeycomb:
             bpm = pa.bond_plot_module()
             bpm.restrict_axis_property_relative(spa.points,'($\sigma$)')
             list_bond_index = bpm.get_bonds_with_conditional_ridge_length(spa.voronoi.ridge_length,spa.voronoi.ridge_points,spa.ridge_first_minima_left)
-            bond_color = 'tan'#'bisque'#'gold'#'darkorange'
+            #color_name: https://www.cssportal.com/html-colors/x11-colors.php
+            bond_color = 'gold'#'mediumseagreen'#'tan'#'bisque'#'gold'#'darkorange'
             bpm.draw_points_with_given_bonds(spa.points,list_bond_index,200,bond_color,bond_color,bond_width=1)
             bpm.plot_traps(LinearCompressionRatio=lcr[i], trap_filename=trap_filename,mode='array',trap_color='r',trap_size=10)
             bpm.restrict_axis_limitation(lim[i],lim[i])
@@ -438,6 +533,192 @@ class show_bonds_transition_from_hex_to_honeycomb:
             bpm.save_figure(png_filename=save_filename)
             #spa.draw_bonds_conditional_ridge_oop(check=[0,spa.ridge_first_minima_left], png_filename=save_filename, xy_stable=spa.points, nb_change=None, x_unit='($\sigma$)', 
             #                                    LinearCompressionRatio=lcr[i], trap_filename=trap_filename, axis_limit=lim[i])
+    def get_bond_trap_plot_unit(self):
+        R"""
+        fig3a large particle, small traps.
+        """
+        list_index = [4620,5228,5288]
+        #seed = 9
+        lcr = [0.78,0.78,0.84]
+
+        prefix = '/home/remote/Downloads/'#'/media/tplab/93B8-B96D/lxt/Fig3_data/FIG3abc/'
+        prefix_trap = '/home/tplab/hoomd-examples_0/'
+        trap_filename = prefix_trap + 'testhoneycomb3-8-12-part1'
+        #'testhoneycomb3-8-12'
+        #testhoneycomb3-8-12-part1.txt
+        for i in range(len(list_index)):
+            filename = prefix + 'index'+str(list_index[i])+'_9'#.txt
+            save_filename = prefix + 'bond_index'+str(list_index[i])+'_9.png'
+            points = np.loadtxt(filename)
+
+            spa = pa.static_points_analysis_2d(points[:,:2],hide_figure=False)
+            spa.get_first_minima_ridge_length_distribution()
+            bpm = pa.bond_plot_module()
+            bpm.restrict_axis_property_relative(spa.points,'($\sigma$)')
+            list_bond_index = bpm.get_bonds_with_conditional_ridge_length(spa.voronoi.ridge_length,spa.voronoi.ridge_points,spa.ridge_first_minima_left)
+            #color_name: https://www.cssportal.com/html-colors/x11-colors.php
+            bond_color = 'mediumseagreen'#'mediumseagreen'#'tan'#'bisque'#'gold'#'darkorange'
+            bpm.draw_points_with_given_bonds(spa.points,list_bond_index,80,bond_color,bond_color,bond_width=1)
+            bpm.plot_traps(LinearCompressionRatio=lcr[i], trap_filename=trap_filename,mode='array',trap_color='r',trap_size=10)
+            
+            bpm.save_figure(png_filename=save_filename)
+            #spa.draw_bonds_conditional_ridge_oop(check=[0,spa.ridge_first_minima_left], png_filename=save_filename, xy_stable=spa.points, nb_change=None, x_unit='($\sigma$)', 
+            #                                    LinearCompressionRatio=lcr[i], trap_filename=trap_filename, axis_limit=lim[i])
+
+    def get_bond_trap_plot_param_compare(self,points,k1,trap_lcr=None,trap_type=True):
+        R"""
+        import workflow_analysis as wa
+        import numpy as np
+        wfr = wa.workflow_file_to_data()
+        list_lcr = np.linspace(0.77,0.84,8)#0.77
+        k1=100
+        for lcr1 in list_lcr:
+            points = wfr.search_and_get_single_final_frame(lcr1=lcr1,k1=k1)
+            print(lcr1)
+            print(np.shape(points))
+            bth = wa.show_bonds_transition_from_hex_to_honeycomb()
+            bth.get_bond_trap_plot_param_compare(points,k1,lcr1)
+        """
+        prefix = '/home/remote/Downloads/'#'/media/tplab/93B8-B96D/lxt/Fig3_data/FIG3abc/'
+        prefix_trap = '/home/tplab/hoomd-examples_0/'
+        if trap_type :#honeycomb_part
+            trap_filename = prefix_trap + 'testhoneycomb3-8-12-part1'
+        else:
+            trap_filename = prefix_trap + 'testhoneycomb3-8-12'
+        save_filename = prefix + 'bond_k'+str(int(k1))+'_lcr'+str(int(trap_lcr*100))+'.png'
+        
+
+        spa = pa.static_points_analysis_2d(points[:,:2],hide_figure=False)
+        spa.get_first_minima_ridge_length_distribution()
+        bpm = pa.bond_plot_module()
+        bpm.restrict_axis_property_relative(spa.points,'($\sigma$)')
+        list_bond_index = bpm.get_bonds_with_conditional_ridge_length(spa.voronoi.ridge_length,spa.voronoi.ridge_points,spa.ridge_first_minima_left)
+        #color_name: https://www.cssportal.com/html-colors/x11-colors.php
+        bond_color = 'mediumseagreen'#'mediumseagreen'#'tan'#'bisque'#'gold'#'darkorange'
+        bpm.draw_points_with_given_bonds(spa.points,list_bond_index,80,bond_color,bond_color,bond_width=1)
+        bpm.plot_traps(LinearCompressionRatio=trap_lcr, trap_filename=trap_filename,mode='array',trap_color='r',trap_size=10)
+        
+        bpm.save_figure(png_filename=save_filename)
+
+class show_bonds_transition_from_hex_to_kagome:
+    def __init__(self):
+        R"""
+        input:
+            directory from self.gsd_to_txyz
+            trap_filename:
+                '/home/remote/hoomd-examples_0/testhoneycomb3-8-12'
+                '/home/remote/hoomd-examples_0/testhoneycomb3-8-12-part1'
+                '/home/remote/hoomd-examples_0/testkagome3-11-6'
+                '/home/remote/hoomd-examples_0/testkagome_part3-11-6'
+            io_only: just return results, not proceeding data.
+        return:
+            a series of figures with particles(mark neighbor changes), bonds, traps
+        example:
+            import data_analysis_cycle as da
+            get_traj = da.data_analysis()
+            directory,data_name = get_traj.gsd_to_txyz('remote',4448,9,io_only=True)
+            get_traj.txyz_to_bond_plot(directory,data_name,
+                trap_filename='/home/remote/hoomd-examples_0/testkagome_part3-11-6',trap_lcr=0.89,
+                    io_only=True)
+        """
+        pass
+    def get_bond_trap_plot(self):
+        R"""
+        fig3a large particle, small traps.
+        """
+        list_index = np.linspace(4436,4445,10,dtype=int)
+        #seed = 9
+        lcr = 0.88
+        #k = [500,60,60]
+        lim=[-20,20]
+        prefix = '/home/remote/Downloads/'#'/media/remote/32E2D4CCE2D49607/file_lxt/Fig3_data/FIG3abc/'#'/media/tplab/93B8-B96D/lxt/Fig3_data/FIG3abc/'
+        trap_filename = prefix + 'testkagome_part3-11-6'#.txt
+        for i in range(10):
+            filename = prefix + 'index'+str(list_index[i])+'_9'#.txt
+            save_filename = prefix + 'bond_index'+str(list_index[i])+'_9.png'#pdf'
+            points = np.loadtxt(filename)
+
+            spa = pa.static_points_analysis_2d(points[:,:2],hide_figure=False)
+            spa.get_first_minima_bond_length_distribution()#get_first_minima_ridge_length_distribution()
+            bpm = pa.bond_plot_module()
+            bpm.restrict_axis_property_relative(spa.points,'($\sigma$)')
+            list_bond_index = bpm.get_bonds_with_conditional_bond_length(spa.bond_length,[0.9,spa.bond_first_minima_left])
+            #list_bond_index = bpm.get_bonds_with_conditional_ridge_length(spa.voronoi.ridge_length,spa.voronoi.ridge_points,spa.ridge_first_minima_left)
+            #color_name: https://www.cssportal.com/html-colors/x11-colors.php
+            bond_color = 'wheat'#'gold'#'mediumseagreen'#'tan'#'bisque'#'gold'#'darkorange'
+            bpm.draw_points_with_given_bonds(spa.points,list_bond_index,100,bond_color,bond_color,bond_width=1)#200 too large
+            bpm.plot_traps(LinearCompressionRatio=lcr, trap_filename=trap_filename,mode='array',trap_color='r',trap_size=10)
+            bpm.restrict_axis_limitation(lim,lim)
+            
+            bpm.save_figure(png_filename=save_filename)
+            #spa.draw_bonds_conditional_ridge_oop(check=[0,spa.ridge_first_minima_left], png_filename=save_filename, xy_stable=spa.points, nb_change=None, x_unit='($\sigma$)', 
+            #                                    LinearCompressionRatio=lcr[i], trap_filename=trap_filename, axis_limit=lim[i])
+    def get_bond_trap_plot_unit(self):
+        R"""
+        fig3a large particle, small traps.
+        """
+        list_index = [4620,5228,5288]
+        #seed = 9
+        lcr = [0.78,0.78,0.84]
+
+        prefix = '/home/remote/Downloads/'#'/media/tplab/93B8-B96D/lxt/Fig3_data/FIG3abc/'
+        prefix_trap = '/home/tplab/hoomd-examples_0/'
+        trap_filename = prefix_trap + 'testhoneycomb3-8-12-part1'
+        #'testhoneycomb3-8-12'
+        #testhoneycomb3-8-12-part1.txt
+        for i in range(len(list_index)):
+            filename = prefix + 'index'+str(list_index[i])+'_9'#.txt
+            save_filename = prefix + 'bond_index'+str(list_index[i])+'_9.png'
+            points = np.loadtxt(filename)
+
+            spa = pa.static_points_analysis_2d(points[:,:2],hide_figure=False)
+            spa.get_first_minima_ridge_length_distribution()
+            bpm = pa.bond_plot_module()
+            bpm.restrict_axis_property_relative(spa.points,'($\sigma$)')
+            list_bond_index = bpm.get_bonds_with_conditional_ridge_length(spa.voronoi.ridge_length,spa.voronoi.ridge_points,spa.ridge_first_minima_left)
+            #color_name: https://www.cssportal.com/html-colors/x11-colors.php
+            bond_color = 'mediumseagreen'#'mediumseagreen'#'tan'#'bisque'#'gold'#'darkorange'
+            bpm.draw_points_with_given_bonds(spa.points,list_bond_index,80,bond_color,bond_color,bond_width=1)
+            bpm.plot_traps(LinearCompressionRatio=lcr[i], trap_filename=trap_filename,mode='array',trap_color='r',trap_size=10)
+            
+            bpm.save_figure(png_filename=save_filename)
+            #spa.draw_bonds_conditional_ridge_oop(check=[0,spa.ridge_first_minima_left], png_filename=save_filename, xy_stable=spa.points, nb_change=None, x_unit='($\sigma$)', 
+            #                                    LinearCompressionRatio=lcr[i], trap_filename=trap_filename, axis_limit=lim[i])
+
+    def get_bond_trap_plot_param_compare(self,points,k1,trap_lcr=None,trap_type=True):
+        R"""
+        import workflow_analysis as wa
+        import numpy as np
+        wfr = wa.workflow_file_to_data()
+        list_lcr = np.linspace(0.77,0.84,8)#0.77
+        k1=100
+        for lcr1 in list_lcr:
+            points = wfr.search_and_get_single_final_frame(lcr1=lcr1,k1=k1)
+            print(lcr1)
+            print(np.shape(points))
+            bth = wa.show_bonds_transition_from_hex_to_honeycomb()
+            bth.get_bond_trap_plot_param_compare(points,k1,lcr1)
+        """
+        prefix = '/home/remote/Downloads/'#'/media/tplab/93B8-B96D/lxt/Fig3_data/FIG3abc/'
+        prefix_trap = '/home/tplab/hoomd-examples_0/'
+        if trap_type :#honeycomb_part
+            trap_filename = prefix_trap + 'testhoneycomb3-8-12-part1'
+        else:
+            trap_filename = prefix_trap + 'testhoneycomb3-8-12'
+        save_filename = prefix + 'bond_k'+str(int(k1))+'_lcr'+str(int(trap_lcr*100))+'.png'
+        
+
+        spa = pa.static_points_analysis_2d(points[:,:2],hide_figure=False)
+        spa.get_first_minima_ridge_length_distribution()
+        bpm = pa.bond_plot_module()
+        bpm.restrict_axis_property_relative(spa.points,'($\sigma$)')
+        list_bond_index = bpm.get_bonds_with_conditional_ridge_length(spa.voronoi.ridge_length,spa.voronoi.ridge_points,spa.ridge_first_minima_left)
+        #color_name: https://www.cssportal.com/html-colors/x11-colors.php
+        bond_color = 'mediumseagreen'#'mediumseagreen'#'tan'#'bisque'#'gold'#'darkorange'
+        bpm.draw_points_with_given_bonds(spa.points,list_bond_index,80,bond_color,bond_color,bond_width=1)
+        bpm.plot_traps(LinearCompressionRatio=trap_lcr, trap_filename=trap_filename,mode='array',trap_color='r',trap_size=10)
+        
+        bpm.save_figure(png_filename=save_filename)
 
 class show_bond_image:
     R"""
@@ -452,7 +733,7 @@ class show_bond_image:
         self.filename = filename
 
     def read_image(self):
-        import points_analysis_2D as pa
+        
         import particle_tracking as pt
         prefix = self.prefix#'/home/tplab/Downloads/20230321/' 
         image_filename = prefix+self.filename#'DefaultImage_12.jpg' #'-' can not be recognized by plt.imread()!
@@ -476,7 +757,7 @@ class show_bond_image:
         20230113-video8-2246,kagome_part,11,400,90,60,[100,900,900,100]
         
         """
-        import points_analysis_2D as pa
+        
         import particle_tracking as pt
         prefix = self.prefix#'/home/tplab/Downloads/20230321/' 
         image_filename = prefix+self.filename#'DefaultImage_12.jpg' 
@@ -690,7 +971,7 @@ class show_waiting_time_interstitial_motion:
         pass
 
     def trajectory_single_particle(self,txyz_stable_id=16):
-        import points_analysis_2D as pa
+        
         import numpy as np
         prefix = '/home/remote/Downloads/4302_9/'
         filename_txyz_stable = prefix+'txyz_stable.npy'
@@ -710,7 +991,7 @@ class show_waiting_time_interstitial_motion:
             n_frame_to_coarse=1,plot: lines + clusters
             n_frame_to_coarse=2,plot: lines + clusters
         """
-        import points_analysis_2D as pa
+        
         prefix = '/home/remote/Downloads/4302_9/'
         filename_txyz_stable = prefix+'txyz_stable.npy'
         txyz_stable = np.load(filename_txyz_stable)
@@ -732,7 +1013,7 @@ class show_waiting_time_interstitial_motion:
             for the same particle id, dr(df) = r(frame+df)-r(frame),
             method2: average 3 frames of positions and draw the trajectory
         """
-        import points_analysis_2D as pa
+        
         prefix = '/home/remote/Downloads/4302_9/'
         filename_txyz_stable = prefix+'txyz_stable.npy'
         txyz_stable = np.load(filename_txyz_stable)
@@ -770,7 +1051,7 @@ class show_polygon_dye:
             spd = wa.show_polygon_dye() 
             spd.plot_polygon_bond_xylim()
         """
-        import points_analysis_2D as pa
+        
         account = 'tplab'#'remote'
         prefix = '/home/'+account+'/Downloads/4302_9/'
         prefix_write='/home/'+account+'/Downloads/4302_9/polygon_6/'#_lim,delauny_voronoi_polygon/'
@@ -788,7 +1069,7 @@ class show_polygon_dye:
             self.draw_bonds_conditional_ridge_oop(prefix_write,frame,limit=True)
 
     def get_points_plot(self):
-        import points_analysis_2D as pa
+        
         import numpy as np
         import proceed_file as pf
         pfile = pf.proceed_file_shell()
@@ -815,7 +1096,7 @@ class show_polygon_dye:
         #self.read_data(prefix_write)
                 
     def get_points_plot_loop(self,seed):
-        import points_analysis_2D as pa
+        
         import numpy as np
         import proceed_file as pf
         pfile = pf.proceed_file_shell()
@@ -1037,7 +1318,7 @@ class show_disp_field:
     
     def get_points_plot(self):
         #self.test_patch()
-        import points_analysis_2D as pa
+        
         import numpy as np
         
         prefix = '/home/remote/Downloads/4302_9/'
@@ -1051,7 +1332,7 @@ class show_disp_field:
         self.p2d.displacemnt_field.get_displacement_field_xy(0,8,plot=True,png_filename=png_filename,limit=True)
     
     def get_disp(self,seed,frame1,frame2):
-        import points_analysis_2D as pa
+        
         import numpy as np
         import proceed_file as pf
         pfile = pf.proceed_file_shell()
@@ -1066,7 +1347,7 @@ class show_disp_field:
         self.p2d.displacemnt_field.get_displacement_field_xy(frame1,frame2,plot=True,png_filename=png_filename)#,limit=True
     
     def get_disp_lim(self,seed,frame):
-        import points_analysis_2D as pa
+        
         import numpy as np
         import proceed_file as pf
         pfile = pf.proceed_file_shell()
@@ -1101,7 +1382,7 @@ class show_disp_field:
         prefix_write = pfile.create_folder(prefix_simu,'pin_check')
         file_txyz_stable = prefix_simu + 'txyz_stable.npy'
         txyz_stable = numpy.load(file_txyz_stable)
-        import points_analysis_2D as pa
+        
         df = pa.dynamical_facilitation_module()
         #df.get_pin_bool(traps,txyz_stable,prefix_write,1.0)
         #plot
@@ -1116,6 +1397,287 @@ class show_disp_field:
         self.p2d.displacemnt_field.get_bicolor_disp(t_pin_bool[frame2],frame1,frame2,plot=True,png_filename=png_filename,limit=lim,traps=traps)
         #png_filename=prefix_write+'displacement_field_xy_0_2000.png'#'_part.png'
         #self.p2d.displacemnt_field.get_bicolor_disp(t_pin_bool[2000],0,2000,plot=True,png_filename=png_filename)
+
+class show_pin_interstitial_order_parameter:
+    def __init__(self) -> None:
+        pass
+
+    def workflow_plot(self,lcr = 0.81,index1=4302,seed=9):
+        R"""
+        
+        """
+        simu_index = str(index1)+'_'+str(seed)
+        dfm = pa.dynamical_facilitation_module()
+        
+        file_txyz = '/home/remote/Downloads/'+simu_index+'/txyz.npy'#_stable
+        file_reference_points = '/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/testhoneycomb3-8-12-part1'#'/home/remote/hoomd-examples_0/testhoneycomb3-8-12'
+        txyz = np.load(file_txyz)
+        reference_points = np.loadtxt(file_reference_points)
+        reference_points_lcr = np.multiply(lcr,reference_points) 
+        result_prefix='/home/remote/Downloads/'+simu_index+'/pin_check/'
+        rt=0.5
+        #t_pin_bool = dfm.get_pin_bool(reference_points_lcr,txyz,result_prefix,r_trap=rt)
+        #t_interstitial_bool = dfm.get_interstitial_bool(reference_points_lcr,txyz,result_prefix,r_trap=rt)
+        t_pin_bool = np.load(result_prefix+'t_pin_bool.npy')
+        t_interstitial_bool = np.load(result_prefix+'t_interstitial_bool.npy')
+        #check the overlap of pinning and interstitial particles. calculate the transformation ratio too.
+        t_transition_bool = np.array(t_interstitial_bool,dtype=int) + np.array(t_pin_bool,dtype=int)
+        #if max(t_transition_bool.any())>1:
+        #    print('overlap of pinning and interstitial particles!')
+        t_trans_ratio = dfm.get_trans_ratio(t_transition_bool)
+        t_pin_ratio = dfm.get_trans_ratio(t_pin_bool)
+        t_interstitial_ratio = dfm.get_trans_ratio(t_interstitial_bool)
+        dfm.plot_transition_state(t_trans_ratio, t_pin_ratio, t_interstitial_ratio)
+
+        dt=10
+        t_trans_event_ratio = dfm.get_activation_event(t_transition_bool,dt)
+        t_pin_event_ratio = dfm.get_activation_event(t_pin_bool,dt)
+        t_interstial_event_ratio = dfm.get_activation_event(t_interstitial_bool,dt)
+
+        t_pin_to_trans = np.divide(t_pin_event_ratio,t_trans_event_ratio) 
+        t_inter_to_trans = np.divide(t_interstial_event_ratio,t_trans_event_ratio)
+        
+        list_t = np.linspace(dt,2000,2001-dt)
+        fig,ax = plt.subplots()
+        
+
+        self.plot_to_check_trans_ratio(list_t,t_trans_ratio,t_pin_ratio,t_interstitial_ratio)
+        self.plot_to_check_act_ratio(list_t,t_trans_event_ratio,t_pin_event_ratio,t_interstial_event_ratio)
+        self.plot_to_check_act_share_ratio(list_t,t_pin_to_trans,t_inter_to_trans)
+
+    def workflow_data_honey_part(self,lcr=0.81,index1=4302,seed=9,r_trap=0.5,io_only=True):
+        R"""
+            t_pin_bool:(Nframe,Nparticle)[bool] means particle_id at frame_i is pinned at reference_position or not.
+            t_interstitial_bool:(Nframe,Nparticle)[bool] means particle_id at frame_i is pinned at reference_position or not.
+            t_transition_bool:(Nframe,Nparticle)[bool] means particle_id at frame_i is pinned at reference_position or not.
+
+        """
+        #set_parameters
+        simu_index = str(index1)+'_'+str(seed)
+        dfm = pa.dynamical_facilitation_module()
+        
+        file_txyz = '/home/remote/Downloads/'+simu_index+'/txyz.npy'#_stable
+        file_reference_points = '/home/remote/hoomd-examples_0/testhoneycomb3-8-12'
+        #/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/testhoneycomb3-8-12-part1
+        # '/home/remote/hoomd-examples_0/testhoneycomb3-8-12'
+        txyz = np.load(file_txyz)
+        reference_points = np.loadtxt(file_reference_points)
+        reference_points_lcr = np.multiply(lcr,reference_points) 
+        result_prefix='/home/remote/Downloads/'+simu_index+'/pin_check/'
+        csv_filename = '/home/remote/Downloads/'+simu_index+'/pin_check/time_vs_activation_ratio.csv'
+
+        dfm = pa.dynamical_facilitation_module()
+        if io_only:
+            t_pin_bool = np.load(result_prefix+'t_pin_bool.npy')
+            t_interstitial_bool = np.load(result_prefix+'t_interstitial_bool.npy')
+        else:
+            t_pin_bool = dfm.get_pin_bool(reference_points_lcr,txyz,result_prefix,r_trap=r_trap)
+            t_interstitial_bool = dfm.get_interstitial_bool(reference_points_lcr,txyz,result_prefix,r_trap=r_trap)
+        
+        #check the overlap of pinning and interstitial particles. calculate the transformation ratio too.
+        t_transition_bool = np.array(t_interstitial_bool,dtype=int) + np.array(t_pin_bool,dtype=int)
+        #if max(t_transition_bool.any())>1:
+        #    print('overlap of pinning and interstitial particles!')
+        t_trans_ratio = dfm.get_trans_ratio(t_transition_bool)
+        t_pin_ratio = dfm.get_trans_ratio(t_pin_bool)
+        t_interstitial_ratio = dfm.get_trans_ratio(t_interstitial_bool)
+        dfm.plot_transition_state(t_trans_ratio, t_pin_ratio, t_interstitial_ratio)
+
+        #get the count of event between t and t+dt frame.
+        #ratio = Nevent/Nparticle
+        dt=1
+        t_trans_event_ratio = dfm.get_activation_event(t_transition_bool,dt)
+        t_pin_event_ratio = dfm.get_activation_event(t_pin_bool,dt)
+        t_interstial_event_ratio = dfm.get_activation_event(t_interstitial_bool,dt)
+
+        #get the share of pin/inter event(trans event as total) between t and t+dt frame.
+        #x_ratio = Nx_event/Ntrans_event, e.g. inter_ratio = Ninter_event/Ntrans_event
+        t_pin_to_trans = np.divide(t_pin_event_ratio,t_trans_event_ratio) 
+        t_inter_to_trans = np.divide(t_interstial_event_ratio,t_trans_event_ratio)
+
+        list_frames = np.linspace(dt,2000,2001-dt).astype(int)
+        import data_decorate as dd
+        d2 = dd.data_decorator()
+        n_data = 10
+        list_index,t_trans_ratio_decorated = d2.coarse_grainize_and_average_data_log(t_trans_ratio[list_frames],n_data)
+        list_index,t_pin_ratio_decorated = d2.coarse_grainize_and_average_data_log(t_pin_ratio[list_frames],n_data)
+        list_index,t_interstitial_ratio_decorated = d2.coarse_grainize_and_average_data_log(t_interstitial_ratio[list_frames],n_data)
+        
+        list_index,t_trans_event_ratio_decorated = d2.coarse_grainize_and_average_data_log(t_trans_event_ratio,n_data)
+        list_index,t_pin_event_ratio_decorated = d2.coarse_grainize_and_average_data_log(t_pin_event_ratio,n_data)
+        list_index,t_interstial_event_ratio_decorated = d2.coarse_grainize_and_average_data_log(t_interstial_event_ratio,n_data)
+
+        list_index,t_pin_to_trans_decorated = d2.coarse_grainize_and_average_data_log(t_pin_to_trans,n_data)
+        list_index,t_inter_to_trans_decorated = d2.coarse_grainize_and_average_data_log(t_inter_to_trans,n_data)
+
+        
+
+        import pandas as pd
+        record_pd = pd.DataFrame([])
+        record_pd['t(step)'] = list_frames[list_index]*1e3
+        record_pd['trans_ratio(1)'] = t_trans_ratio_decorated
+        record_pd['pin_ratio(1)'] = t_pin_ratio_decorated
+        record_pd['trans_act_ratio(1)'] = t_trans_event_ratio_decorated
+        record_pd['pin_act_ratio(1)'] = t_pin_event_ratio_decorated
+        record_pd['inter_act_ratio(1)'] = t_interstial_event_ratio_decorated
+        record_pd['pin_to_trans(1)'] = t_pin_to_trans_decorated
+        record_pd['inter_to_trans(1)'] = t_inter_to_trans_decorated
+
+        pd.DataFrame.to_csv(record_pd,csv_filename)
+        return record_pd
+    
+    def workflow_data_honey(self,lcr=0.79,index1=5238,seed=9,r_trap=0.5,io_only=True):#[x]
+        R"""
+            t_pin_bool:(Nframe,Nparticle)[bool] means particle_id at frame_i is pinned at reference_position or not.
+            t_interstitial_bool:(Nframe,Nparticle)[bool] means particle_id at frame_i is pinned at reference_position or not.
+            t_transition_bool:(Nframe,Nparticle)[bool] means particle_id at frame_i is pinned at reference_position or not.
+
+        """
+        #set_parameters
+        simu_index = str(index1)+'_'+str(seed)
+        dfm = pa.dynamical_facilitation_module()
+        
+        file_txyz = '/home/remote/Downloads/'+simu_index+'/txyz.npy'#_stable
+        file_reference_points = '/home/remote/hoomd-examples_0/testhoneycomb3-8-12'
+        #/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/testhoneycomb3-8-12-part1
+        # '/home/remote/hoomd-examples_0/testhoneycomb3-8-12'
+        txyz = np.load(file_txyz)
+        reference_points = np.loadtxt(file_reference_points)
+        reference_points_lcr = np.multiply(lcr,reference_points) 
+        result_prefix='/home/remote/Downloads/'+simu_index+'/pin_check/'
+        csv_filename = '/home/remote/Downloads/'+simu_index+'/pin_check/time_vs_activation_ratio.csv'
+
+        dfm = pa.dynamical_facilitation_module()
+        if io_only:
+            t_pin_bool = np.load(result_prefix+'t_pin_bool.npy')
+            t_pin_id_bool = np.load(result_prefix+'t_pin_id_bool.npy') 
+            #t_interstitial_bool = np.load(result_prefix+'t_interstitial_bool.npy')
+        else:
+            t_pin_id_bool = dfm.get_pin_id_bool(reference_points_lcr,txyz,result_prefix,r_trap=r_trap)
+            t_pin_bool = dfm.get_pin_bool(reference_points_lcr,txyz,result_prefix,r_trap=r_trap)
+            #t_interstitial_bool = dfm.get_interstitial_bool(reference_points_lcr,txyz,result_prefix,r_trap=r_trap)
+        
+        #check the overlap of pinning and interstitial particles. calculate the transformation ratio too.
+        #t_transition_bool = np.array(t_interstitial_bool,dtype=int) + np.array(t_pin_bool,dtype=int)
+        #if max(t_transition_bool.any())>1:
+        #    print('overlap of pinning and interstitial particles!')
+        #t_trans_ratio = dfm.get_trans_ratio(t_transition_bool)
+        t_pin_ratio = dfm.get_trans_ratio(t_pin_bool)
+        #t_interstitial_ratio = dfm.get_trans_ratio(t_interstitial_bool)
+        #dfm.plot_transition_state(t_trans_ratio, t_pin_ratio, t_interstitial_ratio)
+
+        #get the count of event between t and t+dt frame.
+        #ratio = Nevent/Nparticle
+        dt=1
+        #t_trans_event_ratio = dfm.get_activation_event(t_transition_bool,dt)
+        t_pin_event_ratio,t_depin_event_ratio = dfm.get_pin_depin_event(t_pin_id_bool,dt)
+        #t_interstial_event_ratio = dfm.get_activation_event(t_interstitial_bool,dt)
+
+        #get the share of pin/inter event(trans event as total) between t and t+dt frame.
+        #x_ratio = Nx_event/Ntrans_event, e.g. inter_ratio = Ninter_event/Ntrans_event
+        #t_pin_to_trans = np.divide(t_pin_event_ratio,t_trans_event_ratio) 
+        #t_inter_to_trans = np.divide(t_interstial_event_ratio,t_trans_event_ratio)
+
+        list_frames = np.linspace(dt,2000,2001-dt).astype(int)
+        import data_decorate as dd
+        d2 = dd.data_decorator()
+        n_data = 10
+        #list_index,t_trans_ratio_decorated = d2.coarse_grainize_and_average_data_log(t_trans_ratio,n_data)
+        list_index1,t_pin_ratio_decorated = d2.coarse_grainize_and_average_data_log(t_pin_ratio[list_frames],n_data)
+        #list_index,t_interstitial_ratio_decorated = d2.coarse_grainize_and_average_data_log(t_interstitial_ratio,n_data)
+        
+        #list_index,t_trans_event_ratio_decorated = d2.coarse_grainize_and_average_data_log(t_trans_event_ratio,n_data)
+        list_index2,t_pin_event_ratio_decorated = d2.coarse_grainize_and_average_data_log(t_pin_event_ratio,n_data)
+        list_index3,t_depin_event_ratio_decorated = d2.coarse_grainize_and_average_data_log(t_depin_event_ratio,n_data)
+        #list_index,t_interstial_event_ratio_decorated = d2.coarse_grainize_and_average_data_log(t_interstial_event_ratio,n_data)
+
+        #list_index,t_pin_to_trans_decorated = d2.coarse_grainize_and_average_data_log(t_pin_to_trans,n_data)
+        #list_index,t_inter_to_trans_decorated = d2.coarse_grainize_and_average_data_log(t_inter_to_trans,n_data)
+
+        
+
+        import pandas as pd
+        record_pd = pd.DataFrame([])
+        record_pd['t(step)'] = list_frames[list_index3]*1e3
+        #record_pd['trans_ratio(1)'] = t_trans_ratio_decorated
+        record_pd['pin_ratio(1)'] = t_pin_ratio_decorated
+        #record_pd['trans_act_ratio(1)'] = t_trans_event_ratio_decorated
+        record_pd['pin_act_ratio(1)'] = t_pin_event_ratio_decorated
+        record_pd['depin_act_ratio(1)'] = t_depin_event_ratio_decorated
+        #record_pd['inter_act_ratio(1)'] = t_interstial_event_ratio_decorated
+        #record_pd['pin_to_trans(1)'] = t_pin_to_trans_decorated
+        #record_pd['inter_to_trans(1)'] = t_inter_to_trans_decorated
+
+        pd.DataFrame.to_csv(record_pd,csv_filename)
+        return record_pd
+
+    def plot_to_check_trans_ratio(self,x,y1,y2,y3,simu_index):
+        fig,ax = plt.subplots()
+        ax.semilogx(x,y1,label='trans_ratio')#semilogy,plot
+        ax.semilogx(x,y2,label='pin_ratio')
+        ax.semilogx(x,y3,label='inter_ratio')
+        plt.legend()
+        #plt.title('CN_k '+'index:'+str_index)
+        plt.xlabel('time(steps)')
+        plt.ylabel('activation_ratio(1)')
+        png_filename = '/home/remote/Downloads/'+simu_index+'/pin_check/t_trans_ratio_allpart_r05.jpg'
+        plt.savefig(png_filename)
+        plt.close()
+
+    def plot_to_check_act_ratio(self,x,y1,y2,y3,simu_index):
+        fig,ax = plt.subplots()
+        ax.semilogx(x,y1,label='trans_act_ratio')#semilogy,plot
+        ax.semilogx(x,y2,label='pin_act_ratio')
+        ax.semilogx(x,y3,label='inter_act_ratio')
+        plt.legend()
+        #plt.title('CN_k '+'index:'+str_index)
+        plt.xlabel('time(steps)')
+        plt.ylabel('activation_ratio(1)')
+        png_filename = '/home/remote/Downloads/'+simu_index+'/pin_check/t_trans_act_ratio_allpart_r05.jpg'
+        plt.savefig(png_filename)
+        plt.close()
+        
+    def plot_to_check_act_share_ratio(self,x,y1,y2,simu_index):
+        fig,ax = plt.subplots()
+        ax.semilogx(x,y1,label='pin_act_ratio')#semilogy,plot
+        ax.semilogx(x,y2,label='inter_act_ratio')
+        plt.legend()
+        #plt.title('CN_k '+'index:'+str_index)
+        plt.xlabel('time(steps)')
+        plt.ylabel('activation_ratio/trans_ratio(1)')
+        png_filename = '/home/remote/Downloads/'+str(simu_index)+'/pin_check/t_act_share_allpart_r05.jpg'
+        plt.savefig(png_filename)
+        plt.close()
+
+    def plot_to_check_honey(self,x,y1,y2,y3,simu_index):
+        R"""
+        import workflow_analysis as wa
+        spio = wa.show_pin_interstitial_order_parameter()
+        #spio.workflow_data_honey_part(io_only=True)#0.79,5238,9,io_only=False
+        spio.workflow_data_honey(io_only=True)#0.79,5238,9,io_only=False
+        import pandas as pd
+        simu_index = '5238_9'
+        csv_filename = '/home/remote/Downloads/'+simu_index+'/pin_check/time_vs_activation_ratio.csv'
+        data = pd.read_csv(csv_filename)#/home/remote/Downloads/5238_9/pin_check/time_vs_activation_ratio.csv
+        print(data.columns)
+        t = data['t(step)'].values
+        y1 = data['pin_ratio(1)'].values
+        y2 = data['pin_act_ratio(1)'].values
+        y3 = data['depin_act_ratio(1)'].values
+        spio.plot_to_check_act_ratio
+        spio.plot_to_check_act_share_ratio(t,y1,y2,'5238_9')#'t(step)', 'pin_ratio(1)', 'pin_act_ratio(1)'
+        """
+        fig,ax = plt.subplots()
+        ax.semilogx(x,y1,label='trans_act_ratio')#semilogy,plot
+        ax.semilogx(x,y2,label='pin_act_ratio')
+        ax.semilogx(x,y3,label='depin_act_ratio')
+        plt.legend()
+        #plt.title('CN_k '+'index:'+str_index)
+        plt.xlabel('time(steps)')
+        plt.ylabel('activation_ratio(1)')
+        png_filename = '/home/remote/Downloads/'+simu_index+'/pin_check/t_trans_act_ratio_allpart_r05.jpg'
+        plt.savefig(png_filename)
+        plt.close()
 
 class show_dual_lattice:
     R"""
@@ -1141,10 +1703,542 @@ class show_dual_lattice:
         ax.set_xlim(limit[0])
         ax.set_ylim(limit[1])
         """
+
+class archimedean_tilings:
+    def __init__(self):
+        R"""
+        example_code:
+            import workflow_analysis as wa
+            import matplotlib.pyplot as plt
+            at = wa.archimedean_tilings()
+            at.generate_type10_part()
+            points = at.generate_lattices(6)
+            dula = at.get_dual_lattice(points)
+            fig,ax = plt.subplots()
+            ax.scatter(points[:,0],points[:,1],color='k')
+            ax.scatter(dula[:,0],dula[:,1],facecolors='none',edgecolors='k')#,marker = 'x'
+            ax.set_xlabel('x label')  # Add an x-label to the axes.
+            ax.set_ylabel('y label')  # Add a y-label to the axes.
+            ax.set_title("Simple Plot")  # Add a title to the axes
+            ax.set_aspect('equal','box')
+            plt.show()
+        """
+        pass
+
+    def generate_type11(self,a=1):
+        R"""
+        Introduction:
+            (3^3,4^2) squares and triangles.
+            a: the edge length of a single tile.
+            n: n*n lattices to generate. 
+        example:
+            import workflow_analysis as wa
+            import matplotlib.pyplot as plt
+            at = wa.archimedean_tilings()
+            at.generate_type11(2)
+            points = at.generate_lattices([12,3])
+            fig,ax = plt.subplots()
+            ax.scatter(points[:,0],points[:,1])
+            ax.set_xlabel('x label')  # Add an x-label to the axes.
+            ax.set_ylabel('y label')  # Add a y-label to the axes.
+            ax.set_title("Simple Plot")  # Add a title to the axes
+            ax.set_aspect('equal','box')
+            plt.show()
+        source:
+            def generate_honeycomb(self,a,n):
+            uc = hoomd.lattice.unitcell(N=4,
+                                    a1=[3*a, 0, 0],
+                                    a2=[0, math.sqrt(3)*a, 0],
+                                    a3=[0, 0, 1],
+                                    dimensions=2,
+                                    position=[[0,0,0], [1/2*a, math.sqrt(3)/2*a, 0],[3/2*a,math.sqrt(3)/2*a,0],[2*a,0,0]],
+                                    type_name=['A', 'A','A','A'],
+                                    diameter=[1,1,1,1]);
+            self.system = hoomd.init.create_lattice(unitcell=uc, n=n);
+        """
+        rt = math.sqrt(3)
+        #N=4
+        self.a1 = np.array([1,0,0])*a
+        self.a2 = np.array([0,2+rt,0])*a
+        self.a3 = np.array([0,0,0])
+        #dimensions=2
+        self.position = np.array([[0,2+0.5*rt,0],[0,1+0.5*rt,0],[0.5,1,0],[0.5,0,0]])*a#[0.5,2+rt,0],
+    
+    def generate_type11_part(self,a=1):
+        R"""
+        Introduction:
+            (3^3,4^2) squares and triangles.
+            a: the edge length of a single tile.
+            n: n*n lattices to generate. 
+        example:
+            import workflow_analysis as wa
+            import matplotlib.pyplot as plt
+            at = wa.archimedean_tilings()
+            at.generate_type11_part(2)
+            points = at.generate_lattices([12,3])
+            fig,ax = plt.subplots()
+            ax.scatter(points[:,0],points[:,1])
+            ax.set_xlabel('x label')  # Add an x-label to the axes.
+            ax.set_ylabel('y label')  # Add a y-label to the axes.
+            ax.set_title("Simple Plot")  # Add a title to the axes
+            ax.set_aspect('equal','box')
+            plt.show()
+        source:
+            def generate_honeycomb(self,a,n):
+            uc = hoomd.lattice.unitcell(N=4,
+                                    a1=[3*a, 0, 0],
+                                    a2=[0, math.sqrt(3)*a, 0],
+                                    a3=[0, 0, 1],
+                                    dimensions=2,
+                                    position=[[0,0,0], [1/2*a, math.sqrt(3)/2*a, 0],[3/2*a,math.sqrt(3)/2*a,0],[2*a,0,0]],
+                                    type_name=['A', 'A','A','A'],
+                                    diameter=[1,1,1,1]);
+            self.system = hoomd.init.create_lattice(unitcell=uc, n=n);
+        """
+        rt = math.sqrt(3)
+        #N=4
+        self.a1 = np.array([1,0,0])*a
+        self.a2 = np.array([0,2+rt,0])*a
+        self.a3 = np.array([0,0,0])
+        #dimensions=2
+        self.position = np.array([[0,2+0.5*rt,0],[0.5,1,0]])*a#[0.5,2+rt,0],
+
+    def generate_type10(self,a=1):
+        R"""
+        Introduction:
+            (3^2,4,3,4) squares and triangles.
+            a: the edge length of a single tile.
+            n: n*n lattices to generate. 
+        example:
+            import workflow_analysis as wa
+            import matplotlib.pyplot as plt
+            at = wa.archimedean_tilings()
+            at.generate_type11(2)
+            points = at.generate_lattices([12,3])
+            fig,ax = plt.subplots()
+            ax.scatter(points[:,0],points[:,1])
+            ax.set_xlabel('x label')  # Add an x-label to the axes.
+            ax.set_ylabel('y label')  # Add a y-label to the axes.
+            ax.set_title("Simple Plot")  # Add a title to the axes
+            ax.set_aspect('equal','box')
+            plt.show()
+        source:
+            def generate_honeycomb(self,a,n):
+            uc = hoomd.lattice.unitcell(N=4,
+                                    a1=[3*a, 0, 0],
+                                    a2=[0, math.sqrt(3)*a, 0],
+                                    a3=[0, 0, 1],
+                                    dimensions=2,
+                                    position=[[0,0,0], [1/2*a, math.sqrt(3)/2*a, 0],[3/2*a,math.sqrt(3)/2*a,0],[2*a,0,0]],
+                                    type_name=['A', 'A','A','A'],
+                                    diameter=[1,1,1,1]);
+            self.system = hoomd.init.create_lattice(unitcell=uc, n=n);
+        """
+        rt = math.sqrt(3)
+        #N=8
+        self.a1 = np.array([1+rt,0,0])*a
+        self.a2 = np.array([0,1+rt,0])*a
+        self.a3 = np.array([0,0,0])
+        #dimensions=2
+        self.position = np.array([[0.5+0.5*rt,0.5+0.5*rt,0],[0.5+0.5*rt,1.5+0.5*rt,0],
+                                  [0.5,1+0.5*rt,0],[0.5+rt,1+0.5*rt,0],
+                                  [0.5*rt,0.5,0],[1+0.5*rt,0.5,0],
+                                  [0,0,0],[0,1,0]])*a
+    
+    def generate_type10_part(self,a=1):
+        R"""
+        Introduction:
+            (3^2,4,3,4) squares and triangles.
+            a: the edge length of a single tile.
+            n: n*n lattices to generate. 
+        example:
+            import workflow_analysis as wa
+            import matplotlib.pyplot as plt
+            at = wa.archimedean_tilings()
+            at.generate_type11(2)
+            points = at.generate_lattices([12,3])
+            fig,ax = plt.subplots()
+            ax.scatter(points[:,0],points[:,1])
+            ax.set_xlabel('x label')  # Add an x-label to the axes.
+            ax.set_ylabel('y label')  # Add a y-label to the axes.
+            ax.set_title("Simple Plot")  # Add a title to the axes
+            ax.set_aspect('equal','box')
+            plt.show()
+        source:
+            def generate_honeycomb(self,a,n):
+            uc = hoomd.lattice.unitcell(N=4,
+                                    a1=[3*a, 0, 0],
+                                    a2=[0, math.sqrt(3)*a, 0],
+                                    a3=[0, 0, 1],
+                                    dimensions=2,
+                                    position=[[0,0,0], [1/2*a, math.sqrt(3)/2*a, 0],[3/2*a,math.sqrt(3)/2*a,0],[2*a,0,0]],
+                                    type_name=['A', 'A','A','A'],
+                                    diameter=[1,1,1,1]);
+            self.system = hoomd.init.create_lattice(unitcell=uc, n=n);
+        """
+        rt = math.sqrt(3)
+        #N=8
+        self.a1 = np.array([1+rt,0,0])*a
+        self.a2 = np.array([0,1+rt,0])*a
+        self.a3 = np.array([0,0,0])
+        #dimensions=2
+        self.position = np.array([[0.5+0.5*rt,0.5+0.5*rt,0],[0.5+0.5*rt,1.5+0.5*rt,0],
+                                  [0,0,0],[0,1,0]])*a  
+    
+    def generate_type9(self,a=1):
+        R"""
+        Introduction:
+            (3^2,4,3,4) squares and triangles.
+            a: the edge length of a single tile.
+            n: n*n lattices to generate. 
+        example:
+            import workflow_analysis as wa
+            import matplotlib.pyplot as plt
+            at = wa.archimedean_tilings()
+            at.generate_type11(2)
+            points = at.generate_lattices([12,3])
+            fig,ax = plt.subplots()
+            ax.scatter(points[:,0],points[:,1])
+            ax.set_xlabel('x label')  # Add an x-label to the axes.
+            ax.set_ylabel('y label')  # Add a y-label to the axes.
+            ax.set_title("Simple Plot")  # Add a title to the axes
+            ax.set_aspect('equal','box')
+            plt.show()
+        source:
+            def generate_honeycomb(self,a,n):
+            uc = hoomd.lattice.unitcell(N=4,
+                                    a1=[3*a, 0, 0],
+                                    a2=[0, math.sqrt(3)*a, 0],
+                                    a3=[0, 0, 1],
+                                    dimensions=2,
+                                    position=[[0,0,0], [1/2*a, math.sqrt(3)/2*a, 0],[3/2*a,math.sqrt(3)/2*a,0],[2*a,0,0]],
+                                    type_name=['A', 'A','A','A'],
+                                    diameter=[1,1,1,1]);
+            self.system = hoomd.init.create_lattice(unitcell=uc, n=n);
+        """
+        rt = math.sqrt(3)
+        #N=8
+        self.a1 = np.array([1+rt,0,0])*a
+        self.a2 = np.array([0,1+rt,0])*a
+        self.a3 = np.array([0,0,0])
+        #dimensions=2
+        self.position = np.array([[0.5+0.5*rt,0.5+0.5*rt,0],[0.5+0.5*rt,1.5+0.5*rt,0],
+                                  [0,0,0],[0,1,0]])*a  
+
+    def generate_type8(self,a=1):
+        R"""
+        Introduction:
+            (3,6,3,6) triangles and hexagons. kagome.
+            a: the edge length of a single tile.
+            n: n*n lattices to generate. 
+        example:
+            import workflow_analysis as wa
+            import matplotlib.pyplot as plt
+            at = wa.archimedean_tilings()
+            at.generate_type11(2)
+            points = at.generate_lattices([12,3])
+            fig,ax = plt.subplots()
+            ax.scatter(points[:,0],points[:,1])
+            ax.set_xlabel('x label')  # Add an x-label to the axes.
+            ax.set_ylabel('y label')  # Add a y-label to the axes.
+            ax.set_title("Simple Plot")  # Add a title to the axes
+            ax.set_aspect('equal','box')
+            plt.show()
+        source:
+            def generate_honeycomb(self,a,n):
+            uc = hoomd.lattice.unitcell(N=4,
+                                    a1=[3*a, 0, 0],
+                                    a2=[0, math.sqrt(3)*a, 0],
+                                    a3=[0, 0, 1],
+                                    dimensions=2,
+                                    position=[[0,0,0], [1/2*a, math.sqrt(3)/2*a, 0],[3/2*a,math.sqrt(3)/2*a,0],[2*a,0,0]],
+                                    type_name=['A', 'A','A','A'],
+                                    diameter=[1,1,1,1]);
+            self.system = hoomd.init.create_lattice(unitcell=uc, n=n);
+        """
+        rt = math.sqrt(3)
+        #N=6
+        self.a1 = np.array([2,0,0])*a
+        self.a2 = np.array([0,2*rt,0])*a
+        self.a3 = np.array([0,0,0])
+        #dimensions=2
+        self.position = np.array([[1.5,1.5*rt,0],
+                                  [0,rt,0],[1,rt,0],
+                                  [0,0,0],[1,0,0],[0.5,0.5*rt,0]])*a
+
+    def generate_type8_part(self,a=1):
+        R"""
+        Introduction:
+            (3,6,3,6) triangles and hexagons(kagome). 
+            a: the edge length of a single tile.
+            n: n*n lattices to generate. 
+        example:
+            import workflow_analysis as wa
+            import matplotlib.pyplot as plt
+            at = wa.archimedean_tilings()
+            at.generate_type11(2)
+            points = at.generate_lattices([12,3])
+            fig,ax = plt.subplots()
+            ax.scatter(points[:,0],points[:,1])
+            ax.set_xlabel('x label')  # Add an x-label to the axes.
+            ax.set_ylabel('y label')  # Add a y-label to the axes.
+            ax.set_title("Simple Plot")  # Add a title to the axes
+            ax.set_aspect('equal','box')
+            plt.show()
+        source:
+            def generate_honeycomb(self,a,n):
+            uc = hoomd.lattice.unitcell(N=4,
+                                    a1=[3*a, 0, 0],
+                                    a2=[0, math.sqrt(3)*a, 0],
+                                    a3=[0, 0, 1],
+                                    dimensions=2,
+                                    position=[[0,0,0], [1/2*a, math.sqrt(3)/2*a, 0],[3/2*a,math.sqrt(3)/2*a,0],[2*a,0,0]],
+                                    type_name=['A', 'A','A','A'],
+                                    diameter=[1,1,1,1]);
+            self.system = hoomd.init.create_lattice(unitcell=uc, n=n);
+        """
+        rt = math.sqrt(3)
+        #N=4
+        self.a1 = np.array([2,0,0])*a
+        self.a2 = np.array([0,2*rt,0])*a
+        self.a3 = np.array([0,0,0])
+        #dimensions=2
+        self.position = np.array([[0,rt,0],[1,rt,0],
+                                  [0,0,0],[1,0,0]])*a
+
+    def generate_type6(self,a=1):
+        R"""
+        Introduction:
+            (4,8^2) squares and octagons.
+            a: the edge length of a single tile.
+            n: n*n lattices to generate. 
+        example:
+            import workflow_analysis as wa
+            import matplotlib.pyplot as plt
+            at = wa.archimedean_tilings()
+            at.generate_type11(2)
+            points = at.generate_lattices([12,3])
+            fig,ax = plt.subplots()
+            ax.scatter(points[:,0],points[:,1])
+            ax.set_xlabel('x label')  # Add an x-label to the axes.
+            ax.set_ylabel('y label')  # Add a y-label to the axes.
+            ax.set_title("Simple Plot")  # Add a title to the axes
+            ax.set_aspect('equal','box')
+            plt.show()
+        source:
+            def generate_honeycomb(self,a,n):
+            uc = hoomd.lattice.unitcell(N=4,
+                                    a1=[3*a, 0, 0],
+                                    a2=[0, math.sqrt(3)*a, 0],
+                                    a3=[0, 0, 1],
+                                    dimensions=2,
+                                    position=[[0,0,0], [1/2*a, math.sqrt(3)/2*a, 0],[3/2*a,math.sqrt(3)/2*a,0],[2*a,0,0]],
+                                    type_name=['A', 'A','A','A'],
+                                    diameter=[1,1,1,1]);
+            self.system = hoomd.init.create_lattice(unitcell=uc, n=n);
+        """
+        rt = math.sqrt(2)
+        #N=8
+        self.a1 = np.array([1+rt,0,0])*a
+        self.a2 = np.array([0,1+rt,0])*a
+        self.a3 = np.array([0,0,0])
+        #dimensions=2
+        self.position = np.array([[0,0.5*rt,0],[0,1+0.5*rt,0],
+                                  [0.5*rt,0,0],[1+0.5*rt,0,0] ])*a
+                    
+    def generate_type6_part(self,a=1):
+        R"""
+        Introduction:
+            (4,8^2) squares and octagons.
+            a: the edge length of a single tile.
+            n: n*n lattices to generate. 
+        example:
+            import workflow_analysis as wa
+            import matplotlib.pyplot as plt
+            at = wa.archimedean_tilings()
+            at.generate_type11(2)
+            points = at.generate_lattices([12,3])
+            fig,ax = plt.subplots()
+            ax.scatter(points[:,0],points[:,1])
+            ax.set_xlabel('x label')  # Add an x-label to the axes.
+            ax.set_ylabel('y label')  # Add a y-label to the axes.
+            ax.set_title("Simple Plot")  # Add a title to the axes
+            ax.set_aspect('equal','box')
+            plt.show()
+        source:
+            def generate_honeycomb(self,a,n):
+            uc = hoomd.lattice.unitcell(N=4,
+                                    a1=[3*a, 0, 0],
+                                    a2=[0, math.sqrt(3)*a, 0],
+                                    a3=[0, 0, 1],
+                                    dimensions=2,
+                                    position=[[0,0,0], [1/2*a, math.sqrt(3)/2*a, 0],[3/2*a,math.sqrt(3)/2*a,0],[2*a,0,0]],
+                                    type_name=['A', 'A','A','A'],
+                                    diameter=[1,1,1,1]);
+            self.system = hoomd.init.create_lattice(unitcell=uc, n=n);
+        """
+        rt = math.sqrt(2)
+        #N=8
+        self.a1 = np.array([1+rt,0,0])*a
+        self.a2 = np.array([0,1+rt,0])*a
+        self.a3 = np.array([0,0,0])
+        #dimensions=2
+        self.position = np.array([[0,0.5*rt,0],[0,1+0.5*rt,0],
+                                  [0.5*rt,0,0] ])*a
+
+    def generate_type3(self,a=1):
+        R"""
+        Introduction:
+            (6^3) hexagons(honeycomb).
+            a: the edge length of a single tile.
+        example:
+            import workflow_analysis as wa
+            import matplotlib.pyplot as plt
+            at = wa.archimedean_tilings()
+            at.generate_type11(2)
+            points = at.generate_lattices([12,3])
+            fig,ax = plt.subplots()
+            ax.scatter(points[:,0],points[:,1])
+            ax.set_xlabel('x label')  # Add an x-label to the axes.
+            ax.set_ylabel('y label')  # Add a y-label to the axes.
+            ax.set_title("Simple Plot")  # Add a title to the axes
+            ax.set_aspect('equal','box')
+            plt.show()
+        source:
+            def generate_honeycomb(self,a,n):
+            uc = hoomd.lattice.unitcell(N=4,
+                                    a1=[3*a, 0, 0],
+                                    a2=[0, math.sqrt(3)*a, 0],
+                                    a3=[0, 0, 1],
+                                    dimensions=2,
+                                    position=[[0,0,0], [1/2*a, math.sqrt(3)/2*a, 0],[3/2*a,math.sqrt(3)/2*a,0],[2*a,0,0]],
+                                    type_name=['A', 'A','A','A'],
+                                    diameter=[1,1,1,1]);
+            self.system = hoomd.init.create_lattice(unitcell=uc, n=n);
+        """
+        rt = math.sqrt(3)
+        #N=1
+        self.a1 = np.array([3,0,0])*a
+        self.a2 = np.array([0,rt,0])*a
+        self.a3 = np.array([0,0,0])
+        #dimensions=2
+        self.position = np.array([[0,0,0], [1/2, rt/2, 0],[3/2,rt/2,0],[2,0,0]])*a
+
+    def generate_type2(self,a=1):
+        R"""
+        Introduction:
+            (4^4) squares.
+            a: the edge length of a single tile.
+        example:
+            import workflow_analysis as wa
+            import matplotlib.pyplot as plt
+            at = wa.archimedean_tilings()
+            at.generate_type11(2)
+            points = at.generate_lattices([12,3])
+            fig,ax = plt.subplots()
+            ax.scatter(points[:,0],points[:,1])
+            ax.set_xlabel('x label')  # Add an x-label to the axes.
+            ax.set_ylabel('y label')  # Add a y-label to the axes.
+            ax.set_title("Simple Plot")  # Add a title to the axes
+            ax.set_aspect('equal','box')
+            plt.show()
+        source:
+            def generate_honeycomb(self,a,n):
+            uc = hoomd.lattice.unitcell(N=4,
+                                    a1=[3*a, 0, 0],
+                                    a2=[0, math.sqrt(3)*a, 0],
+                                    a3=[0, 0, 1],
+                                    dimensions=2,
+                                    position=[[0,0,0], [1/2*a, math.sqrt(3)/2*a, 0],[3/2*a,math.sqrt(3)/2*a,0],[2*a,0,0]],
+                                    type_name=['A', 'A','A','A'],
+                                    diameter=[1,1,1,1]);
+            self.system = hoomd.init.create_lattice(unitcell=uc, n=n);
+        """
+        #N=1
+        self.a1 = np.array([1,0,0])*a
+        self.a2 = np.array([0,1,0])*a
+        self.a3 = np.array([0,0,0])
+        #dimensions=2
+        self.position = np.array([[0,0,0]])*a
+    
+    def generate_type1(self,a=1):
+        R"""
+        Introduction:
+            (3^6) triangles(hexagonal).
+            a: the edge length of a single tile.
+        example:
+            import workflow_analysis as wa
+            import matplotlib.pyplot as plt
+            at = wa.archimedean_tilings()
+            at.generate_type11(2)
+            points = at.generate_lattices([12,3])
+            fig,ax = plt.subplots()
+            ax.scatter(points[:,0],points[:,1])
+            ax.set_xlabel('x label')  # Add an x-label to the axes.
+            ax.set_ylabel('y label')  # Add a y-label to the axes.
+            ax.set_title("Simple Plot")  # Add a title to the axes
+            ax.set_aspect('equal','box')
+            plt.show()
+        source:
+            def generate_honeycomb(self,a,n):
+            uc = hoomd.lattice.unitcell(N=4,
+                                    a1=[3*a, 0, 0],
+                                    a2=[0, math.sqrt(3)*a, 0],
+                                    a3=[0, 0, 1],
+                                    dimensions=2,
+                                    position=[[0,0,0], [1/2*a, math.sqrt(3)/2*a, 0],[3/2*a,math.sqrt(3)/2*a,0],[2*a,0,0]],
+                                    type_name=['A', 'A','A','A'],
+                                    diameter=[1,1,1,1]);
+            self.system = hoomd.init.create_lattice(unitcell=uc, n=n);
+        """
+        rt = math.sqrt(3)
+        #N=1
+        self.a1 = np.array([1,0,0])*a
+        self.a2 = np.array([0,rt,0])*a
+        self.a3 = np.array([0,0,0])
+        #dimensions=2
+        self.position = np.array([[0,0,0],[0.5,0.5*rt,0]])*a
+
+    def generate_lattices(self,n):
+        R"""
+            self.position: an array of points as a lattice to generate a larger crystal.
+            n: the size of lattice to expand. 
+                n=5 to generate 5*5 lattice; 
+                n=[5,10] to generate  5*10 lattice.
+        """
+        sz = np.shape(self.position)
+        #ll = len(n)
+        if isinstance(n,int):
+            #positions = np.zeros((sz[0]*n*n,sz[1]))
+            positions = self.generate_lattices([n,n])
+        elif len(n) == int(2):
+            positions = np.zeros((sz[0]*n[0]*n[1],sz[1]))
+            for i in range(n[0]):
+                position_temp = self.position + self.a1*i
+                positions[i*sz[0]:(i+1)*sz[0],:] = position_temp
             
+            for i in range(n[1]):
+                if i>0:
+                    position_temp = positions[:sz[0]*n[0],:] + self.a2*i
+                    positions[i*sz[0]*n[0]:(i+1)*sz[0]*n[0],:] = position_temp
+            #centralize the positions.
+            central = self.a1/2.0*n[0] + self.a2/2.0*n[1] + self.a3/2.0
+            positions[:] = positions[:] - central
+        else:
+            print('Error: n must be a positive int num or 2d int array!')
+        
+        return positions
+        
+    def get_dual_lattice(self,points):
+        test = pa.static_points_analysis_2d(points,hide_figure=False)
+        pt = test.voronoi.vertices
+        return pt
+    
+
+
 class see_cairo_order_parameter:
     def __init__(self) -> None:
-        import points_analysis_2D as pa
+        
         self.sc = pa.show_cairo_order_parameter()
 
     def compute_theoretical_diagram(self):
@@ -1434,7 +2528,7 @@ class compare_diagram:
         return txyz,prefix_simu, str_simu_index
         
     def show_bond_plot(self,xy,folder_name,str_index,lcr):
-        import points_analysis_2D as pa
+        
         a_frame = pa.static_points_analysis_2d(points=xy)
         i=2000
         bond_cut_off=6
@@ -1627,7 +2721,7 @@ class compare_diagram:
         list_simu_index = df_return["SimuIndex"].values
         list_seed = df_return["RandomSeed"].values
         account = 'remote'
-        import points_analysis_2D as pa
+        
         prefix='/home/'+account+'/Downloads/'
         n_simu = len(list_simu_index)
         record_cn3bond = []
@@ -2136,4 +3230,279 @@ class compare_diagram_dynamics:
                 data_decorated[i] =np.average(data[in_st:in_ed]) 
         return list_index,data_decorated
 
+class energy_contribution:
+    def __init__(self):
+        pass
+    def get_energy_particle_wise(self,index1=4302,seed=9):
+        R"""
+        record_energy: [Nframes,Nparticles,3](energy_interaction,energy_pin,energy_mechanical)
+        """
+        import proceed_file as pf
+        filename_trap='/home/remote/hoomd-examples_0/testhoneycomb3-8-12-part1'
+        pos_traps = np.loadtxt(filename_trap)
+        gsd_data = pf.proceed_gsd_file(None,'remote',index1,seed)
+        gsd_data.get_trajectory_data()
+        record_energy = np.zeros(np.shape(gsd_data.txyz))#(2001,256,3))
+        for frame_id in range(2001):#[0,1,10,100,1000,2000]:
+            extended_positions = gsd_data.get_extended_positions(frame_id)
+            points = gsd_data.txyz[frame_id,:,0:2]
+            nps = len(points)
+            #filename_array = "/home/remote/Downloads/index4302_9"
+            en = pa.energy_computer()
+            en.define_system_manual(points,300,0.25,15,pos_traps,0.81,700,1)
+            en.compute_energy_particle_wise(extended_positions)
+            #en.compute_energy(extended_positions)
+            record_energy[frame_id] = en.energy_inter_pin_mecha
+            """
+            print(frame_id)
+            print(en.energy_interaction)
+            print(en.energy_pin)
+            
+            print(frame_id)
+            print(np.sum(en.energy_inter_pin_mecha[:,0]))
+            print(np.sum(en.energy_inter_pin_mecha[:,1]))
+            
+            record_energy[frame_id,0] = en.energy_pin
+            record_energy[frame_id,1] = en.energy_interaction
+            record_energy[frame_id,2] = en.energy_mechanical
+            print(frame_id)
+            print(en.energy_pin)
+            print(en.energy_interaction)
+            print(en.energy_mechanical)"""
+            """print(en.energy_pin/nps)
+            print(en.energy_interaction/nps)
+            print(en.energy_mechanical/nps)"""#the mechanical energy is increasing?
+        #np.savetxt('/home/remote/Downloads/energy_index4302_9.txt',record_energy)
+        return record_energy
+
+class workflow_temp:
+    def __init__(self) -> None:
+        pass
+
+    def extend_traps_to_9boxes(self):
+        import points_analysis_2D as pa
+        import numpy as np
+        import proceed_file as pf
+        import workflow_analysis as wa
+        import matplotlib.pyplot as plt
+        R"""
+        Intro:
+            Drawing positions of traps extended to 3*3 boxes, 
+            to see if the traps, near the edges of the center box, are non-periodic.  
+        """
+        filename_trap='/home/remote/hoomd-examples_0/testhoneycomb3-8-12-part1'
+        pos_traps = np.loadtxt(filename_trap)
+
+        wfr = wa.workflow_file_to_data()
+        list_lcr = np.linspace(0.77,0.84,8)#0.77
+        for lcr1 in list_lcr:
+            #get pos_trap_lcr1
+            pos_traps_lcr1 = np.multiply(pos_traps[:,:2],lcr1) 
+            data = wfr.search_and_get_single_final_frame(lcr1=lcr1,k1=100)
+            #get box with given lcr1
+            gsd_data = pf.proceed_gsd_file(None,'remote',wfr.index1,9)
+            snap=gsd_data.trajectory.read_frame(2000)
+            box = snap.configuration.box
+            #get pos_trap_lcr1 in box
+            spa = pa.static_points_analysis_2d(data)
+            spa.cut_edge_of_positions_by_box(pos_traps_lcr1,box)
+            #get  extended_positions to 3*3 box
+            pos_traps_lcr1_in_box = pos_traps_lcr1[spa.inbox_positions_bool]
+            extended_positions = gsd_data.get_extended_positions_from_points(box,pos_traps_lcr1_in_box)#cut_edge
+            #draw figures
+            fig,ax = plt.subplots()
+            ax.scatter(pos_traps_lcr1_in_box[:,0],pos_traps_lcr1_in_box[:,1],c='b',zorder=2)
+            ax.scatter(extended_positions[:,0],extended_positions[:,1],c='r')
+            ax.plot(spa.position_box[:,0],spa.position_box[:,1],'k')
+            ax.set_title('box:'+str(box[0:2]))
+            ax.axis('equal')
+            png_filename = '/home/remote/Downloads/lcr'+str(np.round(lcr1,2)*100)+'.png'
+            plt.savefig(png_filename)
+            print(lcr1)
+            print(np.shape(data))
+
+class controller_get_honey_cn3_vs_u_sub:
+    def __init__(self):
+        pass
     
+    def control_tb(self):
+        #self.get_cn3_vs_u_sub_high_pin()
+        #self.txt_to_data_high()
+        #self.get_cn3_vs_u_sub_low_pin()
+        #self.txt_to_data_low()
+
+        #index      k       seed
+        #5259-5268  33-60    6-9
+        #4656-4665  100-1000    0-9
+        #196-205    0-90     9      depin_from_honeycomb
+        self.get_cn3_vs_u_sub_low_depin()
+        self.txt_to_data_low_depin()
+
+    def get_cn3_vs_u_sub_high_pin(self):
+        import data_analysis_cycle as dac
+        #[ simu_index | HarmonicK | LinearCompressionRatio | kT |
+        #CoordinationNum4Rate | CoordinationNum3Rate | RandomSeed |
+        #Psi6Global]
+        for seed1 in range(10):
+            dac.saveIndexkTCN4CN3SeedsPsi6(4656,4665,100,100,0.82,1,seed1)
+            #dac.saveIndexkTCN4CN3SeedPsi6(start_index,end_index,kt1,step,linear_compression_ratio,kset,randomseed)
+    
+    def get_cn3_vs_u_sub_low_pin(self):
+        import data_analysis_cycle as dac
+        #[ simu_index | HarmonicK | LinearCompressionRatio | kT |
+        #CoordinationNum4Rate | CoordinationNum3Rate | RandomSeed |
+        #Psi6Global]
+        for seed1 in np.linspace(6,9,4,dtype='int'):
+            dac.saveIndexkTCN4CN3SeedsPsi6(5259,5268,33,3,0.82,1,seed1)
+            #dac.saveIndexkTCN4CN3SeedPsi6(start_index,end_index,kt1,step,linear_compression_ratio,kset,randomseed)
+
+    def get_cn3_vs_u_sub_low_depin(self):
+        #simu_index   HarmonicK lcr
+        #196-205    0-90    0.816
+        import data_analysis_cycle as dac
+        #/home/tplab/Downloads/index196
+        dac.saveIndexkTCN4CN3depin(196,205,1,10,0.816,0)
+
+    def txt_to_data_high(self,filename = '/home/remote/Downloads/4656-4665klt43'):
+        import data_analysis_cycle as dac
+        record = np.zeros((10,10))
+        record_res = np.zeros((10,2))
+        for seed1 in range(10):
+            filename_seed = filename+'_'+str(seed1)
+            data = np.loadtxt(filename_seed)
+            record[:,seed1] = data[:,5]# CoordinationNum3Rate 
+            #dac.saveIndexkTCN4CN3SeedsPsi6(min(list_index),max(list_index),100,100,0.8165,100,seed1)
+        record_res[:,0] = np.linspace(100,1000,10)
+        record_res[:,1] = np.average(record,axis=1)
+        np.savetxt(filename+'_',record_res)
+    
+    def txt_to_data_low(self,filename = '/home/remote/Downloads/5259-5268klt43'):
+        import data_analysis_cycle as dac
+        record = np.zeros((10,4))
+        record_res = np.zeros((10,2))
+        for seed1 in np.linspace(6,9,4,dtype='int'):
+            filename_seed = filename+'_'+str(seed1)
+            data = np.loadtxt(filename_seed)
+            record[:,seed1-6] = data[:,5]# CoordinationNum3Rate 
+            #dac.saveIndexkTCN4CN3SeedsPsi6(min(list_index),max(list_index),100,100,0.8165,100,seed1)
+        record_res[:,0] = np.linspace(33,60,10)
+        record_res[:,1] = np.average(record,axis=1)
+        np.savetxt(filename+'_',record_res)
+    
+    def txt_to_data_low_depin(self,filename = '/home/remote/Downloads/196-205klt43'):
+        record = np.loadtxt(filename)
+        record_res = np.zeros((10,2))
+       
+        record_res[:,0] = record[:,1]
+        record_res[:,1] = record[:,5]
+        np.savetxt(filename+'_',record_res)
+
+class controller_get_honey_part_cn3_vs_u_sub:
+    def __init__(self):
+        pass
+    
+    def control_tb(self):
+        """ self.get_cn3_vs_u_sub()
+        self.txt_to_data()"""
+        self.get_cn3_vs_u_sub_depin()
+        self.txt_to_data_low_depin()
+        #'/home/remote/Downloads/4276-4285klt43'
+
+    def get_cn3_vs_u_sub(self):
+        #import points_analysis_2D as pa
+        import numpy as np
+        import proceed_file as pf
+        import workflow_analysis as wa
+        import pandas as pd
+        import data_analysis_cycle as dac
+        #import matplotlib.pyplot as plt
+        #import opertateOnMysql as osql
+        #get index
+        table = self.search_single_simu_by_lcr_k(lcr1=0.8165)
+        columns = [ 'SimuIndex','HarmonicK','LinearCompressionRatio','kT','Psi3','Psi6','RandomSeed']
+        df = pd.DataFrame(data = table,columns=columns)
+        table_without_seedd = df[df['RandomSeed']<0.5]
+        print(table_without_seedd['SimuIndex'].values)
+        list_index = table_without_seedd['SimuIndex'].values
+        """for seed1 in range(10):
+        for index1 in table_without_seedd['SimuIndex'].values:
+            txt_filename = '/home/remote/Downloads/index'+str(index1)+'_'+str(seed1)
+        data_2d = np.loadtxt(txt_filename)
+        """
+        #[ simu_index | HarmonicK | LinearCompressionRatio | kT |
+        #CoordinationNum4Rate | CoordinationNum3Rate | RandomSeed |
+        #Psi6Global]
+        for seed1 in range(10):
+            dac.saveIndexkTCN4CN3SeedsPsi6(min(list_index),max(list_index),1,100,0.8165,100,seed1)
+            #dac.saveIndexkTCN4CN3SeedPsi6(start_index,end_index,kt1,step,linear_compression_ratio,kset,randomseed)
+
+        #'/home/remote/Downloads/4276-4285klt43'
+    def get_cn3_vs_u_sub_depin(self):
+        #index      k    lcr     seed    table
+        #1233-1242 0-90  0.82    9      depin_from_honeycomb_part1
+        import data_analysis_cycle as dac
+        #/home/tplab/Downloads/index196
+        dac.saveIndexkTCN4CN3depin(1233,1242,1,10,0.82,0)                            
+
+    def search_single_simu_by_lcr_k(self,table_name = 'pin_hex_to_honeycomb_part_klt_2m',lcr1=0.8,kt1=1.0):
+        R"""
+        | SimuIndex | HarmonicK | LinearCompressionRatio | kT   | Psi3     | Psi6     | RandomSeed |
+        'pin_hex_to_honeycomb_part_klt_2m'
+        'pin_hex_to_honeycomb_klt_2m'
+        """
+        import opertateOnMysql as osql
+        lcr_step = 0.0001
+        lcr_min=lcr1 - 0.5*lcr_step
+        lcr_max=lcr1 + 0.5*lcr_step
+        kt_step = 0.1
+        kt_min = kt1 - 0.5*kt_step
+        kt_max = kt1 + 0.5*kt_step
+        
+        #cont=' distinct SimuIndex '#, RandomSeed
+        cond=' where LinearCompressionRatio >'+str(lcr_min)+' and LinearCompressionRatio <'+str(lcr_max)+\
+            ' and kT >'+str(kt_min)+' and kT <'+str(kt_max)
+            #' order by RandomSeed asc'
+        return_table=osql.getDataFromMysql(table_name=table_name,
+                            search_condition=cond)#,select_content=cont
+        #print(return_table)#what if return more than 1 results? 0.8,300 as an example -> 4288,5060.
+        #where 5060 is low Temperature.
+        #just take the first result!
+        return  return_table#[0][0]#((index1,),)
+
+    def txt_to_data(self,filename = '/home/remote/Downloads/4276-4285klt43'):
+        import data_analysis_cycle as dac
+        record = np.zeros((10,10))
+        record_res = np.zeros((10,2))
+        for seed1 in range(10):
+            filename_seed = filename+'_'+str(seed1)
+            data = np.loadtxt(filename_seed)
+            record[:,seed1] = data[:,5]# CoordinationNum3Rate 
+            #dac.saveIndexkTCN4CN3SeedsPsi6(min(list_index),max(list_index),100,100,0.8165,100,seed1)
+        record_res[:,0] = np.linspace(100,1000,10)
+        record_res[:,1] = np.average(record,axis=1)
+        np.savetxt(filename+'_',record_res)
+    
+    def txt_to_data_low_depin(self,filename = '/home/remote/Downloads/1233-1242klt43'):
+        record = np.loadtxt(filename)
+        record_res = np.zeros((10,2))
+       
+        record_res[:,0] = record[:,1]
+        record_res[:,1] = record[:,5]
+        np.savetxt(filename+'_',record_res)
+    
+    
+
+class controller_get_kagome_part_cn3_vs_u_sub:
+    def __init__(self):
+        pass
+    
+    def control_tb(self):
+        pass
+
+    def get(self):
+        pass
+
+    def txt_to_data(self,filename = '/home/remote/Downloads/????klt43'):
+        import data_analysis_cycle as dac
+        record = np.zeros((10,10))
+        record_res = np.zeros((10,2))
