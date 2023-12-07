@@ -38,9 +38,9 @@ class initial_state_generator:
         self.trajectory = gsd.hoomd.open(file_gsd)
         self.snap = self.trajectory.read_frame(0)# _read_frame
         self.particles = self.snap.particles
-        print('ok')
+        #print('ok')
 
-    def set_new_gsd_file(self,lattice_pointer,n_size,positions):
+    def set_new_gsd_file(self,lattice_pointer,n_size,positions,output_gsd_filename):
         R"""
             lattice_pointer: 
                 lp = workflow_analysis.archimedean_tilings(), after lp.generate_typex(),
@@ -60,11 +60,12 @@ class initial_state_generator:
         lp = lattice_pointer
         snap.configuration.box = [lp.a1[0]*n_size[0],lp.a2[1]*n_size[1],lp.a3[2],0,0,0]
 
-        prefix = "/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/"
-        with gsd.hoomd.open(name=prefix+'lattice.gsd', mode='xb') as f:
+        #prefix = "/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/"
+        #prefix+'lattice.gsd'
+        with gsd.hoomd.open(name=output_gsd_filename, mode='wb') as f:
             f.append(snap)
     
-    def set_new_gsd_file_2types(self,particle_pointer,n_size,positions,trap_pointer,output_gsd_filename):
+    def set_new_gsd_file_2types(self,particle_pointer,n_size,positions,trap_pointer,output_gsd_filename,trap_fill_box=False):
         R"""
         introduction:
             Generate a gsd file containing an array of particles and an array of traps
@@ -114,20 +115,48 @@ class initial_state_generator:
 
         #generate type 'trap' particles
         pp = particle_pointer
-        snap.configuration.box = [pp.a1[0]*n_size[0],pp.a2[1]*n_size[1],pp.a3[2],0,0,0]
+        vec = pp.a1+pp.a2+pp.a3#in case some lattices are parrallelograms
+        snap.configuration.box = [vec[0]*n_size[0],vec[1]*n_size[1],0,0,0,0]
+        #snap.configuration.box = [pp.a1[0]*n_size[0],pp.a2[1]*n_size[1],pp.a3[2],0,0,0]
         sp = trap_pointer
         bx = snap.configuration.box
-        trap_size = [int(bx[0]/sp.a1[0]),int(bx[1]/sp.a2[1])]
-        trap_positions = sp.generate_lattices(trap_size)
-        nps_trap = np.shape(trap_positions)[0]
+        if trap_fill_box:#let traps fill the box
+            trap_size = [int(bx[0]/sp.a1[0])+2,int(bx[1]/sp.a2[1])+2]
+            trap_positions = sp.generate_lattices(trap_size)
+            import points_analysis_2D as pa
+            spa = pa.static_points_analysis_2d(trap_positions[:,:2])
+            spa.cut_edge_of_positions_by_box(trap_positions[:,:2],snap.configuration.box)
+            trap_positions = trap_positions[spa.inbox_positions_bool]
+            del spa
+        else:#let lattices of traps no larger than box
+            trap_size = [int(bx[0]/sp.a1[0]),int(bx[1]/sp.a2[1])]
+            trap_positions = sp.generate_lattices(trap_size)
+        
 
+        
+        #when the lattice is a parrallelogram, remove the points outside the box 
+        import points_analysis_2D as pa
+        pd = pa.static_points_analysis_2d(positions,hide_figure=False)
+        pd.cut_edge_of_positions_by_xylimit(-0.5*bx[0],0.5*bx[0],-0.5*bx[1],0.5*bx[1])
+        positions = positions[pd.edge_cut_positions_bool]
+
+        pd = pa.static_points_analysis_2d(trap_positions,hide_figure=False)
+        pd.cut_edge_of_positions_by_xylimit(-0.5*bx[0],0.5*bx[0],-0.5*bx[1],0.5*bx[1])
+        trap_positions = trap_positions[pd.edge_cut_positions_bool]
+        
+        #fill the snap with data
         nps = np.shape(positions)[0]
+        nps_trap = np.shape(trap_positions)[0]
         snap.particles.N = nps + nps_trap
-        snap.particles.position = np.concatenate((positions,trap_positions),axis=0) 
+        position_total = np.concatenate((positions,trap_positions),axis=0) 
+        perturbation = np.random.random(position_total.shape)*0.01
+        snap.particles.position = position_total + perturbation #precisely equalled bond will let delaunay disfunction!
         snap.particles.orientation = [(1,0,0,0)]*(nps+nps_trap)
         list_typeid = [0]*nps+[1]*nps_trap
         snap.particles.typeid = list_typeid
         snap.particles.types = ['particle','trap']
+
+
         
 
         #prefix = "/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/"

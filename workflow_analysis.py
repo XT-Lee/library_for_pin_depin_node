@@ -1,7 +1,6 @@
 import points_analysis_2D as pa
 import numpy as np
 import matplotlib.pyplot as plt
-import numpy
 import os
 import math
 
@@ -312,7 +311,7 @@ class workflow_file_to_data:
         R"""
         example:
             import workflow_analysis as wa
-            import numpy as np
+            
             wfr = wa.workflow_file_to_data()
             list_lcr = np.linspace(0.77,0.84,8)#0.77
             for lcr1 in list_lcr:
@@ -343,7 +342,7 @@ class workflow_file_to_data:
         return gsd_data.txyz
     def what_others(self):
         import points_analysis_2D as pa
-        import numpy as np
+        
         import proceed_file as pf
         gsd_data = pf.proceed_gsd_file(None,'remote',4302,9)
         gsd_data.get_trajectory_data()
@@ -471,7 +470,7 @@ class show_bonds_transition_from_hex_to_honeycomb:
         import pandas as pd
         
         file_txyz_stable = directory + 'txyz_stable.npy'
-        txyz_stable = numpy.load(file_txyz_stable)
+        txyz_stable = np.load(file_txyz_stable)
         dpa = pa.dynamic_points_analysis_2d(txyz_stable,mode='simu')
         #particle id should be set as what in txyz_stable!
         bond_cut_off = 6
@@ -481,7 +480,7 @@ class show_bonds_transition_from_hex_to_honeycomb:
             ts_id_dxy = pd.read_csv(file_ts_id_dxy)
             if_nb_change_int,n_particle_nb_stable = dpa.monitor_neighbor_change_event(ts_id_dxy=ts_id_dxy,csv_prefix=directory)
             dpa.get_hist_neighbor_change_event(if_nb_change_int,n_particle_nb_stable,directory)
-        count_nb_change_event_rate = numpy.load(directory+'count_nb_change_event_rate.npy')
+        count_nb_change_event_rate = np.load(directory+'count_nb_change_event_rate.npy')
         dpa.plot_hist_neighbor_change_event(count_nb_change_event_rate,directory)
         """
         if_nb_change_int, n_particle_nb_stable, png_filename==dpa.monitor_neighbor_change_event(ts_id_dxy=ts_id_dxy,csv_prefix=directory)
@@ -568,7 +567,7 @@ class show_bonds_transition_from_hex_to_honeycomb:
     def get_bond_trap_plot_param_compare(self,points,k1,trap_lcr=None,trap_type=True):
         R"""
         import workflow_analysis as wa
-        import numpy as np
+        
         wfr = wa.workflow_file_to_data()
         list_lcr = np.linspace(0.77,0.84,8)#0.77
         k1=100
@@ -688,7 +687,7 @@ class show_bonds_transition_from_hex_to_kagome:
     def get_bond_trap_plot_param_compare(self,points,k1,trap_lcr=None,trap_type=True):
         R"""
         import workflow_analysis as wa
-        import numpy as np
+        
         wfr = wa.workflow_file_to_data()
         list_lcr = np.linspace(0.77,0.84,8)#0.77
         k1=100
@@ -972,7 +971,7 @@ class show_waiting_time_interstitial_motion:
 
     def trajectory_single_particle(self,txyz_stable_id=16):
         
-        import numpy as np
+        
         prefix = '/home/remote/Downloads/4302_9/'
         filename_txyz_stable = prefix+'txyz_stable.npy'
         txyz_stable = np.load(filename_txyz_stable)
@@ -995,7 +994,7 @@ class show_waiting_time_interstitial_motion:
         prefix = '/home/remote/Downloads/4302_9/'
         filename_txyz_stable = prefix+'txyz_stable.npy'
         txyz_stable = np.load(filename_txyz_stable)
-        sz = numpy.shape(txyz_stable)
+        sz = np.shape(txyz_stable)
         df = pa.dynamical_facilitation_module()
         id = txyz_stable_id
         dr = df.scan_displacement_t(txyz_stable[:,id,:2])
@@ -1017,7 +1016,7 @@ class show_waiting_time_interstitial_motion:
         prefix = '/home/remote/Downloads/4302_9/'
         filename_txyz_stable = prefix+'txyz_stable.npy'
         txyz_stable = np.load(filename_txyz_stable)
-        sz = numpy.shape(txyz_stable)
+        sz = np.shape(txyz_stable)
         df = pa.dynamical_facilitation_module()
         for id in range(sz[1]):
             dr = df.scan_displacement_t(txyz_stable[:,id,:2],)
@@ -1065,12 +1064,12 @@ class show_polygon_dye:
             self.p2d = pa.static_points_analysis_2d(points)#,hide_figure=False
             self.get_first_minima_ridge_length_distribution(prefix_write,frame=frame,io_only=True)
             #draw bonds selected
-            #self.p2d.draw_polygon_patch_oop()
+            self.p2d.draw_polygon_patch_oop()
             self.draw_bonds_conditional_ridge_oop(prefix_write,frame,limit=True)
 
     def get_points_plot(self):
         
-        import numpy as np
+        
         import proceed_file as pf
         pfile = pf.proceed_file_shell()
         prefix_simu, str_simu_index = pfile.create_prefix_results(simu_index=4302,seed=9)
@@ -1097,7 +1096,7 @@ class show_polygon_dye:
                 
     def get_points_plot_loop(self,seed):
         
-        import numpy as np
+        
         import proceed_file as pf
         pfile = pf.proceed_file_shell()
         prefix_simu, str_simu_index = pfile.create_prefix_results(account='tplab',simu_index=4302,seed=seed)
@@ -1250,7 +1249,7 @@ class show_polygon_dye:
         print(list_points_from_simp)
 
     def test_patch(self):
-        import numpy as np
+        
         from matplotlib.patches import Circle, Wedge, Polygon
         from matplotlib.collections import PatchCollection
         import matplotlib.pyplot as plt
@@ -1319,7 +1318,7 @@ class show_disp_field:
     def get_points_plot(self):
         #self.test_patch()
         
-        import numpy as np
+        
         
         prefix = '/home/remote/Downloads/4302_9/'
         prefix_write='/home/remote/Downloads/4302_9/'
@@ -1333,7 +1332,7 @@ class show_disp_field:
     
     def get_disp(self,seed,frame1,frame2):
         
-        import numpy as np
+        
         import proceed_file as pf
         pfile = pf.proceed_file_shell()
         prefix_simu, str_simu_index = pfile.create_prefix_results(simu_index=4302,seed=seed)
@@ -1348,7 +1347,7 @@ class show_disp_field:
     
     def get_disp_lim(self,seed,frame):
         
-        import numpy as np
+        
         import proceed_file as pf
         pfile = pf.proceed_file_shell()
         prefix_simu, str_simu_index = pfile.create_prefix_results(simu_index=4302,seed=seed)
@@ -1375,20 +1374,20 @@ class show_disp_field:
         #seed=9
         lcr=0.81
         trap_filename='/home/remote/hoomd-examples_0/testhoneycomb3-8-12-part1'
-        traps = numpy.loadtxt(trap_filename)*lcr
+        traps = np.loadtxt(trap_filename)*lcr
         import proceed_file as pf
         pfile = pf.proceed_file_shell()
         prefix_simu, str_simu_index = pfile.create_prefix_results(simu_index=4302,seed=seed)
         prefix_write = pfile.create_folder(prefix_simu,'pin_check')
         file_txyz_stable = prefix_simu + 'txyz_stable.npy'
-        txyz_stable = numpy.load(file_txyz_stable)
+        txyz_stable = np.load(file_txyz_stable)
         
         df = pa.dynamical_facilitation_module()
         #df.get_pin_bool(traps,txyz_stable,prefix_write,1.0)
         #plot
         #frame=8
         file_t_pin_bool = '/home/remote/Downloads/'+str_simu_index+'/pin_check/t_pin_bool.npy'
-        t_pin_bool = numpy.load(file_t_pin_bool)
+        t_pin_bool = np.load(file_t_pin_bool)
         
         self.p2d = pa.dynamic_points_analysis_2d(txyz_stable)
         self.p2d.displacement_field_module()
@@ -1683,6 +1682,18 @@ class show_dual_lattice:
     R"""
     import getDataAndScatter
     getDataAndScatter.get_dual_lattice()
+
+    import workflow_analysis as wa
+    sdl = wa.show_dual_lattice()
+    sdl.show_dual_type11_part()
+
+    sdl.show_dual_type10_part()
+    sdl.show_dual_type9_part()
+    sdl.show_dual_type8_part()
+    sdl.show_dual_type7_part()
+    sdl.show_dual_type6_part()
+    sdl.show_dual_type5_part()
+    sdl.show_dual_type4_part()
     """
     def __init__(self) -> None:
         pass
@@ -1703,6 +1714,303 @@ class show_dual_lattice:
         ax.set_xlim(limit[0])
         ax.set_ylim(limit[1])
         """
+
+    def show_dual_type11_part(self,bond_on=True):
+        at = archimedean_tilings()
+        at.generate_type11_part()#<delta>
+        png_filename='dual_type11_part_bond.png'#<delta>
+        vec = at.a1+at.a2
+        n1 = int(np.around(10/vec[0],0)+1 )
+        n2 = int(np.around(10/vec[1],0)+1 )
+        points = at.generate_lattices([n1,n2])#1.73:2
+        dula = at.get_dual_lattice(points)
+        fig,ax = plt.subplots()
+        ax.scatter(points[:,0],points[:,1],color='k',zorder=3)
+        ax.scatter(dula[:,0],dula[:,1],facecolors='white',edgecolors='k',zorder=3)
+        #draw bonds selected
+        if bond_on:
+            atb = archimedean_tilings()
+            atb.generate_type11()#<delta>
+            pointsb = atb.generate_lattices([n1,n2])
+            perturbation = np.random.random(pointsb.shape)*0.01
+            pointsb = pointsb + perturbation #precisely equalled bond will let delaunay disfunction!
+            p2d = pa.static_points_analysis_2d(pointsb,hide_figure=False)
+            p2d.get_first_minima_bond_length_distribution(lattice_constant=1)#png_filename='bond_hist.png'
+            bpm = pa.bond_plot_module(fig,ax)#
+            bpm.restrict_axis_property_relative('(sigma)')
+            list_bond_index = bpm.get_bonds_with_conditional_bond_length(p2d.bond_length,[0.8,p2d.bond_first_minima_left])
+            bpm.draw_points_with_given_bonds(pointsb,list_bond_index,bond_color='silver',particle_size=1)
+            del atb
+        ax.set_aspect('equal','box')
+        ax.set_xlim([-5,5])
+        ax.set_ylim([-5,5])
+        plt.savefig(png_filename)
+        plt.close('all')
+        del at
+
+    def show_dual_type10_part(self,bond_on=True):
+        at = archimedean_tilings()
+        at.generate_type10_part()#<delta>
+        png_filename='dual_type10_part_bond.png'#<delta>
+        vec = at.a1+at.a2
+        n1 = int(np.around(10/vec[0],0)+1 )
+        n2 = int(np.around(10/vec[1],0)+1 )
+        points = at.generate_lattices([n1,n2])#1.73:2
+        dula = at.get_dual_lattice(points)
+        fig,ax = plt.subplots()
+        ax.scatter(points[:,0],points[:,1],color='k',zorder=3)
+        ax.scatter(dula[:,0],dula[:,1],facecolors='white',edgecolors='k',zorder=3)
+        #draw bonds selected
+        if bond_on:
+            atb = archimedean_tilings()
+            atb.generate_type10()#<delta>
+            pointsb = atb.generate_lattices([n1,n2])
+            perturbation = np.random.random(pointsb.shape)*0.01
+            pointsb = pointsb + perturbation #precisely equalled bond will let delaunay disfunction!
+            p2d = pa.static_points_analysis_2d(pointsb,hide_figure=False)
+            p2d.get_first_minima_bond_length_distribution(lattice_constant=1)#png_filename='bond_hist.png'
+            bpm = pa.bond_plot_module(fig,ax)#
+            bpm.restrict_axis_property_relative('(sigma)')
+            list_bond_index = bpm.get_bonds_with_conditional_bond_length(p2d.bond_length,[0.8,p2d.bond_first_minima_left])
+            bpm.draw_points_with_given_bonds(pointsb,list_bond_index,bond_color='silver',particle_size=1)
+            del atb
+        ax.set_aspect('equal','box')
+        ax.set_xlim([-5,5])
+        ax.set_ylim([-5,5])
+        plt.savefig(png_filename)
+        plt.close('all')
+        del at
+
+    def show_dual_type9_part(self,bond_on=True):
+        at = archimedean_tilings()
+        at.generate_type9_part()#<delta>
+        png_filename='dual_type9_part_bond.png'#<delta>
+        vec = at.a1+at.a2
+        n1 = int(np.around(10/vec[0],0)+1 )
+        n2 = int(np.around(10/vec[1],0)+1 )
+        points = at.generate_lattices([n1,n2])#1.73:2
+        dula = at.get_dual_lattice(points)
+        fig,ax = plt.subplots()
+        ax.scatter(points[:,0],points[:,1],color='k',zorder=3)
+        ax.scatter(dula[:,0],dula[:,1],facecolors='white',edgecolors='k',zorder=3)
+        #draw bonds selected
+        if bond_on:
+            atb = archimedean_tilings()
+            atb.generate_type9()#<delta>
+            pointsb = atb.generate_lattices([n1,n2])
+            perturbation = np.random.random(pointsb.shape)*0.01
+            pointsb = pointsb + perturbation #precisely equalled bond will let delaunay disfunction!
+            p2d = pa.static_points_analysis_2d(pointsb,hide_figure=False)
+            p2d.get_first_minima_bond_length_distribution(lattice_constant=1)#png_filename='bond_hist.png'
+            bpm = pa.bond_plot_module(fig,ax)#
+            bpm.restrict_axis_property_relative('(sigma)')
+            list_bond_index = bpm.get_bonds_with_conditional_bond_length(p2d.bond_length,[0.8,p2d.bond_first_minima_left])
+            bpm.draw_points_with_given_bonds(pointsb,list_bond_index,bond_color='silver',particle_size=1)
+            del atb
+        ax.set_aspect('equal','box')
+        ax.set_xlim([-5,5])
+        ax.set_ylim([-5,5])
+        plt.savefig(png_filename)
+        plt.close('all')
+        del at
+    
+    def show_dual_type8_part(self,bond_on=True):
+        at = archimedean_tilings()
+        at.generate_type8_part()#<delta>
+        png_filename='dual_type8_part_bond.png'#<delta>
+        vec = at.a1+at.a2
+        n1 = int(np.around(10/vec[0],0)+1 )
+        n2 = int(np.around(10/vec[1],0)+1 )
+        points = at.generate_lattices([n1,n2])#1.73:2
+        dula = at.get_dual_lattice(points)
+        fig,ax = plt.subplots()
+        ax.scatter(points[:,0],points[:,1],color='k',zorder=3)
+        ax.scatter(dula[:,0],dula[:,1],facecolors='white',edgecolors='k',zorder=3)
+        #draw bonds selected
+        if bond_on:
+            atb = archimedean_tilings()
+            atb.generate_type8()#<delta>
+            pointsb = atb.generate_lattices([n1,n2])
+            perturbation = np.random.random(pointsb.shape)*0.01
+            pointsb = pointsb + perturbation #precisely equalled bond will let delaunay disfunction!
+            p2d = pa.static_points_analysis_2d(pointsb,hide_figure=False)
+            p2d.get_first_minima_bond_length_distribution(lattice_constant=1)#png_filename='bond_hist.png'
+            bpm = pa.bond_plot_module(fig,ax)#
+            bpm.restrict_axis_property_relative('(sigma)')
+            list_bond_index = bpm.get_bonds_with_conditional_bond_length(p2d.bond_length,[0.8,p2d.bond_first_minima_left])
+            bpm.draw_points_with_given_bonds(pointsb,list_bond_index,bond_color='silver',particle_size=1)
+            del atb
+        ax.set_aspect('equal','box')
+        ax.set_xlim([-5,5])
+        ax.set_ylim([-5,5])
+        plt.savefig(png_filename)
+        plt.close('all')
+        del at
+    
+    def show_dual_type7_part(self,bond_on=True):
+        at = archimedean_tilings()
+        at.generate_type7_part()
+        png_filename='dual_type7_part_bond.png'
+        vec = at.a1+at.a2
+        n1 = int(np.around(10/vec[0],0)+1 )
+        n2 = int(np.around(10/vec[1],0)+1 )
+        points = at.generate_lattices([n1,n2])#1.73:2
+        dula = at.get_dual_lattice(points)
+        fig,ax = plt.subplots()
+        ax.scatter(points[:,0],points[:,1],color='k',zorder=3)
+        ax.scatter(dula[:,0],dula[:,1],facecolors='white',edgecolors='k',zorder=3)#,marker = 'x'
+        #draw bonds selected
+        if bond_on:
+            atb = archimedean_tilings()
+            atb.generate_type7()
+            pointsb = atb.generate_lattices([n1,n2])
+            perturbation = np.random.random(pointsb.shape)*0.01
+            pointsb = pointsb + perturbation #precisely equalled bond will let delaunay disfunction!
+            p2d = pa.static_points_analysis_2d(pointsb,hide_figure=False)
+            p2d.get_first_minima_bond_length_distribution(lattice_constant=1)#png_filename='bond_hist.png'
+            bpm = pa.bond_plot_module(fig,ax)#
+            bpm.restrict_axis_property_relative('(sigma)')
+            list_bond_index = bpm.get_bonds_with_conditional_bond_length(p2d.bond_length,[0.8,p2d.bond_first_minima_left])
+            bpm.draw_points_with_given_bonds(pointsb,list_bond_index,bond_color='silver',particle_size=1)
+            del atb
+        ax.set_aspect('equal','box')
+        ax.set_xlim([-5,5])
+        ax.set_ylim([-5,5])
+        plt.savefig(png_filename)
+        plt.close('all')
+        del at
+
+    def show_dual_type6_part(self,bond_on=True):
+        at = archimedean_tilings()
+        at.generate_type6_part()#<delta>
+        png_filename='dual_type6_part_bond.png'#<delta>
+        vec = at.a1+at.a2
+        n1 = int(np.around(10/vec[0],0)+1 )
+        n2 = int(np.around(10/vec[1],0)+1 )
+        points = at.generate_lattices([n1,n2])#1.73:2
+        dula = at.get_dual_lattice(points)
+        fig,ax = plt.subplots()
+        ax.scatter(points[:,0],points[:,1],color='k',zorder=3)
+        ax.scatter(dula[:,0],dula[:,1],facecolors='white',edgecolors='k',zorder=3)
+        #draw bonds selected
+        if bond_on:
+            atb = archimedean_tilings()
+            atb.generate_type6()#<delta>
+            pointsb = atb.generate_lattices([n1,n2])
+            perturbation = np.random.random(pointsb.shape)*0.01
+            pointsb = pointsb + perturbation #precisely equalled bond will let delaunay disfunction!
+            p2d = pa.static_points_analysis_2d(pointsb,hide_figure=False)
+            p2d.get_first_minima_bond_length_distribution(lattice_constant=1)#png_filename='bond_hist.png'
+            bpm = pa.bond_plot_module(fig,ax)#
+            bpm.restrict_axis_property_relative('(sigma)')
+            list_bond_index = bpm.get_bonds_with_conditional_bond_length(p2d.bond_length,[0.8,p2d.bond_first_minima_left])
+            bpm.draw_points_with_given_bonds(pointsb,list_bond_index,bond_color='silver',particle_size=1)
+            del atb
+        ax.set_aspect('equal','box')
+        ax.set_xlim([-5,5])
+        ax.set_ylim([-5,5])
+        plt.savefig(png_filename)
+        plt.close('all')
+        del at
+    
+    def show_dual_type5_part(self,bond_on=True):
+        at = archimedean_tilings()
+        at.generate_type5_part()#<delta>
+        png_filename='dual_type5_part_bond.png'#<delta>
+        vec = at.a1+at.a2
+        n1 = int(np.around(10/vec[0],0)+1 )
+        n2 = int(np.around(10/vec[1],0)+1 )
+        points = at.generate_lattices([n1,n2])#1.73:2
+        dula = at.get_dual_lattice(points)
+        fig,ax = plt.subplots()
+        ax.scatter(points[:,0],points[:,1],color='k',zorder=3)
+        ax.scatter(dula[:,0],dula[:,1],facecolors='white',edgecolors='k',zorder=3)
+        #draw bonds selected
+        if bond_on:
+            atb = archimedean_tilings()
+            atb.generate_type5()#<delta>
+            pointsb = atb.generate_lattices([n1,n2])
+            perturbation = np.random.random(pointsb.shape)*0.01
+            pointsb = pointsb + perturbation #precisely equalled bond will let delaunay disfunction!
+            p2d = pa.static_points_analysis_2d(pointsb,hide_figure=False)
+            p2d.get_first_minima_bond_length_distribution(lattice_constant=1)#png_filename='bond_hist.png'
+            bpm = pa.bond_plot_module(fig,ax)#
+            bpm.restrict_axis_property_relative('(sigma)')
+            list_bond_index = bpm.get_bonds_with_conditional_bond_length(p2d.bond_length,[0.8,p2d.bond_first_minima_left])
+            bpm.draw_points_with_given_bonds(pointsb,list_bond_index,bond_color='silver',particle_size=1)
+            del atb
+        ax.set_aspect('equal','box')
+        ax.set_xlim([-5,5])
+        ax.set_ylim([-5,5])
+        plt.savefig(png_filename)
+        plt.close('all')
+        del at
+    
+    def show_dual_type4_part(self,bond_on=True):
+        at = archimedean_tilings()
+        at.generate_type4_part()#<delta>
+        png_filename='dual_type4_part_bond.png'#<delta>
+        vec = at.a1+at.a2
+        n1 = int(np.around(10/vec[0],0)+1 )
+        n2 = int(np.around(10/vec[1],0)+1 )
+        points = at.generate_lattices([n1,n2])#1.73:2
+        dula = at.get_dual_lattice(points)
+        fig,ax = plt.subplots()
+        ax.scatter(points[:,0],points[:,1],color='k',zorder=3)
+        ax.scatter(dula[:,0],dula[:,1],facecolors='white',edgecolors='k',zorder=3)
+        #draw bonds selected
+        if bond_on:
+            atb = archimedean_tilings()
+            atb.generate_type4()#<delta>
+            pointsb = atb.generate_lattices([n1,n2])
+            perturbation = np.random.random(pointsb.shape)*0.01
+            pointsb = pointsb + perturbation #precisely equalled bond will let delaunay disfunction!
+            p2d = pa.static_points_analysis_2d(pointsb,hide_figure=False)
+            p2d.get_first_minima_bond_length_distribution(lattice_constant=1)#png_filename='bond_hist.png'
+            bpm = pa.bond_plot_module(fig,ax)#
+            bpm.restrict_axis_property_relative('(sigma)')
+            list_bond_index = bpm.get_bonds_with_conditional_bond_length(p2d.bond_length,[0.8,p2d.bond_first_minima_left])
+            bpm.draw_points_with_given_bonds(pointsb,list_bond_index,bond_color='silver',particle_size=1)
+            del atb
+        ax.set_aspect('equal','box')
+        ax.set_xlim([-5,5])
+        ax.set_ylim([-5,5])
+        plt.savefig(png_filename)
+        plt.close('all')
+        del at
+    
+    def show_dual_type3_part(self,bond_on=True):
+        at = archimedean_tilings()
+        at.generate_type3_part()#<delta>
+        png_filename='dual_type3_part_bond.png'#<delta>
+        vec = at.a1+at.a2
+        n1 = int(np.around(10/vec[0],0)+1 )
+        n2 = int(np.around(10/vec[1],0)+1 )
+        points = at.generate_lattices([n1,n2])#1.73:2
+        dula = at.get_dual_lattice(points)
+        fig,ax = plt.subplots()
+        ax.scatter(points[:,0],points[:,1],color='k',zorder=3)
+        ax.scatter(dula[:,0],dula[:,1],facecolors='white',edgecolors='k',zorder=3)
+        #draw bonds selected
+        if bond_on:
+            atb = archimedean_tilings()
+            atb.generate_type3()#<delta>
+            pointsb = atb.generate_lattices([n1,n2])
+            perturbation = np.random.random(pointsb.shape)*0.01
+            pointsb = pointsb + perturbation #precisely equalled bond will let delaunay disfunction!
+            p2d = pa.static_points_analysis_2d(pointsb,hide_figure=False)
+            p2d.get_first_minima_bond_length_distribution(lattice_constant=1)#png_filename='bond_hist.png'
+            bpm = pa.bond_plot_module(fig,ax)#
+            bpm.restrict_axis_property_relative('(sigma)')
+            list_bond_index = bpm.get_bonds_with_conditional_bond_length(p2d.bond_length,[0.8,p2d.bond_first_minima_left])
+            bpm.draw_points_with_given_bonds(pointsb,list_bond_index,bond_color='silver',particle_size=1)
+            del atb
+        ax.set_aspect('equal','box')
+        ax.set_xlim([-5,5])
+        ax.set_ylim([-5,5])
+        plt.savefig(png_filename)
+        plt.close('all')
+        del at
 
 class archimedean_tilings:
     def __init__(self):
@@ -1844,7 +2152,7 @@ class archimedean_tilings:
                                   [0.5,1+0.5*rt,0],[0.5+rt,1+0.5*rt,0],
                                   [0.5*rt,0.5,0],[1+0.5*rt,0.5,0],
                                   [0,0,0],[0,1,0]])*a
-    
+     
     def generate_type10_part(self,a=1):
         R"""
         Introduction:
@@ -1888,7 +2196,7 @@ class archimedean_tilings:
     def generate_type9(self,a=1):
         R"""
         Introduction:
-            (3^2,4,3,4) squares and triangles.
+            (3^4,6) triangles and hexagons.
             a: the edge length of a single tile.
             n: n*n lattices to generate. 
         example:
@@ -1917,13 +2225,62 @@ class archimedean_tilings:
             self.system = hoomd.init.create_lattice(unitcell=uc, n=n);
         """
         rt = math.sqrt(3)
-        #N=8
-        self.a1 = np.array([1+rt,0,0])*a
-        self.a2 = np.array([0,1+rt,0])*a
+        #N=?
+        self.a1 = np.array([2.5,-0.5*rt,0])*a
+        self.a2 = np.array([-0.5,1.5*rt,0])*a#np.array([2,rt,0])*a
         self.a3 = np.array([0,0,0])
         #dimensions=2
-        self.position = np.array([[0.5+0.5*rt,0.5+0.5*rt,0],[0.5+0.5*rt,1.5+0.5*rt,0],
-                                  [0,0,0],[0,1,0]])*a  
+        """self.position = np.array([[3.5,0.5*rt,0],
+                                  [3,0,0],[2.5,0.5*rt,0],
+                                  [0,0,0],[1,0,0],[2,0,0]])*a
+        """
+        """
+                        np.array([[1,rt,0],
+                                  [0.5,0.5*rt,0],[2.5,0.5*rt,0],
+                                  [0,0,0],[1,0,0],[2,0,0]])*a
+        """
+        self.position = np.array([[1,rt,0],
+                                  [0,rt,0],[0.5,0.5*rt,0],
+                                  [0,0,0],[1,0,0],[2,0,0]])*a
+
+    def generate_type9_part(self,a=1):
+        R"""
+        Introduction:
+            (3^4,6) triangles and hexagons, remove one point per lattice.
+            a: the edge length of a single tile.
+            n: n*n lattices to generate. 
+        example:
+            
+        source:
+            def generate_honeycomb(self,a,n):
+            uc = hoomd.lattice.unitcell(N=4,
+                                    a1=[3*a, 0, 0],
+                                    a2=[0, math.sqrt(3)*a, 0],
+                                    a3=[0, 0, 1],
+                                    dimensions=2,
+                                    position=[[0,0,0], [1/2*a, math.sqrt(3)/2*a, 0],[3/2*a,math.sqrt(3)/2*a,0],[2*a,0,0]],
+                                    type_name=['A', 'A','A','A'],
+                                    diameter=[1,1,1,1]);
+            self.system = hoomd.init.create_lattice(unitcell=uc, n=n);
+        """
+        rt = math.sqrt(3)
+        #N=?
+        self.a1 = np.array([2.5,-0.5*rt,0])*a#-1.635
+        self.a2 = np.array([-0.5,1.5*rt,0])*a#np.array([2,rt,0])*a
+        self.a3 = np.array([0,0,0])
+        #dimensions=2
+        """self.position = np.array([[3.5,0.5*rt,0],
+                                  [3,0,0],[2.5,0.5*rt,0],
+                                  [0,0,0],[1,0,0],[2,0,0]])*a
+        """
+        """
+                        np.array([[1,rt,0],
+                                  [0.5,0.5*rt,0],[2.5,0.5*rt,0],
+                                  [0,0,0],[1,0,0],[2,0,0]])*a
+        """
+        self.position = np.array([[1,rt,0],
+                                  [0,rt,0],
+                                  [0,0,0],[1,0,0],[2,0,0]])*a
 
     def generate_type8(self,a=1):
         R"""
@@ -2006,6 +2363,88 @@ class archimedean_tilings:
         self.position = np.array([[0,rt,0],[1,rt,0],
                                   [0,0,0],[1,0,0]])*a
 
+    def generate_type7(self,a=1):
+        R"""
+        Introduction:
+            (3,4,6,4) triangles, squares and hexagons.
+            a: the edge length of a single tile.
+            n: n*n lattices to generate. 
+        example:
+            import workflow_analysis as wa
+            import matplotlib.pyplot as plt
+            at = wa.archimedean_tilings()
+            at.generate_type11(2)
+            points = at.generate_lattices([12,3])
+            fig,ax = plt.subplots()
+            ax.scatter(points[:,0],points[:,1])
+            ax.set_xlabel('x label')  # Add an x-label to the axes.
+            ax.set_ylabel('y label')  # Add a y-label to the axes.
+            ax.set_title("Simple Plot")  # Add a title to the axes
+            ax.set_aspect('equal','box')
+            plt.show()
+        source:
+            def generate_honeycomb(self,a,n):
+            uc = hoomd.lattice.unitcell(N=4,
+                                    a1=[3*a, 0, 0],
+                                    a2=[0, math.sqrt(3)*a, 0],
+                                    a3=[0, 0, 1],
+                                    dimensions=2,
+                                    position=[[0,0,0], [1/2*a, math.sqrt(3)/2*a, 0],[3/2*a,math.sqrt(3)/2*a,0],[2*a,0,0]],
+                                    type_name=['A', 'A','A','A'],
+                                    diameter=[1,1,1,1]);
+            self.system = hoomd.init.create_lattice(unitcell=uc, n=n);
+        """
+        rt = math.sqrt(3)
+        #N=6
+        self.a1 = np.array([1+rt,0,0])*a
+        self.a2 = np.array([-0.5-0.5*rt,1.5+0.5*rt,0])*a#(rt+3)*0.5
+        self.a3 = np.array([0,0,0])
+        #dimensions=2
+        self.position = np.array([[-0.5,1+0.5*rt,0],[0.5*rt,1.5,0],
+                                  [0,1,0],[rt,1,0],
+                                  [0,0,0],[rt,0,0]])*a
+    
+    def generate_type7_part(self,a=1):
+        R"""
+        Introduction:
+            (3,4,6,4) triangles, squares and hexagons.
+            a: the edge length of a single tile.
+            n: n*n lattices to generate. 
+        example:
+            import workflow_analysis as wa
+            import matplotlib.pyplot as plt
+            at = wa.archimedean_tilings()
+            at.generate_type11(2)
+            points = at.generate_lattices([12,3])
+            fig,ax = plt.subplots()
+            ax.scatter(points[:,0],points[:,1])
+            ax.set_xlabel('x label')  # Add an x-label to the axes.
+            ax.set_ylabel('y label')  # Add a y-label to the axes.
+            ax.set_title("Simple Plot")  # Add a title to the axes
+            ax.set_aspect('equal','box')
+            plt.show()
+        source:
+            def generate_honeycomb(self,a,n):
+            uc = hoomd.lattice.unitcell(N=4,
+                                    a1=[3*a, 0, 0],
+                                    a2=[0, math.sqrt(3)*a, 0],
+                                    a3=[0, 0, 1],
+                                    dimensions=2,
+                                    position=[[0,0,0], [1/2*a, math.sqrt(3)/2*a, 0],[3/2*a,math.sqrt(3)/2*a,0],[2*a,0,0]],
+                                    type_name=['A', 'A','A','A'],
+                                    diameter=[1,1,1,1]);
+            self.system = hoomd.init.create_lattice(unitcell=uc, n=n);
+        """
+        rt = math.sqrt(3)
+        #N=6
+        self.a1 = np.array([1+rt,0,0])*a
+        self.a2 = np.array([-0.5-0.5*rt,1.5+0.5*rt,0])*a#(rt+3)*0.5
+        self.a3 = np.array([0,0,0])
+        #dimensions=2
+        self.position = np.array([[-0.5,1+0.5*rt,0],
+                                  [0,1,0],[rt,1,0],
+                                  [0,0,0],[rt,0,0]])*a
+
     def generate_type6(self,a=1):
         R"""
         Introduction:
@@ -2086,6 +2525,177 @@ class archimedean_tilings:
         self.position = np.array([[0,0.5*rt,0],[0,1+0.5*rt,0],
                                   [0.5*rt,0,0] ])*a
 
+    def generate_type5(self,a=1):
+        R"""
+        Introduction:
+            (4,6,12) squares, hexagons and dodecagons.
+            a: the edge length of a single tile.
+            n: n*n lattices to generate. 
+        example:
+            import workflow_analysis as wa
+            import matplotlib.pyplot as plt
+            at = wa.archimedean_tilings()
+            at.generate_type11(2)
+            points = at.generate_lattices([12,3])
+            fig,ax = plt.subplots()
+            ax.scatter(points[:,0],points[:,1])
+            ax.set_xlabel('x label')  # Add an x-label to the axes.
+            ax.set_ylabel('y label')  # Add a y-label to the axes.
+            ax.set_title("Simple Plot")  # Add a title to the axes
+            ax.set_aspect('equal','box')
+            plt.show()
+        source:
+            def generate_honeycomb(self,a,n):
+            uc = hoomd.lattice.unitcell(N=4,
+                                    a1=[3*a, 0, 0],
+                                    a2=[0, math.sqrt(3)*a, 0],
+                                    a3=[0, 0, 1],
+                                    dimensions=2,
+                                    position=[[0,0,0], [1/2*a, math.sqrt(3)/2*a, 0],[3/2*a,math.sqrt(3)/2*a,0],[2*a,0,0]],
+                                    type_name=['A', 'A','A','A'],
+                                    diameter=[1,1,1,1]);
+            self.system = hoomd.init.create_lattice(unitcell=uc, n=n);
+        """
+        rt = math.sqrt(3)
+        #N=6
+        self.a1 = np.array([3+rt,0,0])*a
+        self.a2 = np.array([-1.5-0.5*rt,1.5+1.5*rt,0])*a#(rt+3)*0.5
+        self.a3 = np.array([0,0,0])
+        #dimensions=2
+        self.position = np.array([[-1.5,1+1.5*rt,0],[-0.5,1+1.5*rt,0],
+                                  [0.5*rt,1.5+rt,0],[1+0.5*rt,1.5+rt,0],
+                                  [0,1+rt,0],[1+rt,1+rt,0],
+                                  [-0.5,1+0.5*rt,0],[1.5+rt,1+0.5*rt,0],
+                                  [-0.5,0.5*rt,0],[1.5+rt,0.5*rt,0],
+                                  [0,0,0],[1+rt,0,0]])*a
+    
+    def generate_type5_part(self,a=1):
+        R"""
+        Introduction:
+            (4,6,12) squares, hexagons and dodecagons.
+            a: the edge length of a single tile.
+            n: n*n lattices to generate. 
+        example:
+            import workflow_analysis as wa
+            import matplotlib.pyplot as plt
+            at = wa.archimedean_tilings()
+            at.generate_type11(2)
+            points = at.generate_lattices([12,3])
+            fig,ax = plt.subplots()
+            ax.scatter(points[:,0],points[:,1])
+            ax.set_xlabel('x label')  # Add an x-label to the axes.
+            ax.set_ylabel('y label')  # Add a y-label to the axes.
+            ax.set_title("Simple Plot")  # Add a title to the axes
+            ax.set_aspect('equal','box')
+            plt.show()
+        source:
+            def generate_honeycomb(self,a,n):
+            uc = hoomd.lattice.unitcell(N=4,
+                                    a1=[3*a, 0, 0],
+                                    a2=[0, math.sqrt(3)*a, 0],
+                                    a3=[0, 0, 1],
+                                    dimensions=2,
+                                    position=[[0,0,0], [1/2*a, math.sqrt(3)/2*a, 0],[3/2*a,math.sqrt(3)/2*a,0],[2*a,0,0]],
+                                    type_name=['A', 'A','A','A'],
+                                    diameter=[1,1,1,1]);
+            self.system = hoomd.init.create_lattice(unitcell=uc, n=n);
+        """
+        rt = math.sqrt(3)
+        #N=6
+        self.a1 = np.array([3+rt,0,0])*a
+        self.a2 = np.array([-1.5-0.5*rt,1.5+1.5*rt,0])*a#(rt+3)*0.5
+        self.a3 = np.array([0,0,0])
+        #dimensions=2
+        self.position = np.array([[-1.5,1+1.5*rt,0],
+                                  [0.5*rt,1.5+rt,0],[1+0.5*rt,1.5+rt,0],
+                                  [0,1+rt,0],[1+rt,1+rt,0],
+                                  [-0.5,1+0.5*rt,0],[1.5+rt,1+0.5*rt,0],
+                                  [-0.5,0.5*rt,0],[1.5+rt,0.5*rt,0],
+                                  [0,0,0],[1+rt,0,0]])*a
+
+    def generate_type4(self,a=1):
+        R"""
+        Introduction:
+            (3,12^2) triangles and dodecagons.
+            a: the edge length of a single tile.
+            n: n*n lattices to generate. 
+        example:
+            import workflow_analysis as wa
+            import matplotlib.pyplot as plt
+            at = wa.archimedean_tilings()
+            at.generate_type11(2)
+            points = at.generate_lattices([12,3])
+            fig,ax = plt.subplots()
+            ax.scatter(points[:,0],points[:,1])
+            ax.set_xlabel('x label')  # Add an x-label to the axes.
+            ax.set_ylabel('y label')  # Add a y-label to the axes.
+            ax.set_title("Simple Plot")  # Add a title to the axes
+            ax.set_aspect('equal','box')
+            plt.show()
+        source:
+            def generate_honeycomb(self,a,n):
+            uc = hoomd.lattice.unitcell(N=4,
+                                    a1=[3*a, 0, 0],
+                                    a2=[0, math.sqrt(3)*a, 0],
+                                    a3=[0, 0, 1],
+                                    dimensions=2,
+                                    position=[[0,0,0], [1/2*a, math.sqrt(3)/2*a, 0],[3/2*a,math.sqrt(3)/2*a,0],[2*a,0,0]],
+                                    type_name=['A', 'A','A','A'],
+                                    diameter=[1,1,1,1]);
+            self.system = hoomd.init.create_lattice(unitcell=uc, n=n);
+        """
+        rt = math.sqrt(3)
+        #N=6
+        self.a1 = np.array([2+rt,0,0])*a
+        self.a2 = np.array([-1-0.5*rt,1.5+rt,0])*a#(rt+3)*0.5
+        self.a3 = np.array([0,0,0])
+        #dimensions=2
+        self.position = np.array([[-1,1+rt,0],[0,1+rt,0],
+                                  [-0.5,1+0.5*rt,0],
+                                  [-0.5,0.5*rt,0],
+                                  [0,0,0],[1+rt,0,0]])*a
+    
+    def generate_type4_part(self,a=1):
+        R"""
+        Introduction:
+            (3,12^2) triangles and dodecagons.
+            a: the edge length of a single tile.
+            n: n*n lattices to generate. 
+        example:
+            import workflow_analysis as wa
+            import matplotlib.pyplot as plt
+            at = wa.archimedean_tilings()
+            at.generate_type11(2)
+            points = at.generate_lattices([12,3])
+            fig,ax = plt.subplots()
+            ax.scatter(points[:,0],points[:,1])
+            ax.set_xlabel('x label')  # Add an x-label to the axes.
+            ax.set_ylabel('y label')  # Add a y-label to the axes.
+            ax.set_title("Simple Plot")  # Add a title to the axes
+            ax.set_aspect('equal','box')
+            plt.show()
+        source:
+            def generate_honeycomb(self,a,n):
+            uc = hoomd.lattice.unitcell(N=4,
+                                    a1=[3*a, 0, 0],
+                                    a2=[0, math.sqrt(3)*a, 0],
+                                    a3=[0, 0, 1],
+                                    dimensions=2,
+                                    position=[[0,0,0], [1/2*a, math.sqrt(3)/2*a, 0],[3/2*a,math.sqrt(3)/2*a,0],[2*a,0,0]],
+                                    type_name=['A', 'A','A','A'],
+                                    diameter=[1,1,1,1]);
+            self.system = hoomd.init.create_lattice(unitcell=uc, n=n);
+        """
+        rt = math.sqrt(3)
+        #N=6
+        self.a1 = np.array([2+rt,0,0])*a
+        self.a2 = np.array([-1-0.5*rt,1.5+rt,0])*a#(rt+3)*0.5
+        self.a3 = np.array([0,0,0])
+        #dimensions=2
+        self.position = np.array([[-1,1+rt,0],
+                                  [-0.5,1+0.5*rt,0],
+                                  [0,0,0],[1+rt,0,0]])*a
+
     def generate_type3(self,a=1):
         R"""
         Introduction:
@@ -2123,6 +2733,44 @@ class archimedean_tilings:
         self.a3 = np.array([0,0,0])
         #dimensions=2
         self.position = np.array([[0,0,0], [1/2, rt/2, 0],[3/2,rt/2,0],[2,0,0]])*a
+    
+    def generate_type3_part(self,a=1):
+        R"""
+        Introduction:
+            (3^6) triangles(honeycomb_part).
+            a: the edge length of a single tile.
+        example:
+            import workflow_analysis as wa
+            import matplotlib.pyplot as plt
+            at = wa.archimedean_tilings()
+            at.generate_type11(2)
+            points = at.generate_lattices([12,3])
+            fig,ax = plt.subplots()
+            ax.scatter(points[:,0],points[:,1])
+            ax.set_xlabel('x label')  # Add an x-label to the axes.
+            ax.set_ylabel('y label')  # Add a y-label to the axes.
+            ax.set_title("Simple Plot")  # Add a title to the axes
+            ax.set_aspect('equal','box')
+            plt.show()
+        source:
+            def generate_honeycomb(self,a,n):
+            uc = hoomd.lattice.unitcell(N=4,
+                                    a1=[3*a, 0, 0],
+                                    a2=[0, math.sqrt(3)*a, 0],
+                                    a3=[0, 0, 1],
+                                    dimensions=2,
+                                    position=[[0,0,0], [1/2*a, math.sqrt(3)/2*a, 0],[3/2*a,math.sqrt(3)/2*a,0],[2*a,0,0]],
+                                    type_name=['A', 'A','A','A'],
+                                    diameter=[1,1,1,1]);
+            self.system = hoomd.init.create_lattice(unitcell=uc, n=n);
+        """
+        rt = math.sqrt(3)
+        #N=1
+        self.a1 = np.array([3,0,0])*a
+        self.a2 = np.array([0,rt,0])*a
+        self.a3 = np.array([0,0,0])
+        #dimensions=2
+        self.position = np.array([[0,0,0],[3/2,rt/2,0]])*a
 
     def generate_type2(self,a=1):
         R"""
@@ -2234,7 +2882,829 @@ class archimedean_tilings:
         pt = test.voronoi.vertices
         return pt
     
+class archimedean_tilings_polygon_dye:
+    def __init__(self):
+        R"""
+        example:
+            import workflow_analysis as wa
+            at = wa.archimedean_tilings_polygon_dye()
+            at.workflow_type4()
+            at.workflow_type5()
+            at.workflow_type6()
+            at.workflow_type7()
+            at.workflow_type9()
+            at.workflow_type10()
+            at.workflow_type11()
+        """
+        self.water_color = np.array([115,163,255])/255.0
+        self.particle_color = 'k'
 
+        self.color3 = 'royalblue'
+        self.color4 = 'forestgreen'
+        self.color6 = 'r'
+        self.color8 = 'violet'
+        self.color12 = 'darkorange'#'mediumpurple'
+        """self.color3 = 'r'
+        self.color4 = 'forestgreen'
+        self.color6 = 'darkorange'
+        self.color8 = 'royalblue'
+        self.color12 = 'mediumpurple'"""
+    
+    def workflow_type1(self):
+        import symmetry_transformation_v4_3.system_parameters_generators as pg
+        particles = archimedean_tilings()
+        particles.generate_type1(a=3)
+        n_size = [16,8]
+        particle_points = particles.generate_lattices(n_size)
+
+        traps = archimedean_tilings()
+        traps.generate_type1(a=3)
+        isg = pg.initial_state_generator()
+        prefix_gsd = "/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/"
+        output_gsd_filename = prefix_gsd+'particle_type1_and_trap_type1.gsd'
+        isg.set_new_gsd_file_2types(particles,n_size,particle_points,traps,output_gsd_filename)
+        #isg.set_new_gsd_file(at,n_size,points)#get_gsd_sample()
+        isg = pg.initial_state_generator()
+        isg.read_gsd_file(output_gsd_filename)
+        points = isg.particles.position
+        
+        
+        ids = np.array(isg.snap.particles.typeid)
+        list_p = ids == 0
+        list_t = ids == 1
+
+        fig,ax = plt.subplots()
+
+        points = points[list_t,:2]
+        """perturbation = np.random.random(points.shape)*0.01
+        points = points + perturbation #precisely equalled bond will let delaunay disfunction!"""
+        
+        p2d = pa.static_points_analysis_2d(points,hide_figure=False)#
+        
+        p2d.get_first_minima_bond_length_distribution(png_filename='bond_hist.png')
+        #draw bonds selected
+        bpm = pa.bond_plot_module(fig,ax)#
+        bpm.restrict_axis_property_relative('(sigma)')
+        list_bond_index = bpm.get_bonds_with_conditional_bond_length(p2d.bond_length,[2,p2d.bond_first_minima_left])
+        
+        bpm.draw_points_with_given_bonds(points,list_bond_index,bond_color='k')#p2d.bond_length[:,:2].astype(int)
+        count_polygon_relative = p2d.get_conditional_bonds_and_simplices_bond_length()
+        print(count_polygon_relative)
+        #p2d.list_simplex_cluster
+        fig,ax = p2d.draw_polygon_patch_oop(fig,ax,self.water_color,polygon_n=3)
+        plt.show()
+    
+    def workflow_type2(self):
+        import symmetry_transformation_v4_3.system_parameters_generators as pg
+        particles = archimedean_tilings()
+        particles.generate_type1(a=3)
+        n_size = [16,8]
+        particle_points = particles.generate_lattices(n_size)
+
+        traps = archimedean_tilings()
+        traps.generate_type2(a=3)
+        isg = pg.initial_state_generator()
+        prefix_gsd = "/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/"
+        output_gsd_filename = prefix_gsd+'particle_type1_and_trap_type1.gsd'
+        isg.set_new_gsd_file_2types(particles,n_size,particle_points,traps,output_gsd_filename)
+        #isg.set_new_gsd_file(at,n_size,points)#get_gsd_sample()
+        isg = pg.initial_state_generator()
+        isg.read_gsd_file(output_gsd_filename)
+        points = isg.particles.position
+        
+        
+        ids = np.array(isg.snap.particles.typeid)
+        list_p = ids == 0
+        list_t = ids == 1
+
+        fig,ax = plt.subplots()
+
+        points = points[list_t,:2]
+        """perturbation = np.random.random(points.shape)*0.01
+        points = points + perturbation #precisely equalled bond will let delaunay disfunction!"""
+        
+        p2d = pa.static_points_analysis_2d(points,hide_figure=False)#
+        
+        p2d.get_first_minima_bond_length_distribution(png_filename='bond_hist.png')
+        #draw bonds selected
+        bpm = pa.bond_plot_module(fig,ax)#
+        bpm.restrict_axis_property_relative('(sigma)')
+        list_bond_index = bpm.get_bonds_with_conditional_bond_length(p2d.bond_length,[2,p2d.bond_first_minima_left])
+        
+        bpm.draw_points_with_given_bonds(points,list_bond_index,bond_color='k',particle_color=self.particle_color)#p2d.bond_length[:,:2].astype(int)
+        count_polygon_relative = p2d.get_conditional_bonds_and_simplices_bond_length()
+        print(count_polygon_relative)
+        #p2d.list_simplex_cluster
+        fig,ax = p2d.draw_polygon_patch_oop(fig,ax,self.water_color,polygon_n=4)
+        plt.show()
+
+    def workflow_type3_part(self):
+        import symmetry_transformation_v4_3.system_parameters_generators as pg
+        particles = archimedean_tilings()
+        particles.generate_type1(a=3)
+        n_size = [16,8]
+        particle_points = particles.generate_lattices(n_size)
+
+        traps = archimedean_tilings()
+        traps.generate_type3_part(a=3)
+        isg = pg.initial_state_generator()
+        prefix_gsd = "/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/"
+        output_gsd_filename = prefix_gsd+'particle_type1_and_trap_type3_part.gsd'
+        isg.set_new_gsd_file_2types(particles,n_size,particle_points,traps,output_gsd_filename)
+        #isg.set_new_gsd_file(at,n_size,points)#get_gsd_sample()
+        isg = pg.initial_state_generator()
+        isg.read_gsd_file(output_gsd_filename)
+        points = isg.particles.position
+        
+        
+        ids = np.array(isg.snap.particles.typeid)
+        list_p = ids == 0
+        list_t = ids == 1
+
+        fig,ax = plt.subplots()
+
+        points = points[list_t,:2]
+        
+        p2d = pa.static_points_analysis_2d(points,hide_figure=False)#
+        
+        p2d.get_first_minima_bond_length_distribution(png_filename='bond_hist.png')
+        #draw bonds selected
+        bpm = pa.bond_plot_module(fig,ax)#
+        bpm.restrict_axis_property_relative('(sigma)')
+        list_bond_index = bpm.get_bonds_with_conditional_bond_length(p2d.bond_length,[2,p2d.bond_first_minima_left])
+        
+        bpm.draw_points_with_given_bonds(points,list_bond_index,bond_color='k',particle_color='r')#p2d.bond_length[:,:2].astype(int)
+        count_polygon_relative = p2d.get_conditional_bonds_and_simplices_bond_length()
+        print(count_polygon_relative)
+        #p2d.list_simplex_cluster
+        fig,ax = p2d.draw_polygon_patch_oop(fig,ax,self.water_color,polygon_n=3)
+        plt.show()
+    
+    def workflow_type3(self):
+        import symmetry_transformation_v4_3.system_parameters_generators as pg
+        particles = archimedean_tilings()
+        particles.generate_type1(a=3)
+        n_size = [16,8]
+        particle_points = particles.generate_lattices(n_size)
+
+        traps = archimedean_tilings()
+        traps.generate_type3(a=3)
+        isg = pg.initial_state_generator()
+        prefix_gsd = "/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/"
+        output_gsd_filename = prefix_gsd+'particle_type1_and_trap_type3_part.gsd'
+        isg.set_new_gsd_file_2types(particles,n_size,particle_points,traps,output_gsd_filename)
+        #isg.set_new_gsd_file(at,n_size,points)#get_gsd_sample()
+        isg = pg.initial_state_generator()
+        isg.read_gsd_file(output_gsd_filename)
+        points = isg.particles.position
+        
+        
+        ids = np.array(isg.snap.particles.typeid)
+        list_p = ids == 0
+        list_t = ids == 1
+
+        fig,ax = plt.subplots()
+
+        points = points[list_t,:2]
+        
+        p2d = pa.static_points_analysis_2d(points,hide_figure=False)#
+        
+        p2d.get_first_minima_bond_length_distribution(png_filename='bond_hist.png')
+        #draw bonds selected
+        bpm = pa.bond_plot_module(fig,ax)#
+        bpm.restrict_axis_property_relative('(sigma)')
+        list_bond_index = bpm.get_bonds_with_conditional_bond_length(p2d.bond_length,[2,p2d.bond_first_minima_left])
+        
+        bpm.draw_points_with_given_bonds(points,list_bond_index,bond_color='k',particle_color=self.particle_color)#p2d.bond_length[:,:2].astype(int)
+        count_polygon_relative = p2d.get_conditional_bonds_and_simplices_bond_length()
+        print(count_polygon_relative)
+        #p2d.list_simplex_cluster
+        fig,ax = p2d.draw_polygon_patch_oop(fig,ax,self.water_color,polygon_n=6)
+        plt.show()
+
+    def workflow_type11(self):
+        import symmetry_transformation_v4_3.system_parameters_generators as pg
+        particles = archimedean_tilings()
+        particles.generate_type11(a=3)
+        n_size = [12,3]
+        particle_points = particles.generate_lattices(n_size)
+
+        traps = archimedean_tilings()
+        traps.generate_type3(a=3)
+        isg = pg.initial_state_generator()
+        prefix_gsd = "/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/"
+        output_gsd_filename = prefix_gsd+'particle_type4_and_trap_square.gsd'
+        isg.set_new_gsd_file_2types(particles,n_size,particle_points,traps,output_gsd_filename)
+        #isg.set_new_gsd_file(at,n_size,points)#get_gsd_sample()
+        isg = pg.initial_state_generator()
+        isg.read_gsd_file(output_gsd_filename)
+        points = isg.particles.position
+        
+        
+        ids = np.array(isg.snap.particles.typeid)
+        list_p = ids == 0
+        list_t = ids == 1
+
+        fig,ax = plt.subplots()
+        """isg.snap.particles.types
+        
+        ax.scatter(points[list_p,0],points[list_p,1],color='k')#
+        #ax.scatter(points[list_t,0],points[list_t,1],color='r')#
+        #ax.scatter(dula[:,0],dula[:,1],facecolors='none',edgecolors='k')#,marker = 'x'
+        ax.set_xlabel('x label')  # Add an x-label to the axes.
+        ax.set_ylabel('y label')  # Add a y-label to the axes.
+        ax.set_title("Simple Plot")  # Add a title to the axes
+        ax.set_aspect('equal','box')
+        #plt.show()"""
+
+        #spd = show_polygon_dye()
+        #spd.plot_polygon_bond_xylim()
+        points = points[list_p,:2]
+        perturbation = np.random.random(points.shape)*0.01
+        points = points + perturbation #precisely equalled bond will let delaunay disfunction!
+        
+        p2d = pa.static_points_analysis_2d(points,hide_figure=False)#
+        #p2d.get_first_minima_ridge_length_distribution(png_filename='ridge_hist.png')
+        p2d.get_first_minima_bond_length_distribution(png_filename='bond_hist.png')
+        #draw bonds selected
+        
+        bpm = pa.bond_plot_module(fig,ax)#
+        bpm.restrict_axis_property_relative('(sigma)')
+        #list_bond_index = bpm.get_bonds_with_conditional_ridge_length(p2d.voronoi.ridge_length,p2d.voronoi.ridge_points,p2d.ridge_first_minima_left)
+        list_bond_index = bpm.get_bonds_with_conditional_bond_length(p2d.bond_length,[2,p2d.bond_first_minima_left])
+        
+        bpm.draw_points_with_given_bonds(points,list_bond_index,bond_color='k')#p2d.bond_length[:,:2].astype(int)
+        #import matplotlib
+        #matplotlib.use(backend="QtAgg")#Backend agg is non-interactive backend. Turning interactive mode off. 'QtAgg'
+        #p2d.linked_triangles
+        count_polygon_relative = p2d.get_conditional_bonds_and_simplices_bond_length()
+        print(count_polygon_relative)
+        #p2d.list_simplex_cluster
+        
+        fig,ax = p2d.draw_polygon_patch_oop(fig,ax,self.color3,polygon_n=3)#'limegreen','c',not good
+        fig,ax = p2d.draw_polygon_patch_oop(fig,ax,self.color4,polygon_n=4)#'royalblue'
+        plt.show()
+
+    def workflow_type10(self):
+        import symmetry_transformation_v4_3.system_parameters_generators as pg
+        particles = archimedean_tilings()
+        particles.generate_type10(a=3)
+        n_size = [4,4]
+        particle_points = particles.generate_lattices(n_size)
+
+        traps = archimedean_tilings()
+        traps.generate_type3(a=3)
+        isg = pg.initial_state_generator()
+        prefix_gsd = "/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/"
+        output_gsd_filename = prefix_gsd+'particle_type10_and_trap_square.gsd'
+        isg.set_new_gsd_file_2types(particles,n_size,particle_points,traps,output_gsd_filename)
+        #isg.set_new_gsd_file(at,n_size,points)#get_gsd_sample()
+        isg = pg.initial_state_generator()
+        isg.read_gsd_file(output_gsd_filename)
+        points = isg.particles.position
+        
+        
+        ids = np.array(isg.snap.particles.typeid)
+        list_p = ids == 0
+        list_t = ids == 1
+
+        fig,ax = plt.subplots()
+        """isg.snap.particles.types
+        
+        ax.scatter(points[list_p,0],points[list_p,1],color='k')#
+        #ax.scatter(points[list_t,0],points[list_t,1],color='r')#
+        #ax.scatter(dula[:,0],dula[:,1],facecolors='none',edgecolors='k')#,marker = 'x'
+        ax.set_xlabel('x label')  # Add an x-label to the axes.
+        ax.set_ylabel('y label')  # Add a y-label to the axes.
+        ax.set_title("Simple Plot")  # Add a title to the axes
+        ax.set_aspect('equal','box')
+        #plt.show()"""
+
+        #spd = show_polygon_dye()
+        #spd.plot_polygon_bond_xylim()
+        points = points[list_p,:2]
+        perturbation = np.random.random(points.shape)*0.01
+        points = points + perturbation #precisely equalled bond will let delaunay disfunction!
+        
+        p2d = pa.static_points_analysis_2d(points,hide_figure=False)#
+        #p2d.get_first_minima_ridge_length_distribution(png_filename='ridge_hist.png')
+        p2d.get_first_minima_bond_length_distribution(png_filename='bond_hist.png')
+        #draw bonds selected
+        
+        bpm = pa.bond_plot_module(fig,ax)#
+        bpm.restrict_axis_property_relative('(sigma)')
+        #list_bond_index = bpm.get_bonds_with_conditional_ridge_length(p2d.voronoi.ridge_length,p2d.voronoi.ridge_points,p2d.ridge_first_minima_left)
+        list_bond_index = bpm.get_bonds_with_conditional_bond_length(p2d.bond_length,[2,p2d.bond_first_minima_left])
+        
+        bpm.draw_points_with_given_bonds(points,list_bond_index,bond_color='k')#p2d.bond_length[:,:2].astype(int)
+        #import matplotlib
+        #matplotlib.use(backend="QtAgg")#Backend agg is non-interactive backend. Turning interactive mode off. 'QtAgg'
+        #p2d.linked_triangles
+        count_polygon_relative = p2d.get_conditional_bonds_and_simplices_bond_length()
+        print(count_polygon_relative)
+        #p2d.list_simplex_cluster
+        
+        fig,ax = p2d.draw_polygon_patch_oop(fig,ax,self.color3,polygon_n=3)#'limegreen','c',not good
+        fig,ax = p2d.draw_polygon_patch_oop(fig,ax,self.color4,polygon_n=4)#'royalblue'
+        plt.show()
+
+    def workflow_type9(self):
+        import symmetry_transformation_v4_3.system_parameters_generators as pg
+        """particles = archimedean_tilings()
+        particles.generate_type9(a=3)
+        n_size = [10,10]
+        particle_points = particles.generate_lattices(n_size)
+
+        traps = archimedean_tilings()
+        traps.generate_type3(a=3)
+        isg = pg.initial_state_generator()"""
+        prefix_gsd = "/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/"
+        output_gsd_filename = prefix_gsd+'particle_type9_and_trap_square.gsd'
+        #isg.set_new_gsd_file_2types(particles,n_size,particle_points,traps,output_gsd_filename)
+        #isg.set_new_gsd_file(at,n_size,points)#get_gsd_sample()
+        isg = pg.initial_state_generator()
+        isg.read_gsd_file(output_gsd_filename)
+        points = isg.particles.position
+        
+        
+        ids = np.array(isg.snap.particles.typeid)
+        list_p = ids == 0
+        list_t = ids == 1
+
+        fig,ax = plt.subplots()
+        """isg.snap.particles.types
+        
+        ax.scatter(points[list_p,0],points[list_p,1],color='k')#
+        #ax.scatter(points[list_t,0],points[list_t,1],color='r')#
+        #ax.scatter(dula[:,0],dula[:,1],facecolors='none',edgecolors='k')#,marker = 'x'
+        ax.set_xlabel('x label')  # Add an x-label to the axes.
+        ax.set_ylabel('y label')  # Add a y-label to the axes.
+        ax.set_title("Simple Plot")  # Add a title to the axes
+        ax.set_aspect('equal','box')
+        #plt.show()"""
+
+        #spd = show_polygon_dye()
+        #spd.plot_polygon_bond_xylim()
+        points = points[list_p,:2]
+        perturbation = np.random.random(points.shape)*0.01
+        points = points + perturbation #precisely equalled bond will let delaunay disfunction!
+        
+        p2d = pa.static_points_analysis_2d(points,hide_figure=False)#
+        #p2d.get_first_minima_ridge_length_distribution(png_filename='ridge_hist.png')
+        p2d.get_first_minima_bond_length_distribution(png_filename='bond_hist.png')
+        #draw bonds selected
+        
+        bpm = pa.bond_plot_module(fig,ax)#
+        bpm.restrict_axis_property_relative('(sigma)')
+        #list_bond_index = bpm.get_bonds_with_conditional_ridge_length(p2d.voronoi.ridge_length,p2d.voronoi.ridge_points,p2d.ridge_first_minima_left)
+        list_bond_index = bpm.get_bonds_with_conditional_bond_length(p2d.bond_length,[2,p2d.bond_first_minima_left])
+        
+        bpm.draw_points_with_given_bonds(points,list_bond_index,bond_color='k')#p2d.bond_length[:,:2].astype(int)
+        #import matplotlib
+        #matplotlib.use(backend="QtAgg")#Backend agg is non-interactive backend. Turning interactive mode off. 'QtAgg'
+        #p2d.linked_triangles
+        count_polygon_relative = p2d.get_conditional_bonds_and_simplices_bond_length()
+        print(count_polygon_relative)
+        #p2d.list_simplex_cluster
+        fig,ax = p2d.draw_polygon_patch_oop(fig,ax,self.color3,polygon_n=3)
+        fig,ax = p2d.draw_polygon_patch_oop(fig,ax,self.color6,polygon_n=6)#'darkorange'
+        plt.show()
+        
+        #p2d.draw_bonds_simplex_conditional_oop(prefix_write,frame,limit=True)
+        
+        """p2d = pa.static_points_analysis_2d(points[list_p])#,hide_figure=False
+        p2d.get_first_minima_ridge_length_distribution()
+        #draw bonds selected
+        self.p2d.draw_polygon_patch_oop()
+        png_filename = prefix_write + 'type_9_polygon'
+        p2d.draw_bonds_simplex_conditional_oop(png_filename)
+        p2d.draw_polygon_patch_oop()
+        #p2d.draw_bonds_conditional_ridge_oop(,)
+
+        count_polygon_relative = self.p2d.get_conditional_bonds_and_simplices()
+        if not io_only:
+            png_filename = prefix_write+"bond_vertices_patch"+str(int(frame))+".pdf"
+            fig,ax = plt.subplots()
+            fig,ax = self.p2d.draw_polygon_patch_oop(ax)
+            if limit:
+                ax.set_xlim([-18,18])#-4,12
+                ax.set_ylim([-18,18])#-5,16
+            self.p2d.draw_bonds_simplex_conditional_oop(png_filename=png_filename,x_unit='($\sigma$)',fig=fig,ax=ax)#   """
+        """
+        bpm = pa.bond_plot_module()
+        bpm.restrict_axis_property_relative(spa.points,'($\sigma$)')
+        #list_bond_index = bpm.get_bonds_with_conditional_ridge_length(spa.voronoi.ridge_length,spa.voronoi.ridge_points,spa.ridge_first_minima_left)
+        list_bond_index = bpm.get_bonds_with_conditional_bond_length(spa.bond_length,[0.9,spa.bond_first_minima_left])
+        #color_name: https://www.cssportal.com/html-colors/x11-colors.php
+        bond_color = 'k'#'gold'#'mediumseagreen'#'tan'#'bisque'#'gold'#'darkorange'
+        bpm.draw_points_with_given_bonds(spa.points,list_bond_index,50,bond_color,bond_color,bond_width=1)#200
+        bpm.plot_traps(LinearCompressionRatio=1.0, trap_filename=trap_filename,mode='map',trap_color='r',trap_size=10)#array
+        semibox = gsd_data.trajectory[0].configuration.box[0:2]/2
+        bpm.restrict_axis_limitation([-semibox[0],semibox[0]],[-semibox[1],semibox[1]])
+        save_filename = png_filename2
+        bpm.save_figure(png_filename=save_filename)
+        """
+
+    def workflow_type9_part(self):
+        import symmetry_transformation_v4_3.system_parameters_generators as pg
+        particles = archimedean_tilings()
+        particles.generate_type9_part(a=3)
+        n_size = [10,10]
+        particle_points = particles.generate_lattices(n_size)
+
+        traps = archimedean_tilings()
+        traps.generate_type3(a=3)
+        isg = pg.initial_state_generator()
+        prefix_gsd = "/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/"
+        output_gsd_filename = prefix_gsd+'particle_type9_part_and_trap_square.gsd'
+        isg.set_new_gsd_file_2types(particles,n_size,particle_points,traps,output_gsd_filename)
+        #isg.set_new_gsd_file(at,n_size,points)#get_gsd_sample()
+        isg = pg.initial_state_generator()
+        isg.read_gsd_file(output_gsd_filename)
+        points = isg.particles.position
+        
+        
+        ids = np.array(isg.snap.particles.typeid)
+        list_p = ids == 0
+        list_t = ids == 1
+
+        fig,ax = plt.subplots()
+        """isg.snap.particles.types
+        
+        ax.scatter(points[list_p,0],points[list_p,1],color='k')#
+        #ax.scatter(points[list_t,0],points[list_t,1],color='r')#
+        #ax.scatter(dula[:,0],dula[:,1],facecolors='none',edgecolors='k')#,marker = 'x'
+        ax.set_xlabel('x label')  # Add an x-label to the axes.
+        ax.set_ylabel('y label')  # Add a y-label to the axes.
+        ax.set_title("Simple Plot")  # Add a title to the axes
+        ax.set_aspect('equal','box')
+        #plt.show()"""
+
+        #spd = show_polygon_dye()
+        #spd.plot_polygon_bond_xylim()
+        points = points[list_p,:2]
+        perturbation = np.random.random(points.shape)*0.01
+        points = points + perturbation #precisely equalled bond will let delaunay disfunction!
+        
+        p2d = pa.static_points_analysis_2d(points,hide_figure=False)#
+        #p2d.get_first_minima_ridge_length_distribution(png_filename='ridge_hist.png')
+        p2d.get_first_minima_bond_length_distribution(png_filename='bond_hist.png')
+        #draw bonds selected
+        
+        bpm = pa.bond_plot_module(fig,ax)#
+        bpm.restrict_axis_property_relative('(sigma)')
+        #list_bond_index = bpm.get_bonds_with_conditional_ridge_length(p2d.voronoi.ridge_length,p2d.voronoi.ridge_points,p2d.ridge_first_minima_left)
+        list_bond_index = bpm.get_bonds_with_conditional_bond_length(p2d.bond_length,[2,p2d.bond_first_minima_left])
+        
+        bpm.draw_points_with_given_bonds(points,list_bond_index,bond_color='k')#p2d.bond_length[:,:2].astype(int)
+        #import matplotlib
+        #matplotlib.use(backend="QtAgg")#Backend agg is non-interactive backend. Turning interactive mode off. 'QtAgg'
+        #p2d.linked_triangles
+        count_polygon_relative = p2d.get_conditional_bonds_and_simplices_bond_length()
+        print(count_polygon_relative)
+        #p2d.list_simplex_cluster
+        fig,ax = p2d.draw_polygon_patch_oop(fig,ax,polygon_n=3)
+        fig,ax = p2d.draw_polygon_patch_oop(fig,ax,'darkorange',polygon_n=6)
+        plt.show()
+
+    def workflow_type8(self):
+        import symmetry_transformation_v4_3.system_parameters_generators as pg
+        particles = archimedean_tilings()
+        particles.generate_type1(a=3)
+        n_size = [16,8]
+        particle_points = particles.generate_lattices(n_size)
+
+        traps = archimedean_tilings()
+        traps.generate_type8(a=3)
+        isg = pg.initial_state_generator()
+        prefix_gsd = "/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/"
+        output_gsd_filename = prefix_gsd+'particle_type1_and_trap_type3_part.gsd'
+        isg.set_new_gsd_file_2types(particles,n_size,particle_points,traps,output_gsd_filename)
+        #isg.set_new_gsd_file(at,n_size,points)#get_gsd_sample()
+        isg = pg.initial_state_generator()
+        isg.read_gsd_file(output_gsd_filename)
+        points = isg.particles.position
+        
+        
+        ids = np.array(isg.snap.particles.typeid)
+        list_p = ids == 0
+        list_t = ids == 1
+
+        fig,ax = plt.subplots()
+
+        points = points[list_t,:2]
+        
+        p2d = pa.static_points_analysis_2d(points,hide_figure=False)#
+        
+        p2d.get_first_minima_bond_length_distribution(png_filename='bond_hist.png')
+        #draw bonds selected
+        bpm = pa.bond_plot_module(fig,ax)#
+        bpm.restrict_axis_property_relative('(sigma)')
+        list_bond_index = bpm.get_bonds_with_conditional_bond_length(p2d.bond_length,[2,p2d.bond_first_minima_left])
+        
+        bpm.draw_points_with_given_bonds(points,list_bond_index,bond_color='k',particle_color=self.particle_color)#p2d.bond_length[:,:2].astype(int)
+        count_polygon_relative = p2d.get_conditional_bonds_and_simplices_bond_length()
+        print(count_polygon_relative)
+        #p2d.list_simplex_cluster
+        
+        fig,ax = p2d.draw_polygon_patch_oop(fig,ax,self.water_color,polygon_n=3)#'cornflowerblue','deepskyblue'
+        fig,ax = p2d.draw_polygon_patch_oop(fig,ax,self.water_color,polygon_n=6)
+        plt.show()
+
+    def workflow_type8_part(self):
+        import symmetry_transformation_v4_3.system_parameters_generators as pg
+        particles = archimedean_tilings()
+        particles.generate_type1(a=3)
+        n_size = [16,8]
+        particle_points = particles.generate_lattices(n_size)
+
+        traps = archimedean_tilings()
+        traps.generate_type8_part(a=3)
+        isg = pg.initial_state_generator()
+        prefix_gsd = "/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/"
+        output_gsd_filename = prefix_gsd+'particle_type1_and_trap_type3_part.gsd'
+        isg.set_new_gsd_file_2types(particles,n_size,particle_points,traps,output_gsd_filename)
+        #isg.set_new_gsd_file(at,n_size,points)#get_gsd_sample()
+        isg = pg.initial_state_generator()
+        isg.read_gsd_file(output_gsd_filename)
+        points = isg.particles.position
+        
+        
+        ids = np.array(isg.snap.particles.typeid)
+        list_p = ids == 0
+        list_t = ids == 1
+
+        fig,ax = plt.subplots()
+
+        points = points[list_t,:2]
+        
+        p2d = pa.static_points_analysis_2d(points,hide_figure=False)#
+        
+        p2d.get_first_minima_bond_length_distribution(png_filename='bond_hist.png')
+        #draw bonds selected
+        bpm = pa.bond_plot_module(fig,ax)#
+        bpm.restrict_axis_property_relative('(sigma)')
+        list_bond_index = bpm.get_bonds_with_conditional_bond_length(p2d.bond_length,[2,p2d.bond_first_minima_left])
+        
+        bpm.draw_points_with_given_bonds(points,list_bond_index,bond_color='k',particle_color='r')#p2d.bond_length[:,:2].astype(int)
+        count_polygon_relative = p2d.get_conditional_bonds_and_simplices_bond_length()
+        print(count_polygon_relative)
+        #p2d.list_simplex_cluster
+        
+        fig,ax = p2d.draw_polygon_patch_oop(fig,ax,self.water_color,polygon_n=4)#'cornflowerblue','deepskyblue'
+        plt.show()
+
+    def workflow_type7(self):
+        import symmetry_transformation_v4_3.system_parameters_generators as pg
+        particles = archimedean_tilings()
+        particles.generate_type7(a=3)
+        n_size = [18,10]
+        particle_points = particles.generate_lattices(n_size)
+
+        traps = archimedean_tilings()
+        traps.generate_type3(a=3)
+        isg = pg.initial_state_generator()
+        prefix_gsd = "/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/"
+        output_gsd_filename = prefix_gsd+'particle_type7_and_trap_square.gsd'
+        isg.set_new_gsd_file_2types(particles,n_size,particle_points,traps,output_gsd_filename)
+        #isg.set_new_gsd_file(at,n_size,points)#get_gsd_sample()
+        isg = pg.initial_state_generator()
+        isg.read_gsd_file(output_gsd_filename)
+        points = isg.particles.position
+        
+        
+        ids = np.array(isg.snap.particles.typeid)
+        list_p = ids == 0
+        list_t = ids == 1
+
+        fig,ax = plt.subplots()
+        """isg.snap.particles.types
+        
+        ax.scatter(points[list_p,0],points[list_p,1],color='k')#
+        #ax.scatter(points[list_t,0],points[list_t,1],color='r')#
+        #ax.scatter(dula[:,0],dula[:,1],facecolors='none',edgecolors='k')#,marker = 'x'
+        ax.set_xlabel('x label')  # Add an x-label to the axes.
+        ax.set_ylabel('y label')  # Add a y-label to the axes.
+        ax.set_title("Simple Plot")  # Add a title to the axes
+        ax.set_aspect('equal','box')
+        #plt.show()"""
+
+        #spd = show_polygon_dye()
+        #spd.plot_polygon_bond_xylim()
+        points = points[list_p,:2]
+        perturbation = np.random.random(points.shape)*0.01
+        points = points + perturbation #precisely equalled bond will let delaunay disfunction!
+        
+        p2d = pa.static_points_analysis_2d(points,hide_figure=False)#
+        #p2d.get_first_minima_ridge_length_distribution(png_filename='ridge_hist.png')
+        p2d.get_first_minima_bond_length_distribution(png_filename='bond_hist.png')
+        #draw bonds selected
+        
+        bpm = pa.bond_plot_module(fig,ax)#
+        bpm.restrict_axis_property_relative('(sigma)')
+        #list_bond_index = bpm.get_bonds_with_conditional_ridge_length(p2d.voronoi.ridge_length,p2d.voronoi.ridge_points,p2d.ridge_first_minima_left)
+        list_bond_index = bpm.get_bonds_with_conditional_bond_length(p2d.bond_length,[2,p2d.bond_first_minima_left])
+        
+        bpm.draw_points_with_given_bonds(points,list_bond_index,bond_color='k')#p2d.bond_length[:,:2].astype(int)
+        #import matplotlib
+        #matplotlib.use(backend="QtAgg")#Backend agg is non-interactive backend. Turning interactive mode off. 'QtAgg'
+        #p2d.linked_triangles
+        count_polygon_relative = p2d.get_conditional_bonds_and_simplices_bond_length()
+        print(count_polygon_relative)
+        #p2d.list_simplex_cluster
+        fig,ax = p2d.draw_polygon_patch_oop(fig,ax,self.color3,polygon_n=3)
+        fig,ax = p2d.draw_polygon_patch_oop(fig,ax,self.color4,polygon_n=4)#'tan','limegreen','c',not good
+        fig,ax = p2d.draw_polygon_patch_oop(fig,ax,self.color6,polygon_n=6)#'darkorange'
+        plt.show()
+
+    def workflow_type6(self):
+        import symmetry_transformation_v4_3.system_parameters_generators as pg
+        particles = archimedean_tilings()
+        particles.generate_type6(a=3)
+        n_size = [10,10]
+        particle_points = particles.generate_lattices(n_size)
+
+        traps = archimedean_tilings()
+        traps.generate_type3(a=3)
+        isg = pg.initial_state_generator()
+        prefix_gsd = "/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/"
+        output_gsd_filename = prefix_gsd+'particle_type7_and_trap_square.gsd'
+        isg.set_new_gsd_file_2types(particles,n_size,particle_points,traps,output_gsd_filename)
+        #isg.set_new_gsd_file(at,n_size,points)#get_gsd_sample()
+        isg = pg.initial_state_generator()
+        isg.read_gsd_file(output_gsd_filename)
+        points = isg.particles.position
+        
+        
+        ids = np.array(isg.snap.particles.typeid)
+        list_p = ids == 0
+        list_t = ids == 1
+
+        fig,ax = plt.subplots()
+        """isg.snap.particles.types
+        
+        ax.scatter(points[list_p,0],points[list_p,1],color='k')#
+        #ax.scatter(points[list_t,0],points[list_t,1],color='r')#
+        #ax.scatter(dula[:,0],dula[:,1],facecolors='none',edgecolors='k')#,marker = 'x'
+        ax.set_xlabel('x label')  # Add an x-label to the axes.
+        ax.set_ylabel('y label')  # Add a y-label to the axes.
+        ax.set_title("Simple Plot")  # Add a title to the axes
+        ax.set_aspect('equal','box')
+        #plt.show()"""
+
+        #spd = show_polygon_dye()
+        #spd.plot_polygon_bond_xylim()
+        points = points[list_p,:2]
+        perturbation = np.random.random(points.shape)*0.01
+        points = points + perturbation #precisely equalled bond will let delaunay disfunction!
+        
+        p2d = pa.static_points_analysis_2d(points,hide_figure=False)#
+        #p2d.get_first_minima_ridge_length_distribution(png_filename='ridge_hist.png')
+        p2d.get_first_minima_bond_length_distribution(png_filename='bond_hist.png')
+        #draw bonds selected
+        
+        bpm = pa.bond_plot_module(fig,ax)#
+        bpm.restrict_axis_property_relative('(sigma)')
+        #list_bond_index = bpm.get_bonds_with_conditional_ridge_length(p2d.voronoi.ridge_length,p2d.voronoi.ridge_points,p2d.ridge_first_minima_left)
+        list_bond_index = bpm.get_bonds_with_conditional_bond_length(p2d.bond_length,[2,p2d.bond_first_minima_left])
+        
+        bpm.draw_points_with_given_bonds(points,list_bond_index,bond_color='k')#p2d.bond_length[:,:2].astype(int)
+        #import matplotlib
+        #matplotlib.use(backend="QtAgg")#Backend agg is non-interactive backend. Turning interactive mode off. 'QtAgg'
+        #p2d.linked_triangles
+        count_polygon_relative = p2d.get_conditional_bonds_and_simplices_bond_length()
+        print(count_polygon_relative)
+        #p2d.list_simplex_cluster
+        fig,ax = p2d.draw_polygon_patch_oop(fig,ax,self.color4,polygon_n=4)#'tan','limegreen','c',not good
+        fig,ax = p2d.draw_polygon_patch_oop(fig,ax,self.color8,polygon_n=8)#'darkorange'
+        plt.show()
+
+    def workflow_type5(self):
+        import symmetry_transformation_v4_3.system_parameters_generators as pg
+        particles = archimedean_tilings()
+        particles.generate_type5(a=3)
+        n_size = [18,10]
+        particle_points = particles.generate_lattices(n_size)
+
+        traps = archimedean_tilings()
+        traps.generate_type3(a=3)
+        isg = pg.initial_state_generator()
+        prefix_gsd = "/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/"
+        output_gsd_filename = prefix_gsd+'particle_type7_and_trap_square.gsd'
+        isg.set_new_gsd_file_2types(particles,n_size,particle_points,traps,output_gsd_filename)
+        #isg.set_new_gsd_file(at,n_size,points)#get_gsd_sample()
+        isg = pg.initial_state_generator()
+        isg.read_gsd_file(output_gsd_filename)
+        points = isg.particles.position
+        
+        
+        ids = np.array(isg.snap.particles.typeid)
+        list_p = ids == 0
+        list_t = ids == 1
+
+        fig,ax = plt.subplots()
+        """isg.snap.particles.types
+        
+        ax.scatter(points[list_p,0],points[list_p,1],color='k')#
+        #ax.scatter(points[list_t,0],points[list_t,1],color='r')#
+        #ax.scatter(dula[:,0],dula[:,1],facecolors='none',edgecolors='k')#,marker = 'x'
+        ax.set_xlabel('x label')  # Add an x-label to the axes.
+        ax.set_ylabel('y label')  # Add a y-label to the axes.
+        ax.set_title("Simple Plot")  # Add a title to the axes
+        ax.set_aspect('equal','box')
+        #plt.show()"""
+
+        #spd = show_polygon_dye()
+        #spd.plot_polygon_bond_xylim()
+        points = points[list_p,:2]
+        perturbation = np.random.random(points.shape)*0.01
+        points = points + perturbation #precisely equalled bond will let delaunay disfunction!
+        
+        p2d = pa.static_points_analysis_2d(points,hide_figure=False)#
+        #p2d.get_first_minima_ridge_length_distribution(png_filename='ridge_hist.png')
+        p2d.get_first_minima_bond_length_distribution(png_filename='bond_hist.png')
+        #draw bonds selected
+        
+        bpm = pa.bond_plot_module(fig,ax)#
+        bpm.restrict_axis_property_relative('(sigma)')
+        #list_bond_index = bpm.get_bonds_with_conditional_ridge_length(p2d.voronoi.ridge_length,p2d.voronoi.ridge_points,p2d.ridge_first_minima_left)
+        list_bond_index = bpm.get_bonds_with_conditional_bond_length(p2d.bond_length,[2,p2d.bond_first_minima_left])
+        
+        bpm.draw_points_with_given_bonds(points,list_bond_index,bond_color='k')#p2d.bond_length[:,:2].astype(int)
+        #import matplotlib
+        #matplotlib.use(backend="QtAgg")#Backend agg is non-interactive backend. Turning interactive mode off. 'QtAgg'
+        #p2d.linked_triangles
+        count_polygon_relative = p2d.get_conditional_bonds_and_simplices_bond_length()
+        print(count_polygon_relative)
+        #p2d.list_simplex_cluster
+        
+        fig,ax = p2d.draw_polygon_patch_oop(fig,ax,self.color4,polygon_n=4)#'tan','limegreen','c',not good
+        fig,ax = p2d.draw_polygon_patch_oop(fig,ax,self.color6,polygon_n=6)#'darkorange'
+        fig,ax = p2d.draw_polygon_patch_oop(fig,ax,self.color12,polygon_n=12)#'royalblue'
+        plt.show()
+    
+    def workflow_type4(self):
+        import symmetry_transformation_v4_3.system_parameters_generators as pg
+        particles = archimedean_tilings()
+        particles.generate_type4(a=3)
+        n_size = [18,10]
+        particle_points = particles.generate_lattices(n_size)
+
+        traps = archimedean_tilings()
+        traps.generate_type3(a=3)
+        isg = pg.initial_state_generator()
+        prefix_gsd = "/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/"
+        output_gsd_filename = prefix_gsd+'particle_type4_and_trap_square.gsd'
+        isg.set_new_gsd_file_2types(particles,n_size,particle_points,traps,output_gsd_filename)
+        #isg.set_new_gsd_file(at,n_size,points)#get_gsd_sample()
+        isg = pg.initial_state_generator()
+        isg.read_gsd_file(output_gsd_filename)
+        points = isg.particles.position
+        
+        
+        ids = np.array(isg.snap.particles.typeid)
+        list_p = ids == 0
+        list_t = ids == 1
+
+        fig,ax = plt.subplots()
+        """isg.snap.particles.types
+        
+        ax.scatter(points[list_p,0],points[list_p,1],color='k')#
+        #ax.scatter(points[list_t,0],points[list_t,1],color='r')#
+        #ax.scatter(dula[:,0],dula[:,1],facecolors='none',edgecolors='k')#,marker = 'x'
+        ax.set_xlabel('x label')  # Add an x-label to the axes.
+        ax.set_ylabel('y label')  # Add a y-label to the axes.
+        ax.set_title("Simple Plot")  # Add a title to the axes
+        ax.set_aspect('equal','box')
+        #plt.show()"""
+
+        #spd = show_polygon_dye()
+        #spd.plot_polygon_bond_xylim()
+        points = points[list_p,:2]
+        perturbation = np.random.random(points.shape)*0.01
+        points = points + perturbation #precisely equalled bond will let delaunay disfunction!
+        
+        p2d = pa.static_points_analysis_2d(points,hide_figure=False)#
+        #p2d.get_first_minima_ridge_length_distribution(png_filename='ridge_hist.png')
+        p2d.get_first_minima_bond_length_distribution(png_filename='bond_hist.png')
+        #draw bonds selected
+        
+        bpm = pa.bond_plot_module(fig,ax)#
+        bpm.restrict_axis_property_relative('(sigma)')
+        #list_bond_index = bpm.get_bonds_with_conditional_ridge_length(p2d.voronoi.ridge_length,p2d.voronoi.ridge_points,p2d.ridge_first_minima_left)
+        list_bond_index = bpm.get_bonds_with_conditional_bond_length(p2d.bond_length,[2,p2d.bond_first_minima_left])
+        
+        bpm.draw_points_with_given_bonds(points,list_bond_index,bond_color='k')#p2d.bond_length[:,:2].astype(int)
+        #import matplotlib
+        #matplotlib.use(backend="QtAgg")#Backend agg is non-interactive backend. Turning interactive mode off. 'QtAgg'
+        #p2d.linked_triangles
+        count_polygon_relative = p2d.get_conditional_bonds_and_simplices_bond_length()
+        print(count_polygon_relative)
+        #p2d.list_simplex_cluster
+        
+        fig,ax = p2d.draw_polygon_patch_oop(fig,ax,self.color3,polygon_n=3)#'limegreen','c',not good
+        fig,ax = p2d.draw_polygon_patch_oop(fig,ax,self.color12,polygon_n=12)#'royalblue'
+        plt.show()
 
 class see_cairo_order_parameter:
     def __init__(self) -> None:
@@ -2310,7 +3780,7 @@ class see_cairo_order_parameter:
         prefix = '/home/tplab/Downloads/record_results/cairo/depin_from_Cairo/Pcairo_egct2lcra/'
         filename = '2573-2582klcn346'#'2563-2572klcn346'#
         import opertateOnMysql as osql
-        osql.loadDataToMysql(prefix+filename,'depin_from_cairo_egct2lcra')
+        osql.loadTxtDataToMysql(prefix+filename,'depin_from_cairo_egct2lcra')
         #data = np.loadtxt(prefix+filename)
 
 class show_cn_k:
@@ -2331,13 +3801,13 @@ class show_cn_k:
         #print(snap.particles.position[137])
         a_frame.get_coordination_number_conditional(lattice_constant=lattice_constant)#cut edge to remove CN012
         ccn = a_frame.count_coordination_ratio#[time_steps,psi3,psi6]
-        ccn = numpy.transpose(ccn)
+        ccn = np.transpose(ccn)
         if not "record_cn" in locals():#check if the variable exists
             #load CN_k s
-            record_cn = numpy.zeros((gsd_data.num_of_frames,numpy.shape(ccn)[1]+1))
+            record_cn = np.zeros((gsd_data.num_of_frames,np.shape(ccn)[1]+1))
             record_cn[:,0] = time_steps#range(10)##gsd frame is different from log frame for period set 100 vs 2e3
-        #print(numpy.shape(ccn)[1])
-        record_cn[i,1:numpy.shape(ccn)[1]+1] = ccn
+        #print(np.shape(ccn)[1])
+        record_cn[i,1:np.shape(ccn)[1]+1] = ccn
     
     def show_cn_k(self,frame_cut,record_cn,prefix,str_index):
         plt.figure()
@@ -2372,7 +3842,7 @@ class show_cn_k:
         #plt.show()
         plt.savefig(png_filename)
         record_filename = prefix +'T_VS_CN_k_cut'+'index'+str_index+'.txt'
-        numpy.savetxt(record_filename,record_cn)
+        np.savetxt(record_filename,record_cn)
         plt.close()
 
     def reorganize_cn_k_txt_and_show(self):
@@ -2463,7 +3933,7 @@ class show_cn_k:
         #plt.show()
         plt.savefig(png_filename)
         record_filename = prefix +'T_VS_CN_k_cut'+'index'+str_index+'.txt'
-        numpy.savetxt(record_filename,record_cn)
+        np.savetxt(record_filename,record_cn)
         plt.close()
 
 class compare_diagram:
@@ -3281,7 +4751,7 @@ class workflow_temp:
 
     def extend_traps_to_9boxes(self):
         import points_analysis_2D as pa
-        import numpy as np
+        
         import proceed_file as pf
         import workflow_analysis as wa
         import matplotlib.pyplot as plt
@@ -3362,6 +4832,13 @@ class controller_get_honey_cn3_vs_u_sub:
         import data_analysis_cycle as dac
         #/home/tplab/Downloads/index196
         dac.saveIndexkTCN4CN3depin(196,205,1,10,0.816,0)
+    
+    def get_cn3_vs_u_sub_pin_gauss(self):
+        #simu_index   HarmonicK lcr
+        #5773-5812    0-90-1000    0.82
+        import data_analysis_cycle as dac
+        #/home/tplab/Downloads/
+        dac.saveIndexkTCN4CN3depin(196,205,1,10,0.816,0)
 
     def txt_to_data_high(self,filename = '/home/remote/Downloads/4656-4665klt43'):
         import data_analysis_cycle as dac
@@ -3410,7 +4887,7 @@ class controller_get_honey_part_cn3_vs_u_sub:
 
     def get_cn3_vs_u_sub(self):
         #import points_analysis_2D as pa
-        import numpy as np
+        
         import proceed_file as pf
         import workflow_analysis as wa
         import pandas as pd

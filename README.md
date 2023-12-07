@@ -24,6 +24,15 @@
 	and others.
 
 ## log:
+- 20231204 add trap_fill_box in system_parameters_generators.initial_state_generator.set_new_gsd_file_2types
+			add get_gsds_from_mysql.get_record_from_csv
+- 20231130 add get_conditional_bonds_and_simplices_bond_length in points_analysis_2D.static_points_analysis_2d.
+			add workflow_analysis.archimedean_tilings_polygon_dye
+			edit workflow_analysis.archimedean_tilings
+- 20231127 add  loadCsvDataToMysql, loadTxtDataToMysql in opertateOnMysql
+- 20231124 add archimedean_tilings_polygon_dye in workflow_analysis.
+			add generate_simu_index_csv in symmetry_transformation_v4_3.simulation_controller
+			add generate_initial_state_hexagonal_particle_honeycomb_trap_scan_csv in symmetry_transformation_v4_3.simulation_controller
 - 20231123 add cut_edge_of_positions_manual in points_analysis_2D.static_points_analysis_2d
 - 20231122 edit simulation_controller.simulation_controller_traps.generate_initial_state_hexagonal_particle_honeycomb_trap
 			add simulation_controller.simulation_controller_traps.generate_initial_state_hexagonal_particle_honeycomb_trap_scan_k

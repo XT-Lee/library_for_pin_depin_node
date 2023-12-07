@@ -57,7 +57,7 @@ class simulation_core_traps:
         #self.gsd_data = pf.proceed_gsd_file(filename_gsd_seed=self.input_file_gsd,account=account)
         self.init_snap = self.trajectory.read_frame(0)
     
-    def operate_simulation(self):
+    def operate_simulation_langevin(self):
         #initialize
         if self.mode == 'cpu':
             device=hoomd.device.CPU()
@@ -117,10 +117,11 @@ class simulation_core_traps:
         mobile_particles= hoomd.filter.Tags(tags)#tag n is the n-th particle, must be a list or iterator 
         #stationary_particles = hoomd.filter.Tags([1])
         #mobile_particles = hoomd.filter.SetDifference(hoomd.filter.All(),stationary_particles)
-        langevin = hoomd.md.methods.Langevin(filter=mobile_particles, kT=self.kT)#hoomd.filter.All()
+        langevin = hoomd.md.methods.Langevin(filter=mobile_particles, kT=self.kT,)#hoomd.filter.All()
         integrator = hoomd.md.Integrator(dt=self.dt,
                                         methods=[langevin],
                                         forces=[gauss,yukawa])
+
         sim.operations.integrator = integrator
 
         
@@ -131,3 +132,77 @@ class simulation_core_traps:
         sim.operations.writers.append(gsd_writer)
         sim.run(self.total_steps)
 
+    def operate_simulation_brownian(self):
+        #initialize
+        if self.mode == 'cpu':
+            device=hoomd.device.CPU()
+        elif self.mode == 'gpu':
+            device=hoomd.device.GPU()
+        sim = hoomd.Simulation(device=device, seed=self.seed)
+        #sim.state
+        self.__set_init_state_parameters()
+        sim.create_state_from_snapshot(self.init_snap)
+        #sim.create_state_from_gsd(filename='molecular.gsd')
+
+        #set interaction
+        # Apply the harmonic traps on the particles.
+        gauss_cell = hoomd.md.nlist.Cell(1)#default_r_cut=15.0 ? 'particle','trap'
+        gauss = hoomd.md.pair.Gaussian(nlist=gauss_cell,default_r_cut=self.gauss_r_cut)
+        gauss.params[('particle','trap')] = dict(epsilon=self.gauss_epsilon,sigma=self.gauss_sigma)
+        gauss.params[('particle','particle')] = dict(epsilon=0.0,sigma=1.0)
+        gauss.params[('trap','trap')] = dict(epsilon=0.0,sigma=1.0)
+        gauss.r_cut[('particle','trap')] = 1.0
+        gauss.r_cut[('particle','particle')] = 0.0
+        gauss.r_cut[('trap','trap')] = 0.0
+        
+        # Apply the yukawa interaction on the particles.
+        yukawa_cell = hoomd.md.nlist.Cell(1)#('trap',)
+        yukawa = hoomd.md.pair.Yukawa(nlist=yukawa_cell,default_r_cut=self.yukawa_r_cut)
+        yukawa.params[('particle','particle')] = dict(epsilon=self.yukawa_epsilon,kappa=self.yukawa_kappa)
+        yukawa.params[('particle','trap')] = dict(epsilon=0.0,kappa=0.0)
+        yukawa.params[('trap','trap')] = dict(epsilon=0.0,kappa=0.0)
+        
+        R"""
+        https://hoomd-blue.readthedocs.io/en/v4.3.0/howto/prevent-particles-from-moving.html#how-to-prevent-particles-from-moving
+        MD simulations
+        Omit the stationary particles from the filter (or filters) 
+        that you provide to your integration method (or methods) 
+        to prevent them from moving in MD simulations. For example:
+
+        simulation = hoomd.util.make_example_simulation()
+
+        # Select mobile particles with a filter.
+        stationary_particles = hoomd.filter.Tags([0])
+        mobile_particles = hoomd.filter.SetDifference(hoomd.filter.All(),
+                                                    stationary_particles)
+
+        # Integrate the equations of motion of the mobile particles.
+        langevin = hoomd.md.methods.Langevin(filter=mobile_particles, kT=1.5)
+        simulation.operations.integrator = hoomd.md.Integrator(dt=0.001,
+                                                            methods=[langevin])
+
+        simulation.run(100)
+        """
+        #find the mobile particles
+        #list_particles = range(self.snap.particles.N)
+        list_ids = self.init_snap.particles.typeid#range(21)#np.linspace(0,20,21,dtype=int)
+        list_Particles_index = list_ids == 0
+        tags = list(np.where(list_Particles_index))
+        #set system
+        mobile_particles= hoomd.filter.Tags(tags)#tag n is the n-th particle, must be a list or iterator 
+        #stationary_particles = hoomd.filter.Tags([1])
+        #mobile_particles = hoomd.filter.SetDifference(hoomd.filter.All(),stationary_particles)
+        brownian = hoomd.md.methods.Brownian(filter=mobile_particles,kT=self.kT)
+        integrator = hoomd.md.Integrator(dt=self.dt,
+                                        methods=[brownian],
+                                        forces=[gauss,yukawa])
+
+        sim.operations.integrator = integrator
+
+        
+        #https://gsd.readthedocs.io/en/v3.2.0/python-module-gsd.hoomd.html#gsd.hoomd.open
+        gsd_writer = hoomd.write.GSD(filename=self.output_file_gsd,
+                                    trigger=hoomd.trigger.Periodic(self.snap_period),
+                                    mode='xb')#deprecated: 'xb'
+        sim.operations.writers.append(gsd_writer)
+        sim.run(self.total_steps)

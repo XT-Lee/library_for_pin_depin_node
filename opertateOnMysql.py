@@ -14,6 +14,11 @@ def introduction():
 def createTableInMysql(new_table_name,param_name_data_type=None,old_table_name=None):
     R"""
     DATA_TYPE:    (<param_name1> <data_type1>,<param_name2> <data_type2>) 
+
+    example:
+        osql.createTableInMysql('pin_hex_to_honeycomb_klt_2m_gauss',\
+        'simu_index integer unsigned not null,seed integer unsigned not null,lcr float, trap_gauss_epsilon float, temperature float')
+
     """
     mysql_conn = connectToMysql()
 
@@ -33,10 +38,10 @@ def createTableInMysql(new_table_name,param_name_data_type=None,old_table_name=N
 
     mysql_conn.close()
 
-def loadDataToMysql(path_to_file_name,table_name):
+def loadTxtDataToMysql(path_to_file_name,table_name):
     R"""
     Examples:
-        operateOnMysql.loadDataToMysql(
+        operateOnMysql.loadTxtDataToMysql(
         path_to_file_name='/home/tplab/Downloads/91-192kl',
         table_name='honeycomb')
     """
@@ -66,7 +71,45 @@ def loadDataToMysql(path_to_file_name,table_name):
 
     mysql_conn.close()
 
-def getDataFromMysql(path_to_save_file=None,table_name='',search_condition='',select_content='*'):
+def loadCsvDataToMysql(path_to_file_name,table_name):
+    R"""
+    Examples:
+        operateOnMysql.loadCsvDataToMysql(
+        path_to_file_name='/home/tplab/Downloads/91-192kl',
+        table_name='honeycomb')
+    """
+    import pandas as pd
+    mysql_conn = connectToMysql()
+    data=pd.read_csv(path_to_file_name)
+    
+    shape_data=np.shape(data)
+    col = data.columns
+    len_col = len(col)
+    #data[col[]]
+    
+
+    for row in range(shape_data[0]):
+        data_to_string='('
+        #print(data[row.astype(int)-1])
+        for column in range(shape_data[1]-1):
+            data_to_string=data_to_string+str(data.iloc[row,column+1])
+            if column < shape_data[1]-2:
+                data_to_string=data_to_string+','
+        
+        data_to_string=data_to_string+');'
+        #print(data_to_string)
+        sql = 'insert into '+table_name+' values'+data_to_string
+        try:
+            with mysql_conn.cursor() as cursor:
+                cursor.execute(sql)
+            mysql_conn.commit()
+        except Exception as e:
+            print(e)
+            mysql_conn.rollback()
+
+    mysql_conn.close()
+
+def getDataFromMysql(table_name='',search_condition='',select_content='*'):#path_to_save_file=None,
     R"""
     Examples:
         data = operateOnMysql.getDataFromMysql(

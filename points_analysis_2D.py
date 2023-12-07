@@ -402,7 +402,7 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
         ml = polygon_analyzer_ml(self.voronoi,self.ridge_first_minima_left)
         ml.scan_conditional_bonds_and_simplices_ml(mode,png_filename)
 
-    def get_conditional_bonds_and_simplices(self,long_bond_cutoff=6):
+    def get_conditional_bonds_and_simplices(self,ridge_first_minima_left=None):#long_bond_cutoff=6,
         R"""
         return:
             vertex_bonds_index: n rows of [start_point_index, end_point_index]
@@ -412,7 +412,9 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
         method:
             vertices cluster method: find the shortest ridges and link the related vertices.
         """
-        list_short_ridge_bool = self.voronoi.ridge_length[:] <= self.ridge_first_minima_left
+        if ridge_first_minima_left is None:
+            ridge_first_minima_left = self.ridge_first_minima_left
+        list_short_ridge_bool = self.voronoi.ridge_length[:] <= ridge_first_minima_left
         list_short_bonds = self.voronoi.ridge_points[np.logical_not(list_short_ridge_bool)]#[start_point_index, end_point_index]
         """
         select_short_bonds_bool = self.bond_length[list_short_bonds[:,0],2] < long_bond_cutoff
@@ -462,7 +464,7 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
             count_polygon[n_complex_i,0]=n_complex_i+2#[x]frame=1421,polygon=10;1609,12
             count_polygon[n_complex_i,1]+=1
         count_polygon[1,0]=3
-        count_polygon[1,1]=np.shape(list_short_bonds)[0]
+        count_polygon[1,1]=np.shape(list_short_bonds)[0]#[x]may be wrong, n_bond != n_simplex
         #print("polygon_n, count\n",count_polygon)
         #
         count_polygon_relative = np.array(count_polygon)
@@ -480,6 +482,86 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
        
         self.vertex_bonds_index = list_short_bonds#short bonds index offered by ridge comapre method 
         self.list_simplex_cluster = record_vertices_cluster
+        return count_polygon_relative
+    
+    def get_conditional_bonds_and_simplices_bond_length(self,bond_first_minima_left=None):
+        R"""
+        return:
+            self.list_simplex_cluster: n_vertices rows of [simplex_id, cluster_id],
+                where delaunay.simplices[simplex_id], 
+                and cluster_id is the cluster the simplex belonging to.
+                if cluster_id = -1, the simplex is on boundary and should not be drawn.
+            count_polygon_relative: [polygon_n,share of total n of simplices]
+        method:
+            vertices cluster method: find the shortest ridges and link the related vertices.
+        """
+        if bond_first_minima_left is None:
+            bond_first_minima_left = self.bond_first_minima_left
+        list_long_bond_bool = self.bond_length[:,2] >= bond_first_minima_left
+        list_short_bonds = self.voronoi.ridge_points[np.logical_not(list_long_bond_bool)]#[start_point_index, end_point_index]
+        #print(self.delaunay.simplices)#(n_simplex,3)[index_vertex1,index_vertex2,index_vertex3]
+        sz = self.delaunay.simplices.shape
+        list_simplex_cluster = np.zeros((sz[0],2),dtype=int)
+        list_simplex_cluster[:,0] = range(sz[0])
+        list_simplex_cluster[:,1] = range(sz[0])#initialize each simplex as independent cluster
+        list_simplices_points = np.array(self.delaunay.simplices,dtype=int)
+        n_bond = len(list_long_bond_bool)
+        for i in range(n_bond):
+            if list_long_bond_bool[i]:
+                index_p1 = int(self.bond_length[i,0])
+                index_p2 = int(self.bond_length[i,1])
+                loc1 = np.where(list_simplices_points == index_p1)#list_simplices with p1
+                loc2 = np.where(list_simplices_points == index_p2)#list_simplices with p2
+                #print(i,loc1[0],loc2[0])
+                #get the simplices with p1 and p2
+                list_simplices_with_p = np.concatenate((loc1[0],loc2[0]))
+                list_simplices_with_p = np.sort(list_simplices_with_p)
+                list_simplices_with_p_unique = np.unique(list_simplices_with_p)
+                count_cobond = np.zeros((len(list_simplices_with_p_unique),),dtype=int)
+                for j in range(len(list_simplices_with_p_unique)):
+                    loc_repeat = np.where(list_simplices_with_p==list_simplices_with_p_unique[j]) #
+                    n_loc_with_p = len(loc_repeat[0])
+                    if n_loc_with_p == 2:
+                        count_cobond[j] = n_loc_with_p
+                        #print(list_simplices_with_p_unique[j],count_cobond[j])#index_simplices, n_repeat
+                        #count_cobond = count_cobond + 1
+                list_simplices_cobond = np.where(count_cobond==2)
+                n_simplices_cobond = len(list_simplices_cobond[0])
+                """if n_simplices_cobond==1:
+                    #ban a simplex by set whose cluster_id as -1
+                    list_boundary_simplex = list_simplices_with_p_unique[list_simplices_cobond]
+                    list_simplex_cluster[list_boundary_simplex,1] = -1"""
+                if n_simplices_cobond==2:
+                    #merge linked simplices into a cluster whose id is smaller.
+                    list_boundary_simplex = list_simplices_with_p_unique[list_simplices_cobond]
+                    cluster_id_min = min(list_simplex_cluster[list_boundary_simplex,1])
+                    cluster_id_max = max(list_simplex_cluster[list_boundary_simplex,1])
+                    list_simplex_cluster[list_simplex_cluster[:,1] == cluster_id_max,1] = cluster_id_min
+
+                #print(list_simplices_with_p)
+        self.list_simplex_cluster = list_simplex_cluster
+
+        #get the distribution of cluster
+        list_cluster_id = np.unique(list_simplex_cluster[:,1])
+        count_polygon = np.zeros((99,2))#(10,2)
+        for cluster_id in list_cluster_id:
+            if not cluster_id == -1:
+                list_simplex_ids_in_cluster_i = list_simplex_cluster[list_simplex_cluster[:,1]==cluster_id,0]
+                n_simplex_in_cluster_i = np.shape(list_simplex_ids_in_cluster_i)[0]
+                cluster_i_is_polygon_n=n_simplex_in_cluster_i+2
+                count_polygon[n_simplex_in_cluster_i,0]=cluster_i_is_polygon_n#[x]frame=1421,polygon=10;1609,12
+                count_polygon[n_simplex_in_cluster_i,1]+=n_simplex_in_cluster_i
+        """p_valids = np.array([self.points[index_p1], self.points[index_p2]])
+        result = self.delaunay.find_simplex(p_valids)
+        if result.shape[0] == 1:
+            #not show the simplex
+            pass
+        elif result.shape[0] > 1:
+            #merge two clusters
+            pass"""
+        count_polygon_relative = np.array(count_polygon)
+        count_polygon_relative[:,1] = count_polygon[:,1]/sum(count_polygon[:,1]) \
+                                        *100#see one simplex as one weight
         return count_polygon_relative
 
     def draw_bonds_simplex_conditional_oop(self,png_filename=None,xy_stable=None,nb_change=None,x_unit='(um)',
@@ -514,7 +596,7 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
         """
         pass
 
-    def draw_polygon_patch_oop(self,fig=None,ax=None,polygon_color='r'):
+    def draw_polygon_patch_oop(self,fig=None,ax=None,polygon_color='r',polygon_n=6):
         R"""
         parameters:
             vertex_bonds_index: n rows of [start_point_index, end_point_index]
@@ -536,25 +618,29 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
         list_cluster_id = np.unique(vertices_cluster[:,1])
         #patches=[]
         for cluster_id in list_cluster_id:
-            list_simplex_ids_in_cluster_i = vertices_cluster[vertices_cluster[:,1]==cluster_id,0]
-            n_simplex_in_cluster_i = np.shape(list_simplex_ids_in_cluster_i)[0]
-            cluster_i_is_polygon_n=n_simplex_in_cluster_i+2
-            if cluster_i_is_polygon_n==6:
-                #patches=[]
-                for simplex_id in list_simplex_ids_in_cluster_i.astype(int):
-                    list_points_ids_in_simplex = self.delaunay.simplices[simplex_id]
-                    list_points_xy = points[list_points_ids_in_simplex]
-                    """
-                    polygon = Polygon(list_points_xy, closed=True)
-                    polygon.set(color='r')
-                    patches.append(polygon)
-                    p = PatchCollection(patches)#, alpha=0.4
-                    ax.add_collection(p)
-                    """
-                    
-                    ax.fill(list_points_xy[:,0],list_points_xy[:,1],facecolor=polygon_color,edgecolor=polygon_color)
-                #plt.show()
-                    
+            if cluster_id==-1:
+                pass
+            else:
+                list_simplex_ids_in_cluster_i = vertices_cluster[vertices_cluster[:,1]==cluster_id,0]
+                n_simplex_in_cluster_i = np.shape(list_simplex_ids_in_cluster_i)[0]
+                cluster_i_is_polygon_n=n_simplex_in_cluster_i+2
+                #print(cluster_i_is_polygon_n)
+                if cluster_i_is_polygon_n==polygon_n:
+                    #patches=[]
+                    for simplex_id in list_simplex_ids_in_cluster_i.astype(int):
+                        list_points_ids_in_simplex = self.delaunay.simplices[simplex_id]
+                        list_points_xy = points[list_points_ids_in_simplex]
+                        """
+                        polygon = Polygon(list_points_xy, closed=True)
+                        polygon.set(color='r')
+                        patches.append(polygon)
+                        p = PatchCollection(patches)#, alpha=0.4
+                        ax.add_collection(p)
+                        """
+                        
+                        ax.fill(list_points_xy[:,0],list_points_xy[:,1],facecolor=polygon_color,edgecolor=polygon_color)
+                    #plt.show()
+                        
         """
         #rearrange points anti-clockwise
         """
@@ -970,15 +1056,15 @@ index 10 is out of bounds for axis 0 with size 10
     def cut_edge_of_positions_by_xylimit(self,xmin,xmax,ymin,ymax):
         R"""
         Variables:
-            effective_lattice_constant： the distance between a particle and its neighbor
+            xmin,xmax,ymin,ymax: seen as vertices to form a box. select the points inside the box.
             edge_cut_positions_list: list the rows of particles' positions at given snapshot.
         """
         
         #That directly using 'and' has been banned, so 'logical_and' is necessary
-        list_xmin = self.points[:,0] > xmin
-        list_xmax = self.points[:,0] < xmax
-        list_ymin = self.points[:,1] > ymin
-        list_ymax = self.points[:,1] < ymax
+        list_xmin = self.points[:,0] >= xmin
+        list_xmax = self.points[:,0] <= xmax
+        list_ymin = self.points[:,1] >= ymin
+        list_ymax = self.points[:,1] <= ymax
         list_x = np.logical_and(list_xmin,list_xmax)
         list_y = np.logical_and(list_ymin,list_ymax)
         list_xy = np.logical_and(list_x,list_y)
@@ -1003,10 +1089,10 @@ index 10 is out of bounds for axis 0 with size 10
         ymin = -box[1]/2.0
         
         #That directly using 'and' has been banned, so 'logical_and' is necessary
-        list_xmin = points[:,0] > xmin
-        list_xmax = points[:,0] < xmax
-        list_ymin = points[:,1] > ymin
-        list_ymax = points[:,1] < ymax
+        list_xmin = points[:,0] >= xmin
+        list_xmax = points[:,0] <= xmax
+        list_ymin = points[:,1] >= ymin
+        list_ymax = points[:,1] <= ymax
         list_x = np.logical_and(list_xmin,list_xmax)
         list_y = np.logical_and(list_ymin,list_ymax)
         list_xy = np.logical_and(list_x,list_y)
@@ -3430,7 +3516,7 @@ class bond_plot_module:
             self.fig = fig
             self.ax = ax
         
-    def restrict_axis_property_relative(self,xy,x_unit='(um)'):
+    def restrict_axis_property_relative(self,x_unit='(um)'):#,xy
         R"""
         Parameters:
             txyz: all the particle positions, no one removed.
@@ -3520,7 +3606,7 @@ class bond_plot_module:
         if not particle_size is None:
             self.ax.scatter(xy[:,0],xy[:,1],color=particle_color,zorder=1,s=particle_size)
         else:
-            self.ax.scatter(xy[:,0],xy[:,1],color=particle_color,zorder=1)#,s=particle_size
+            self.ax.scatter(xy[:,0],xy[:,1],color=particle_color,zorder=2)#,s=particle_size
 
     def get_bonds_with_conditional_ridge_length(self,ridge_length,ridge_points,ridge_first_minima_left):       
         R"""
@@ -3541,6 +3627,17 @@ class bond_plot_module:
         list_longer = bond_length[:,2] > bond_length_limmit[0]
         list_shorter = bond_length[:,2] < bond_length_limmit[1]
         list_bond_bool = np.logical_and(list_longer,list_shorter)
+        list_bond_index = bond_length[list_bond_bool,0:2].astype(int)
+        return list_bond_index
+    
+    def get_bonds_with_longer_bond_length(self,bond_length=None,bond_length_limmit=2.0):
+        R"""
+        Introduction:
+            In Delauny triangulation, remove long bonds and 
+            reserve short bonds to show polygons formed by particles. 
+        """
+        list_longer = bond_length[:,2] > bond_length_limmit
+        list_bond_bool = list_longer
         list_bond_index = bond_length[list_bond_bool,0:2].astype(int)
         return list_bond_index
 
@@ -3572,7 +3669,7 @@ class bond_plot_module:
         """
         self.ax.scatter(xy_stable[nb_change,0],xy_stable[nb_change,1],color='orange',zorder=2)
             
-    def plot_traps(self,trap_filename="/home/tplab/hoomd-examples_0/testhoneycomb3-8-12-part1",LinearCompressionRatio=0.79,mode='map',trap_color='r',trap_size=1):
+    def plot_traps(self,traps=None,trap_filename=None,LinearCompressionRatio=0.79,mode='map',trap_color='r',trap_size=1):
         R"""
         trap_filename:
                 '/home/remote/hoomd-examples_0/testhoneycomb3-8-12'
@@ -3580,9 +3677,14 @@ class bond_plot_module:
                 '/home/remote/hoomd-examples_0/testkagome3-11-6'
                 '/home/remote/hoomd-examples_0/testkagome_part3-11-6'
         mode: 'array'(scatter) or 'map'(pcolormesh)
+        traps: n rows of [x,y] recording the positions of traps.
         """
-        traps=np.loadtxt(trap_filename)
-        traps=np.multiply(traps,LinearCompressionRatio)
+        if trap_filename is None:
+            if traps is None:
+                print('Error: No traps info input!')
+        else:
+            traps=np.loadtxt(trap_filename)
+            traps=np.multiply(traps,LinearCompressionRatio)
         if mode=='array':
             #x_scale = 200
             self.ax.scatter(traps[:,0], traps[:,1],c=trap_color,zorder=3,s=trap_size)#,marker = 'x',s=x_scale

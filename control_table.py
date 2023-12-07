@@ -5,7 +5,7 @@ tm1=time.localtime(time.time())
 
 #draw a diagram of CN3 4 6
 #draw a series of plot about CN3 4 6 vs t
-import workflow_analysis as wa
+"""import workflow_analysis as wa
 import matplotlib.pyplot as plt
 at = wa.archimedean_tilings()
 at.generate_type11()
@@ -18,7 +18,7 @@ ax.set_xlabel('x label')  # Add an x-label to the axes.
 ax.set_ylabel('y label')  # Add a y-label to the axes.
 ax.set_title("Simple Plot")  # Add a title to the axes
 ax.set_aspect('equal','box')
-plt.show()
+plt.show()"""
 """getDataAndDiagram.get_dual_lattice()
 dl = wa.show_dual_lattice()
 dl.go()"""
@@ -47,7 +47,7 @@ for i in range(10):
                                             xy_stable=xy,x_unit=self.x_unit,
                                     LinearCompressionRatio=trap_lcr, trap_filename=trap_filename)"""
 
-print('s')
+#print('s')
 """
 import tensorflow as tf
 import jax
@@ -97,12 +97,29 @@ for seed in list_seed:
 daw = dac.data_analysis_workflow()
 daw.get_info_from_mysql_bond()
 """
+import workflow_analysis as wa
+sdl = wa.show_dual_lattice()
+#sdl.show_dual_type11_part()
 
+sdl.show_dual_type10_part()
+sdl.show_dual_type9_part()
+sdl.show_dual_type8_part()
+sdl.show_dual_type7_part()
+sdl.show_dual_type6_part()
+sdl.show_dual_type5_part()
+sdl.show_dual_type4_part()
+
+
+"""lsg = lca.analyze_a_series_of_gsd_file()
+list_data = lsg.get_list_simu_from_sql_by_lcr()
+lsg.get_gsd_from_list_simu(list_data)
+filename_csv = '/media/remote/32E2D4CCE2D49607/file_lxt/record_results_v430/honeycomb_pin/pin_hex_to_honeycomb_klt_2m_gauss_5813_5932.csv'
 import workflow_analysis as wa
 #cn3 = wa.controller_get_honey_part_cn3_vs_u_sub()
 #cn3.control_tb()
-ccn3 = wa.controller_get_honey_part_cn3_vs_u_sub()
-ccn3.control_tb()
+ccn3 = wa.controller_get_honey_cn3_vs_u_sub()
+ccn3.control_tb()"""
+
 """import matplotlib.pyplot as plt
 plt.figure()
 plt.scatter(extended_positions[:,0],extended_positions[:,1])

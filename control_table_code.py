@@ -2,37 +2,48 @@ import time
 tm1=time.localtime(time.time())
 
 
-
-"""import workflow_analysis as wa
-import matplotlib.pyplot as plt
+import symmetry_transformation_v4_3.list_code_simulation as lcs
+lcs.pin_hex_to_hp_fill_brownian_workflow()
+"""_series_of_gsd_file()
+cn3s = sgf.get_cn3s_from_csv_honeycomb_part()
+print(cn3s)"""
+"""import matplotlib.pyplot as plt
 import symmetry_transformation_v4_3.system_parameters_generators as pg
 import numpy as np"""
-import symmetry_transformation_v4_3.list_code_analysis as lca
+"""import symmetry_transformation_v4_3.list_code_analysis as lca
 agf = lca.analyze_a_gsd_file()
-agf.analyze_gsd_files_and_record_as_csv()
+agf.analyze_gsd_files_and_record_as_csv()"""
+"""import symmetry_transformation_v4_3.list_code_analysis as lca
+agf = lca.analyze_a_gsd_file()
+agf.get_bond_plot_from_a_gsd()"""
+#dac.save_from_gsd(5793,0,-1,bond_plot=True,)
+"""import workflow_analysis as wa
+atp = wa.archimedean_tilings_polygon_dye()
 
-"""import symmetry_transformation_v4_3.simulation_controller as sc
-#import symmetry_transformation_v4_3.simulation_core as sco
-sct = sc.simulation_controller_traps()
-sct.generate_initial_state_hexagonal_particle_honeycomb_trap_scan_lcr()"""
+atp.workflow_type8()"""
+
+#sct.generate_simu_index_csv()
+
 
 
 #sco.simulation_core_traps()
 
 #pg.initial_state_generator()
-"""
-particles = wa.archimedean_tilings()
-particles.generate_type8(a=3)
-n_size = [3,2]
+
+"""particles = wa.archimedean_tilings()
+particles.generate_type9(a=3)
+n_size = [10,10]
 particle_points = particles.generate_lattices(n_size)
 
 traps = wa.archimedean_tilings()
-traps.generate_type2(a=2)
+traps.generate_type3(a=3)
 isg = pg.initial_state_generator()
-isg.set_new_gsd_file_2types(particles,n_size,particle_points,traps)
+prefix = "/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/"
+output_gsd_filename = prefix+'particle_type9_and_trap_square.gsd'
+isg.set_new_gsd_file_2types(particles,n_size,particle_points,traps,output_gsd_filename)
 #isg.set_new_gsd_file(at,n_size,points)#get_gsd_sample()
 isg = pg.initial_state_generator()
-isg.read_gsd_file()
+isg.read_gsd_file(output_gsd_filename)
 points = isg.particles.position
 import numpy as np
 ids = np.array(isg.snap.particles.typeid)
@@ -42,14 +53,14 @@ list_t = ids == 1
 isg.snap.particles.types
 fig,ax = plt.subplots()
 ax.scatter(points[list_p,0],points[list_p,1],color='k')#
-ax.scatter(points[list_t,0],points[list_t,1],color='r')#
+#ax.scatter(points[list_t,0],points[list_t,1],color='r')#
 #ax.scatter(dula[:,0],dula[:,1],facecolors='none',edgecolors='k')#,marker = 'x'
 ax.set_xlabel('x label')  # Add an x-label to the axes.
 ax.set_ylabel('y label')  # Add a y-label to the axes.
 ax.set_title("Simple Plot")  # Add a title to the axes
 ax.set_aspect('equal','box')
-plt.show()
-"""
+plt.show()"""
+
 """import gsd.hoomd as gh
 gsd_prefix = '/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/'
 gsd_filename = gsd_prefix+'trajectory_auto9902_9.gsd'
