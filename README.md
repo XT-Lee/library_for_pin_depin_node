@@ -14,6 +14,8 @@
 - data analysis module:
 	points_analysis_2D,
 	particle_tracking.
+	particle_decorate
+	data_decorate
 - application scripts:
 	workflow_part,
 	workflow_analysis,
@@ -22,6 +24,89 @@
 	and others.
 
 ## log:
+- 20231204 add trap_fill_box in system_parameters_generators.initial_state_generator.set_new_gsd_file_2types
+			add get_gsds_from_mysql.get_record_from_csv
+- 20231130 add get_conditional_bonds_and_simplices_bond_length in points_analysis_2D.static_points_analysis_2d.
+			add workflow_analysis.archimedean_tilings_polygon_dye
+			edit workflow_analysis.archimedean_tilings
+- 20231127 add  loadCsvDataToMysql, loadTxtDataToMysql in opertateOnMysql
+- 20231124 add archimedean_tilings_polygon_dye in workflow_analysis.
+			add generate_simu_index_csv in symmetry_transformation_v4_3.simulation_controller
+			add generate_initial_state_hexagonal_particle_honeycomb_trap_scan_csv in symmetry_transformation_v4_3.simulation_controller
+- 20231123 add cut_edge_of_positions_manual in points_analysis_2D.static_points_analysis_2d
+- 20231122 edit simulation_controller.simulation_controller_traps.generate_initial_state_hexagonal_particle_honeycomb_trap
+			add simulation_controller.simulation_controller_traps.generate_initial_state_hexagonal_particle_honeycomb_trap_scan_k
+- 20231120 edit get_trajectory_data in proceed_file.proceed_gsd_file
+			edit test_simulation
+- 20231117 add generate_type10_part,generate_type10 in  workflow_analysis.archimedean_tilings.
+			add set_new_gsd_file_2types in system_parameters_generators.initial_state_generator.
+- 20231116 add archimedean_tilings in  workflow_analysis.
+			add generate_type11_part,generate_type11 in  workflow_analysis.archimedean_tilings.
+- 20231115 add show_bonds_transition_from_hex_to_kagome in workflow_analysis.
+			edit draw_points_with_given_bonds in points_analysis_2D.bond_plot_module for matplotlib update.
+- 20231113 add symmetry_transformation_v4_3 to adjust the new hoomd.
+- 20231107 add get_cn3_vs_u_sub_low_depin,txt_to_data_low_depin in workflow_analysis.controller_get_honey_cn3_vs_u_sub.
+			add in workflow_analysis.controller_get_honey_part_cn3_vs_u_sub
+			add saveIndexkTCN4CN3depin in data_analysis_cycle
+- 20231106 add saveIndexkTCN4CN3SeedsPsi6 in data_analysis_cycle
+- 20231027 add extend_traps_to_9boxes in workflow_analysis.workflow_temp
+- 20231026 edit cut_edge_of_positions_by_box in points_analysis_2D.static_points_analysis_2d
+- 20231025 add cut_edge_of_positions_by_box in points_analysis_2D.static_points_analysis_2d
+- 20231019 add search_and_get_trajectory, search_and_get_single_final_frame in workflow_analysis.workflow_file_to_result.
+			get_bond_trap_plot_param_compare
+- 20231017 edit compute_energy_particle_wise in points_analysis_2D.energy_computer. 
+- 20231016 decouple get_extended_positions_from_points and get_extended_positions in proceed_file.proceed_gsd_file
+			add compute_energy_particle_wise. in .
+- 20231014 add interact_mode in points_analysis_2D.energy_computer.compute_distance
+- 20231013 edit read_a_frame, adding dimension, in proceed_file.proceed_gsd_file.
+			add get_extended_positions in proceed_file.proceed_gsd_file
+- 20231012 edit the introduction of workflow_analysis.
+			add data_retriever.
+			add energy_computer to calculate the free energy of a system in in points_analysis_2d.
+- 20231010 add array_to_xyz in proceed_file.data_type_transformer.
+- 20230907 add plot_to_check_trans_ratio,plot_to_check_act_ratio,plot_to_check_act_share_ratio in workflow_analysis.show_pin_interstitial_order_parameter.
+			add get_pin_depin_event in points_analysis_2d.dynamical_facilitation_module
+- 20230906 add show_pin_interstitial_order_parameter in workflow_analysis
+			add data_decorate
+			add data_decorator in data_decorate
+			add coarse_grainize_data_log,coarse_grainize_and_average_data_log in data_decorate.data_decorator
+- 20230905 add get_interstitial_bool in points_analysis_2d.dynamical_facilitation_module
+- 20230826 edit example in workflow_part.workflow_simu_to_mysql_pin_hex_to_kagome_oop_klt_2m
+			add particle_decorate.py
+- 20230814 edit workflow_part.workflow_simu_to_mysql_pin_hex_to_kagome_oop_klt_2m
+			edit control_table
+- 20230807 edit get_cost_function_cluster_ml
+- 20230806 edit get_cost_function_cluster_ml
+- 20230804 add polygon_analyzer_ml to reorganize get_conditional_bonds_and_simplices_ml and get_cost_function_cluster_ml
+			add __init__() to relink vertices of rational ridge length in points_analysis_2d.static_points_analysis_2d.polygon_analyzer_ml
+			edit two modes in points_analysis_2d.static_points_analysis_2d.polygon_analyzer_ml.get_conditional_bonds_and_simplices_ml
+- 20230803 edit get_cost_function_cluster_ml
+- 20230731 edit record_vertices_cluster[vertex_id, cluster_id], not initialize cluster_id as -1 but range(n_vertices)
+			in points_analysis_2d.static_points_analysis_2d.get_conditional_bonds_and_simplices_ml.
+			caution: edges not cut ! [x] in points_analysis_2d.static_points_analysis_2d.get_cost_function_cluster_ml.
+			codes are finished but not checked [x]
+- 20230730 edit get_conditional_bonds_and_simplices_ml in points_analysis_2d.static_points_analysis_2d[on going]
+- 20230729 add account, filename_seed in data_analysis_cycle.saveIndexCN346PCairoSeed
+			add account in workflow_part.workflow_simu_to_mysql_pin_hex_to_cairo_egct_uniform
+			add get_conditional_bonds_and_simplices_ml in points_analysis_2d.static_points_analysis_2d
+			add get_cost_function_cluster_ml in points_analysis_2d.static_points_analysis_2d
+- 20230728 edit steps set option in pin_seed_oop.workflow_uniform.__init__().
+			edit pcairo1 in data_analysis_cycle.saveIndexCN346PCairoSeed
+			solve passing over month bug in computeTime.getTimeCost
+- 20230727 add example for get_trajectory_data in proceed_file.proceed_gsd_file
+			rename function __init_state_launch as __launch_init_state in pin_seed_oop.
+- 20230726 edit str_index=str(int(simu_index)) in data_analysis_cycle.save_from_gsd 
+			edit get_trajectory_data, add simu_index1 in proceed_file.proceed_gsd_file
+			edit scp = pa.show_cairo_order_parameter(), overplot 'r+' in data_analysis_cycle.save_from_gsd(if p_cairo)
+- 20230725 add introduction for compute_cairo_order_parameter in workflow_analysis.show_cairo_order_parameter.
+			add get_cairo_order_parameter in points_analysis_2d.static_points_analysis_2d. link to show_cairo_order_parameter.
+			move and edit show_cairo_order_parameter from workflow_analysis to  points_analysis_2d.
+- 20230724 add plot_bond_ridge_rank_idea 
+			in points_analysis_2d.static_points_analysis_2d, 
+			which is an idea of bond plot, 
+			bond_length_rank vs ridge_length_rank.
+			add get_bonds_with_machine_learning_idea
+			in points_analysis_2d.bond_plot_module [ongoing]
 - 20230713 edit trajectory_coarse_grain_general in points_analysis_2d.trajectory_module
 			add plot_bicolor_final_displacements_static in points_analysis_2d.trajectory_module
 			add bond_plot_for_ai, particle large, trap small[ongoing]

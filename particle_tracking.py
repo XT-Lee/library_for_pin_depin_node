@@ -219,7 +219,8 @@ class particle_track:
         else:
             lm = axis_limit
             self.image = f0[lm[0]:lm[1],lm[2]:lm[3],:]
-            
+        
+        return f1
 
     def folder_frames_particle_tracking(self,dir_path,Diameter=19, minmass=1000,feature_filename='feature.csv'):
         R"""

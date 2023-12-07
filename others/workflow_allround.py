@@ -26,7 +26,7 @@ def workdlow_simu_to_mysql(index1,lcr):
         simu_index | HarmonicK | LinearCompressionRatio | Psi3Global | Psi6Global
     """
     import opertateOnMysql as osql
-    osql.loadDataToMysql(path_to_file_name=filename_kl,table_name='depin_from_honeycomb')#"/home/tplab/Downloads/193-205kl"
+    osql.loadTxtDataToMysql(path_to_file_name=filename_kl,table_name='depin_from_honeycomb')#"/home/tplab/Downloads/193-205kl"
 
 
 

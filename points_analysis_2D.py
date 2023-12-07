@@ -1,6 +1,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.lines as lines
 from scipy.spatial import Voronoi
 from scipy.spatial import  Delaunay
 from scipy.spatial import  distance
@@ -397,7 +398,11 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
             plt.savefig(png_filename)
         plt.close()
 
-    def get_conditional_bonds_and_simplices(self,long_bond_cutoff=6):
+    def scan_conditional_bonds_and_simplices_ml(self,png_filename=None,mode='global_scan'):
+        ml = polygon_analyzer_ml(self.voronoi,self.ridge_first_minima_left)
+        ml.scan_conditional_bonds_and_simplices_ml(mode,png_filename)
+
+    def get_conditional_bonds_and_simplices(self,ridge_first_minima_left=None):#long_bond_cutoff=6,
         R"""
         return:
             vertex_bonds_index: n rows of [start_point_index, end_point_index]
@@ -407,8 +412,9 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
         method:
             vertices cluster method: find the shortest ridges and link the related vertices.
         """
-
-        list_short_ridge_bool = self.voronoi.ridge_length[:] <= self.ridge_first_minima_left
+        if ridge_first_minima_left is None:
+            ridge_first_minima_left = self.ridge_first_minima_left
+        list_short_ridge_bool = self.voronoi.ridge_length[:] <= ridge_first_minima_left
         list_short_bonds = self.voronoi.ridge_points[np.logical_not(list_short_ridge_bool)]#[start_point_index, end_point_index]
         """
         select_short_bonds_bool = self.bond_length[list_short_bonds[:,0],2] < long_bond_cutoff
@@ -458,7 +464,7 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
             count_polygon[n_complex_i,0]=n_complex_i+2#[x]frame=1421,polygon=10;1609,12
             count_polygon[n_complex_i,1]+=1
         count_polygon[1,0]=3
-        count_polygon[1,1]=np.shape(list_short_bonds)[0]
+        count_polygon[1,1]=np.shape(list_short_bonds)[0]#[x]may be wrong, n_bond != n_simplex
         #print("polygon_n, count\n",count_polygon)
         #
         count_polygon_relative = np.array(count_polygon)
@@ -476,6 +482,86 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
        
         self.vertex_bonds_index = list_short_bonds#short bonds index offered by ridge comapre method 
         self.list_simplex_cluster = record_vertices_cluster
+        return count_polygon_relative
+    
+    def get_conditional_bonds_and_simplices_bond_length(self,bond_first_minima_left=None):
+        R"""
+        return:
+            self.list_simplex_cluster: n_vertices rows of [simplex_id, cluster_id],
+                where delaunay.simplices[simplex_id], 
+                and cluster_id is the cluster the simplex belonging to.
+                if cluster_id = -1, the simplex is on boundary and should not be drawn.
+            count_polygon_relative: [polygon_n,share of total n of simplices]
+        method:
+            vertices cluster method: find the shortest ridges and link the related vertices.
+        """
+        if bond_first_minima_left is None:
+            bond_first_minima_left = self.bond_first_minima_left
+        list_long_bond_bool = self.bond_length[:,2] >= bond_first_minima_left
+        list_short_bonds = self.voronoi.ridge_points[np.logical_not(list_long_bond_bool)]#[start_point_index, end_point_index]
+        #print(self.delaunay.simplices)#(n_simplex,3)[index_vertex1,index_vertex2,index_vertex3]
+        sz = self.delaunay.simplices.shape
+        list_simplex_cluster = np.zeros((sz[0],2),dtype=int)
+        list_simplex_cluster[:,0] = range(sz[0])
+        list_simplex_cluster[:,1] = range(sz[0])#initialize each simplex as independent cluster
+        list_simplices_points = np.array(self.delaunay.simplices,dtype=int)
+        n_bond = len(list_long_bond_bool)
+        for i in range(n_bond):
+            if list_long_bond_bool[i]:
+                index_p1 = int(self.bond_length[i,0])
+                index_p2 = int(self.bond_length[i,1])
+                loc1 = np.where(list_simplices_points == index_p1)#list_simplices with p1
+                loc2 = np.where(list_simplices_points == index_p2)#list_simplices with p2
+                #print(i,loc1[0],loc2[0])
+                #get the simplices with p1 and p2
+                list_simplices_with_p = np.concatenate((loc1[0],loc2[0]))
+                list_simplices_with_p = np.sort(list_simplices_with_p)
+                list_simplices_with_p_unique = np.unique(list_simplices_with_p)
+                count_cobond = np.zeros((len(list_simplices_with_p_unique),),dtype=int)
+                for j in range(len(list_simplices_with_p_unique)):
+                    loc_repeat = np.where(list_simplices_with_p==list_simplices_with_p_unique[j]) #
+                    n_loc_with_p = len(loc_repeat[0])
+                    if n_loc_with_p == 2:
+                        count_cobond[j] = n_loc_with_p
+                        #print(list_simplices_with_p_unique[j],count_cobond[j])#index_simplices, n_repeat
+                        #count_cobond = count_cobond + 1
+                list_simplices_cobond = np.where(count_cobond==2)
+                n_simplices_cobond = len(list_simplices_cobond[0])
+                """if n_simplices_cobond==1:
+                    #ban a simplex by set whose cluster_id as -1
+                    list_boundary_simplex = list_simplices_with_p_unique[list_simplices_cobond]
+                    list_simplex_cluster[list_boundary_simplex,1] = -1"""
+                if n_simplices_cobond==2:
+                    #merge linked simplices into a cluster whose id is smaller.
+                    list_boundary_simplex = list_simplices_with_p_unique[list_simplices_cobond]
+                    cluster_id_min = min(list_simplex_cluster[list_boundary_simplex,1])
+                    cluster_id_max = max(list_simplex_cluster[list_boundary_simplex,1])
+                    list_simplex_cluster[list_simplex_cluster[:,1] == cluster_id_max,1] = cluster_id_min
+
+                #print(list_simplices_with_p)
+        self.list_simplex_cluster = list_simplex_cluster
+
+        #get the distribution of cluster
+        list_cluster_id = np.unique(list_simplex_cluster[:,1])
+        count_polygon = np.zeros((99,2))#(10,2)
+        for cluster_id in list_cluster_id:
+            if not cluster_id == -1:
+                list_simplex_ids_in_cluster_i = list_simplex_cluster[list_simplex_cluster[:,1]==cluster_id,0]
+                n_simplex_in_cluster_i = np.shape(list_simplex_ids_in_cluster_i)[0]
+                cluster_i_is_polygon_n=n_simplex_in_cluster_i+2
+                count_polygon[n_simplex_in_cluster_i,0]=cluster_i_is_polygon_n#[x]frame=1421,polygon=10;1609,12
+                count_polygon[n_simplex_in_cluster_i,1]+=n_simplex_in_cluster_i
+        """p_valids = np.array([self.points[index_p1], self.points[index_p2]])
+        result = self.delaunay.find_simplex(p_valids)
+        if result.shape[0] == 1:
+            #not show the simplex
+            pass
+        elif result.shape[0] > 1:
+            #merge two clusters
+            pass"""
+        count_polygon_relative = np.array(count_polygon)
+        count_polygon_relative[:,1] = count_polygon[:,1]/sum(count_polygon[:,1]) \
+                                        *100#see one simplex as one weight
         return count_polygon_relative
 
     def draw_bonds_simplex_conditional_oop(self,png_filename=None,xy_stable=None,nb_change=None,x_unit='(um)',
@@ -502,10 +588,15 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
             self.draw_bonds.plot_neighbor_change(xy_stable,nb_change)
         if not png_filename is None:
             self.draw_bonds.save_figure(png_filename)
-        #else:
-        #    return ax
+    
+    def plot_bond_ridge_rank_idea(self):
+        R"""
+        bond plot, bond_length_rank vs ridge_length_rank,
+        to see if when bond be longer, the ridge be shorter.
+        """
+        pass
 
-    def draw_polygon_patch_oop(self,fig=None,ax=None,polygon_color='r'):
+    def draw_polygon_patch_oop(self,fig=None,ax=None,polygon_color='r',polygon_n=6):
         R"""
         parameters:
             vertex_bonds_index: n rows of [start_point_index, end_point_index]
@@ -527,25 +618,29 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
         list_cluster_id = np.unique(vertices_cluster[:,1])
         #patches=[]
         for cluster_id in list_cluster_id:
-            list_simplex_ids_in_cluster_i = vertices_cluster[vertices_cluster[:,1]==cluster_id,0]
-            n_simplex_in_cluster_i = np.shape(list_simplex_ids_in_cluster_i)[0]
-            cluster_i_is_polygon_n=n_simplex_in_cluster_i+2
-            if cluster_i_is_polygon_n==6:
-                #patches=[]
-                for simplex_id in list_simplex_ids_in_cluster_i.astype(int):
-                    list_points_ids_in_simplex = self.delaunay.simplices[simplex_id]
-                    list_points_xy = points[list_points_ids_in_simplex]
-                    """
-                    polygon = Polygon(list_points_xy, closed=True)
-                    polygon.set(color='r')
-                    patches.append(polygon)
-                    p = PatchCollection(patches)#, alpha=0.4
-                    ax.add_collection(p)
-                    """
-                    
-                    ax.fill(list_points_xy[:,0],list_points_xy[:,1],facecolor=polygon_color,edgecolor=polygon_color)
-                #plt.show()
-                    
+            if cluster_id==-1:
+                pass
+            else:
+                list_simplex_ids_in_cluster_i = vertices_cluster[vertices_cluster[:,1]==cluster_id,0]
+                n_simplex_in_cluster_i = np.shape(list_simplex_ids_in_cluster_i)[0]
+                cluster_i_is_polygon_n=n_simplex_in_cluster_i+2
+                #print(cluster_i_is_polygon_n)
+                if cluster_i_is_polygon_n==polygon_n:
+                    #patches=[]
+                    for simplex_id in list_simplex_ids_in_cluster_i.astype(int):
+                        list_points_ids_in_simplex = self.delaunay.simplices[simplex_id]
+                        list_points_xy = points[list_points_ids_in_simplex]
+                        """
+                        polygon = Polygon(list_points_xy, closed=True)
+                        polygon.set(color='r')
+                        patches.append(polygon)
+                        p = PatchCollection(patches)#, alpha=0.4
+                        ax.add_collection(p)
+                        """
+                        
+                        ax.fill(list_points_xy[:,0],list_points_xy[:,1],facecolor=polygon_color,edgecolor=polygon_color)
+                    #plt.show()
+                        
         """
         #rearrange points anti-clockwise
         """
@@ -690,8 +785,16 @@ index 10 is out of bounds for axis 0 with size 10
             self.count_coordination[i]+=1
         #print(self.count_coordination)
         self.count_coordination_ratio=self.count_coordination/sum(self.count_coordination)
-        #print(self.count_coordination_ratio)
-        #return self.__coordination_bond
+    
+    def get_cairo_order_parameter(self,cn3,cn4):
+        R"""
+        output:
+            p: order_parameter_for_cairo
+        introduction:
+            p_cairo = (cn3 + cn4)*min(cn3/2cn4,2cn4/cn3)
+        """
+        sca = show_cairo_order_parameter()
+        return sca.compute_cairo_order_parameter(cn3,cn4)
 
     def search_neighbor_id(self,id):
         #cut edge to remove CN012
@@ -949,6 +1052,62 @@ index 10 is out of bounds for axis 0 with size 10
 
         self.edge_cut_positions_list = np.where(list_xy)
         self.edge_cut_positions_bool = list_xy # T for body, F for edge.
+    
+    def cut_edge_of_positions_by_xylimit(self,xmin,xmax,ymin,ymax):
+        R"""
+        Variables:
+            xmin,xmax,ymin,ymax: seen as vertices to form a box. select the points inside the box.
+            edge_cut_positions_list: list the rows of particles' positions at given snapshot.
+        """
+        
+        #That directly using 'and' has been banned, so 'logical_and' is necessary
+        list_xmin = self.points[:,0] >= xmin
+        list_xmax = self.points[:,0] <= xmax
+        list_ymin = self.points[:,1] >= ymin
+        list_ymax = self.points[:,1] <= ymax
+        list_x = np.logical_and(list_xmin,list_xmax)
+        list_y = np.logical_and(list_ymin,list_ymax)
+        list_xy = np.logical_and(list_x,list_y)
+
+        self.edge_cut_positions_list = np.where(list_xy)
+        self.edge_cut_positions_bool = list_xy # T for body, F for edge.
+
+    def cut_edge_of_positions_by_box(self,points,box):
+        R"""
+        Variables:
+            points:n rows of [x,y]
+            box:[LX,LY,LZ,RX,RY,RZ]
+            inbox_positions_list: self.
+            inbox_positions_bool: self.
+        """
+        
+        #sz = len(self.init_positions)#np.size
+        #xy = self.init_positions
+        xmax = box[0]/2.0
+        ymax = box[1]/2.0
+        xmin = -box[0]/2.0
+        ymin = -box[1]/2.0
+        
+        #That directly using 'and' has been banned, so 'logical_and' is necessary
+        list_xmin = points[:,0] >= xmin
+        list_xmax = points[:,0] <= xmax
+        list_ymin = points[:,1] >= ymin
+        list_ymax = points[:,1] <= ymax
+        list_x = np.logical_and(list_xmin,list_xmax)
+        list_y = np.logical_and(list_ymin,list_ymax)
+        list_xy = np.logical_and(list_x,list_y)
+
+        self.inbox_positions_list = np.where(list_xy)
+        self.inbox_positions_bool = list_xy # T for body, F for edge.
+
+        #get the position of vertices of box
+        position_box = np.zeros((5,2))
+        position_box[0] = [xmin,ymin]
+        position_box[1] = [xmax,ymin]
+        position_box[2] = [xmax,ymax]
+        position_box[3] = [xmin,ymax]
+        position_box[4] = [xmin,ymin]#back to origin
+        self.position_box = position_box
 
     def get_bond_orientational_order(self,plot=False,png_filename=None,k_set=6):
         R"""
@@ -1124,7 +1283,7 @@ index 10 is out of bounds for axis 0 with size 10
         LinearCompressionRatio=0.79
         trap_filename="/home/tplab/hoomd-examples_0/testhoneycomb3-8-12-part1"
         """
-        self.draw_bonds = bond_plot_module_old()
+        self.draw_bonds = bond_plot_module()
         self.draw_bonds.restrict_axis_property_relative(self.points,x_unit=x_unit)
         if not axis_limit is None:
             xlim = [-axis_limit[0],axis_limit[0]]#[0,axis_limit[0]]
@@ -3357,7 +3516,7 @@ class bond_plot_module:
             self.fig = fig
             self.ax = ax
         
-    def restrict_axis_property_relative(self,xy,x_unit='(um)'):
+    def restrict_axis_property_relative(self,x_unit='(um)'):#,xy
         R"""
         Parameters:
             txyz: all the particle positions, no one removed.
@@ -3437,15 +3596,17 @@ class bond_plot_module:
         self.points = xy
         #add lines for edges
         for i in range(np.shape(list_bonds_index)[0]):
-            pt1,pt2 = [self.points[list_bonds_index[i,0]],self.points[list_bonds_index[i,1]]]
-            line = plt.Polygon([pt1,pt2], closed=None, fill=None, edgecolor= bond_color,linewidth=bond_width)
+            bondx,bondy = [self.points[list_bonds_index[i],0],self.points[list_bonds_index[i],1]]
+            line = lines.Line2D(bondx,bondy,color= bond_color,linewidth=bond_width)
+            #pt1,pt2 = [self.points[list_bonds_index[i,0]],self.points[list_bonds_index[i,1]]]
+            #line = plt.Polygon([pt1,pt2], closed=None, fill=None, edgecolor= bond_color,linewidth=bond_width)
             self.ax.add_line(line)#plt.gca().add_line(line)
         self.ax.set_title("bond_length: vertices"+self.x_unit)  # Add a title to the axes
 
         if not particle_size is None:
             self.ax.scatter(xy[:,0],xy[:,1],color=particle_color,zorder=1,s=particle_size)
         else:
-            self.ax.scatter(xy[:,0],xy[:,1],color=particle_color,zorder=1,s=particle_size)
+            self.ax.scatter(xy[:,0],xy[:,1],color=particle_color,zorder=2)#,s=particle_size
 
     def get_bonds_with_conditional_ridge_length(self,ridge_length,ridge_points,ridge_first_minima_left):       
         R"""
@@ -3466,8 +3627,35 @@ class bond_plot_module:
         list_longer = bond_length[:,2] > bond_length_limmit[0]
         list_shorter = bond_length[:,2] < bond_length_limmit[1]
         list_bond_bool = np.logical_and(list_longer,list_shorter)
-        list_bond_index = bond_length[list_bond_bool,0:2]
+        list_bond_index = bond_length[list_bond_bool,0:2].astype(int)
         return list_bond_index
+    
+    def get_bonds_with_longer_bond_length(self,bond_length=None,bond_length_limmit=2.0):
+        R"""
+        Introduction:
+            In Delauny triangulation, remove long bonds and 
+            reserve short bonds to show polygons formed by particles. 
+        """
+        list_longer = bond_length[:,2] > bond_length_limmit
+        list_bond_bool = list_longer
+        list_bond_index = bond_length[list_bond_bool,0:2].astype(int)
+        return list_bond_index
+
+    def get_bonds_with_machine_learning_idea(self,bond_length,ridge_length):
+        R"""
+        Machine learning based Clustering algorithm：
+        cost function = normalized Ncluster + normalized sum(deviation of cluster i ) 
+        scan r within [p(r) first minima, ] (Nparticle,σ2(particle)) as the normalizing parameters.
+        （如果只是大团簇剪枝，就是HCS_clustering_algorithm）
+        初始粒子团簇不应该标0，应该是0-n-1，然后每次向下取团簇编号。
+        （要规定由短到长合并团簇吗？那就是PH算法）
+        这样随着r-ridge增大，团簇数从n-1开始下降，总方差从0开始上升。综合方法可以处理p(r) 粗糙，1st minima难找问题吗？
+        （由短到长合并团簇，不依赖分布？(Nparticle,id rank)*(Nridge,length rank)）能解决稀疏团簇和密集团簇互不干扰吗？
+        （监测σ2(cluster i)随Nmerge的异常增长，让不同cluster互不干扰。）
+        从0开始的团簇编号，意味着0号团簇全是开放结构，是边缘，应该被切边。（ridge法没切长bond，bond法去超长bond？）
+        """
+
+        pass
 
     def plot_neighbor_change(self,xy_stable,nb_change):
         R"""
@@ -3481,7 +3669,7 @@ class bond_plot_module:
         """
         self.ax.scatter(xy_stable[nb_change,0],xy_stable[nb_change,1],color='orange',zorder=2)
             
-    def plot_traps(self,trap_filename="/home/tplab/hoomd-examples_0/testhoneycomb3-8-12-part1",LinearCompressionRatio=0.79,mode='map',trap_color='r',trap_size=1):
+    def plot_traps(self,traps=None,trap_filename=None,LinearCompressionRatio=0.79,mode='map',trap_color='r',trap_size=1):
         R"""
         trap_filename:
                 '/home/remote/hoomd-examples_0/testhoneycomb3-8-12'
@@ -3489,9 +3677,14 @@ class bond_plot_module:
                 '/home/remote/hoomd-examples_0/testkagome3-11-6'
                 '/home/remote/hoomd-examples_0/testkagome_part3-11-6'
         mode: 'array'(scatter) or 'map'(pcolormesh)
+        traps: n rows of [x,y] recording the positions of traps.
         """
-        traps=np.loadtxt(trap_filename)
-        traps=np.multiply(traps,LinearCompressionRatio)
+        if trap_filename is None:
+            if traps is None:
+                print('Error: No traps info input!')
+        else:
+            traps=np.loadtxt(trap_filename)
+            traps=np.multiply(traps,LinearCompressionRatio)
         if mode=='array':
             #x_scale = 200
             self.ax.scatter(traps[:,0], traps[:,1],c=trap_color,zorder=3,s=trap_size)#,marker = 'x',s=x_scale
@@ -3545,7 +3738,7 @@ class bond_plot_module:
         'pip install latex' is necessary for plt.savefig()
         """
         self.fig.savefig(png_filename)#plt.savefig(png_filename)
-        plt.close(self.fig)#plt.close() # closes the current active figure
+        plt.close('all')#self.fig,plt.close() # closes the current active figure
 
 class bond_plot_module_for_image:
     def __init__(self,image):
@@ -3923,22 +4116,6 @@ class dynamical_facilitation_module:
         print(sz)
         dr = np.sqrt(dr2[:,0]+dr2[:,1])
     
-    def get_activation_event(self,trajectory,ta,a):#[x]
-        R"""
-        input:
-            trajectory: 
-        output:
-
-        """
-        dt = 0
-        t = 0
-        sz = np.size(trajectory)#(Nframe,Ndimension)
-        tt = ta/2 - dt
-        uv = trajectory[t+tt] - trajectory[t-tt]
-        dr2 = uv*uv
-        dr = np.sqrt(dr2[:,0]+dr2[:,1])
-        abs(dr[t+tt] - dr[t-tt])
-
     def coarse_grain(self):#[x]
         pass
 
@@ -4151,19 +4328,29 @@ class dynamical_facilitation_module:
         self.bond_length[:,0:2]=self.voronoi.ridge_points
         self.bond_length[:,2]=self.bond_length_temp.diagonal()
         """
-    def get_pin_bool(self,reference_positions,txyz,result_prefix=None,r_trap=1):
+    
+    def get_pin_bool(self,reference_positions,txyz,result_prefix=None,r_trap=1,ispin=True):
         R"""
         Input: 
             reference_positions: (Ntrap,2)[x,y]
             txyz:(Nframe,Nparticle,2)[x,y]
         Output: 
-            reference_occupation: save .npy file recording list_reference_occupation
-                (Nframe,Nparticle)[bool] means particle_id at frame_i is pinned or not.
+            list_pin_bool: save .npy file recording list_pin_bool
+                (Nframe,Nparticle)[bool] means particle_id at frame_i is pinned at reference_position or not.
         Variables:
             bond_length_temp: (Nframe,Nparticle,)[frame:int, reference_point: int, occupied:bool]        
 
         example:
-            
+            import points_analysis_2D as pa
+            import numpy as np
+            dfm = pa.dynamical_facilitation_module()
+            lcr = 0.81
+            file_txyz = '/home/remote/Downloads/4302_9/txyz.npy'
+            file_reference_points = '/home/remote/hoomd-examples_0/testhoneycomb3-8-12'
+            txyz = np.load(file_txyz)
+            reference_points = np.loadtxt(file_reference_points)
+            reference_points_lcr = np.multiply(lcr,reference_points) 
+            dfm.get_pin_bool(reference_points_lcr,txyz)
         """
         txy = txyz[:,:,:2]
         reference_positions = reference_positions[:,:2]
@@ -4181,8 +4368,186 @@ class dynamical_facilitation_module:
         print('size of list_reference_occupation:')
         print(np.shape(list_pin_bool))
         if not result_prefix is None:
-            result_filename = result_prefix+'t_pin_bool'
+            if ispin:
+                result_filename = result_prefix+'t_pin_bool'
+            else:
+                result_filename = result_prefix+'t_interstitial_bool'
             np.save(result_filename,list_pin_bool)
+        return list_pin_bool
+    
+    def get_pin_id_bool(self,reference_positions,txyz,result_prefix=None,r_trap=0.5):
+        R"""
+        Input: 
+            reference_positions: (Ntrap,2)[x,y]
+            txyz:(Nframe,Nparticle,2)[x,y]
+        Output: 
+            list_pin_bool: save .npy file recording list_pin_bool
+                (Nframe,Nparticle)[bool] means particle_id at frame_i is pinned at reference_position or not.
+        Variables:
+            bond_length_temp: (Nframe,Nparticle,)[frame:int, reference_point: int, occupied:bool]        
+
+        example:
+        """
+        txy = txyz[:,:,:2]
+        reference_positions = reference_positions[:,:2]
+        sz_txy = np.shape(txy)
+        sz_ref = np.shape(reference_positions)
+        list_pin_id_bool = np.zeros((sz_txy[0],sz_txy[1],sz_ref[0]))
+        for frame in range(sz_txy[0]):
+            xy = txy[frame]
+            bond_length_temp = distance.cdist(xy,reference_positions,'euclidean')
+            #bond_length_sort = np.sort(bond_length_temp,axis=1)
+            #print(self.bond_length_temp)
+            list_pin_bool_1 = bond_length_temp[:,:]<r_trap# 0 for free; 1 for pin
+            #print(ref_dis)
+            list_pin_id_bool[frame] = list_pin_bool_1
+        print('size of list_reference_occupation:')
+        print(np.shape(list_pin_id_bool))
+        if not result_prefix is None:
+            result_filename = result_prefix+'t_pin_id_bool'
+            np.save(result_filename,list_pin_id_bool)
+        return list_pin_id_bool
+
+    def get_interstitial_bool(self,reference_positions,txyz,result_prefix=None,r_trap=1):
+        R"""
+            for a triangle whose edge length A is 1, the center-vertex distance Rcv is sqrt(3)/3=0.577.
+            if A is 3, Rcv is sqrt(3)=1.73, Rcv-1 is 0.73. so r_trap=1 is slightly too large 
+        example:
+            import points_analysis_2D as pa
+            import numpy as np
+            dfm = pa.dynamical_facilitation_module()
+            lcr = 0.81
+            file_txyz = '/home/remote/Downloads/4302_9/txyz.npy'#_stable
+            file_reference_points = '/home/remote/hoomd-examples_0/testhoneycomb3-8-12'
+            txyz = np.load(file_txyz)
+            reference_points = np.loadtxt(file_reference_points)
+            reference_points_lcr = np.multiply(lcr,reference_points) 
+            result_prefix='/home/remote/Downloads/4302_9/pin_check/'
+            rt=0.5
+            t_pin_bool = dfm.get_pin_bool(reference_points_lcr,txyz,result_prefix,r_trap=rt)
+            t_interstitial_bool = dfm.get_interstitial_bool(reference_points_lcr,txyz,result_prefix,r_trap=rt)
+            #t_pin_bool = np.load(result_prefix+'t_pin_bool.npy')
+            #t_interstitial_bool = np.load(result_prefix+'t_interstitial_bool.npy')
+            #check the overlap of pinning and interstitial particles. calculate the transformation ratio too.
+            t_transition_bool = t_interstitial_bool.astype(int) + t_pin_bool.astype(int)
+            if max(t_transition_bool.all())>1:
+                print('overlap of pinning and interstitial particles!')
+            sz_list = np.shape(t_transition_bool)
+            t_trans_count = np.sum(t_transition_bool,axis=1)
+
+            import matplotlib.pyplot as plt
+            fig,ax = plt.subplots()
+            ax.plot(t_trans_count/sz_list[1])
+            png_filename = '/home/remote/Downloads/4302_9/pin_check/t_trans_ratio_allpart_r05.jpg'
+            plt.savefig(png_filename)
+            plt.close()
+        """
+        ref_pos = static_points_analysis_2d(reference_positions)
+        dual_pt = ref_pos.voronoi.vertices
+        list_interstitial_bool = self.get_pin_bool(dual_pt,txyz,result_prefix,r_trap,ispin=False)
+        return list_interstitial_bool
+
+    def get_trans_ratio(self,t_state_bool):
+        sz_list = np.shape(t_state_bool)
+        t_trans_count = np.sum(t_state_bool,axis=1)
+        t_trans_ratio = t_trans_count/sz_list[1]
+        return t_trans_ratio
+
+    def get_activation_event(self,t_state_bool,dt=1):
+        R"""
+        input:
+            t_state_bool: (Nframe,Nparticle) t_pin_bool or t_state_bool
+        output:
+            t_act_bool: (Nframe-dt,Nparticle)
+            
+            dt = 0
+            t = 0
+            sz = np.size(trajectory)#(Nframe,Ndimension)
+            tt = ta/2 - dt
+            uv = trajectory[t+tt] - trajectory[t-tt]
+            dr2 = uv*uv
+            dr = np.sqrt(dr2[:,0]+dr2[:,1])
+            abs(dr[t+tt] - dr[t-tt])
+        """
+        """
+        #method1:
+        t_act_bool = t_state_bool[dt:] - t_state_bool[:-dt]
+        sz_list = np.shape(t_act_bool)
+        t_trans_count = np.sum(t_act_bool,axis=1)
+        t_trans_ratio = t_trans_count/sz_list[1]
+        #method2:xor, count any changes, including positive and negative ones.
+        t_act_bool = np.logical_xor(t_state_bool[dt:],t_state_bool[:-dt]) 
+        sz_list = np.shape(t_act_bool)
+        t_trans_count = np.sum(t_act_bool,axis=1)
+        t_trans_ratio = t_trans_count/sz_list[1]
+        """
+        #method3:xor, count positive changes.
+        t_act_bool = t_state_bool[dt:] - t_state_bool[:-dt]
+        t_act_bool = t_act_bool[:,:] == 1
+        sz_list = np.shape(t_act_bool)
+        t_trans_count = np.sum(t_act_bool,axis=1)
+        t_trans_ratio = t_trans_count/sz_list[1]
+        return t_trans_ratio
+
+    def get_pin_depin_event(self,t_state_id_bool,dt=1):
+        R"""
+        input:
+            t_state_bool: (Nframe,Nparticle) t_pin_bool or t_state_bool
+        output:
+            t_act_bool: (Nframe-dt,Nparticle)
+            
+            dt = 0
+            t = 0
+            sz = np.size(trajectory)#(Nframe,Ndimension)
+            tt = ta/2 - dt
+            uv = trajectory[t+tt] - trajectory[t-tt]
+            dr2 = uv*uv
+            dr = np.sqrt(dr2[:,0]+dr2[:,1])
+            abs(dr[t+tt] - dr[t-tt])
+        """
+        """
+        #method1:
+        t_act_bool = t_state_bool[dt:] - t_state_bool[:-dt]
+        sz_list = np.shape(t_act_bool)
+        t_trans_count = np.sum(t_act_bool,axis=1)
+        t_trans_ratio = t_trans_count/sz_list[1]
+        #method2:xor, count any changes, including positive and negative ones.
+        t_act_bool = np.logical_xor(t_state_bool[dt:],t_state_bool[:-dt]) 
+        sz_list = np.shape(t_act_bool)
+        t_trans_count = np.sum(t_act_bool,axis=1)
+        t_trans_ratio = t_trans_count/sz_list[1]
+        """
+        #method3:xor, count positive changes.
+        t_act_bool = t_state_id_bool[dt:] - t_state_id_bool[:-dt]
+        sz_list = np.shape(t_act_bool)
+
+        t_pin_id_bool = t_act_bool[:,:] == 1
+        t_depin_id_bool = t_act_bool[:,:] == -1
+
+        t_pin_bool=np.sum(t_pin_id_bool,axis=2)
+        t_pin_count=np.sum(t_pin_bool,axis=1)
+        t_pin_ratio=t_pin_count/sz_list[1]
+        t_depin_bool=np.sum(t_depin_id_bool,axis=2)
+        t_depin_count=np.sum(t_depin_bool,axis=1)
+        t_depin_ratio=t_depin_count/sz_list[1]
+        
+        return t_pin_ratio,t_depin_ratio
+    
+    def plot_transition_state(self,t_trans_ratio,t_pin_ratio,t_interstitial_ratio):
+        #import matplotlib.pyplot as plt
+        fig,ax = plt.subplots()
+        dt=0
+        np.linspace(dt,2000,2001-dt)
+        ax.semilogx(t_trans_ratio,label='trans_ratio')#semilogy,plot
+        ax.semilogx(t_pin_ratio,label='pin_ratio')
+        ax.semilogx(t_interstitial_ratio,label='inter_ratio')
+        plt.legend()
+        #plt.title('CN_k '+'index:'+str_index)
+        plt.xlabel('time(steps)')
+        plt.ylabel('trans_ratio(1)')
+        png_filename = '/home/remote/Downloads/4302_9/pin_check/t_trans_pin_inter_ratio_allpart_r05.jpg'
+        plt.savefig(png_filename)
+        plt.close()
 
     def plot_reference_occupation(self,reference_positions,reference_occupation,prefix=None):
         sz = np.shape(reference_occupation)
@@ -4289,9 +4654,605 @@ class dynamical_facilitation_module:
         print(np.shape(points_selected))
         return points_selected
 
-class polygon_analyzer:
-    def __init__(self,points,bonds,faces):
+class polygon_analyzer_ml:
+    def __init__(self,voronoi,ridge_first_minima_left,ridge_length_cutoff=5.0):
         R"""
-        
+        description:
+            reorganize voronoi from static_points_analysis_2d, 
+            remove ridges whose length are too long to to reasonable,
+            and rearrange the indices to relink the ridges and vertices reasonable.
+        parameters:
+            self.voronoi: from static_points_analysis_2d, not tuned.
+            self.voronoi.vertices[self.voronoi.ridge_vertices[:,0],:] #position of vertices
+            self.voronoi.ridge_length#ridge_row -> [ridge_length]
+            self.voronoi.ridge_points#ridge_row -> [start_point_row,end_point_row]
+            self.voronoi.ridge_vertices#ridge_row -> [start_vertex_row,end_vertex_row]
         """
+        self.voronoi = voronoi
+
+        self.ridge_first_minima_left = ridge_first_minima_left
+        #ridge cut operation, to remove those whose ridge_lengths are too to to be reasonable
+        list_rational_ridge_bool = self.voronoi.ridge_length < ridge_length_cutoff
+        self.ridge_length = self.voronoi.ridge_length[list_rational_ridge_bool]#value, right
+        ridge_vertices = self.voronoi.ridge_vertices[list_rational_ridge_bool]#vertices index ?
+        list_vertices_index = np.unique(ridge_vertices)
+        self.vertices = self.voronoi.vertices[list_vertices_index]#vertices position, right
+        
+        #transform from old index to new index
+        """
+        list_rational_ridge_bool -> 0,1,2,3..len(self.ridge_length)
+        list_vertices_index -> 0,1,2,3..len(self.vertices)
+        ridge_vertices: row:ridge_index [vertex_index1,vertex_index2]
+
+        vertices_index_old_new = np.zeros((len(list_vertices_index),2))
+        vertices_index_old_new[:,0] = list_vertices_index
+        vertices_index_old_new[:,1] = range(len(list_vertices_index))
+        """
+        vertices_index_old_new = np.array(list_vertices_index)
+        
+        #ridge_vertices_temp = np.zeros(np.shape(ridge_vertices))#vertices index ?
+        ridge_vertices_temp = -np.ones(np.shape(ridge_vertices))
+        #ridge_vertices_temp[:,:] = -ridge_vertices_temp[:,:]
+        for j in range(2):
+            for i in range(np.shape(ridge_vertices)[0]):
+                row = np.where(vertices_index_old_new[:]==ridge_vertices[i,j] )
+                ridge_vertices_temp[i,j] = row[0]#int(row)
+        self.ridge_vertices = ridge_vertices_temp
+        #self.ridge_points = self.voronoi.ridge_points[list_rational_ridge_bool]#points index ?
+
+    def scan_conditional_bonds_and_simplices_ml(self,scan_mode='local_scan',png_filename=None,cost_mode='mean_var'):#[x]
+        R"""
+        input:
+        ----------
+            mode:
+                'local_scan', scan a small range of ridge_length around self.ridge_first_minima_left,
+                 forming vertices' clusters group, to check the overlap of local minima of cost and
+                 ridge_first_minima_left.
+                'global_scan', scan all the ridge_length to form vertices' clusters group, 
+                to calculate the global minima of cost.
+            png_filename:
+                to save figure of ridge_length vs cost.
+
+        return:
+        ----------
+            list_short_ridge_rank
+            record_costs
+
+        parameters:
+        ----------
+            vertex_bonds_index: n rows of [start_point_index, end_point_index]
+            list_simplex_cluster: n_vertices rows of [simplex_id, cluster_id],
+                where delaunay.simplices[simplex_id], 
+                and cluster_id is the cluster the simplex belonging to
+        method:
+        ----------
+            vertices cluster method: find the shortest ridges and link the related vertices.
+        
+        typical ridge length:
+        ----------
+            lattice     | bond_length   | ridge_length  | ratio
+            hex         | 1             | sqrt(3)/3     | bl*lcr*rl 
+            honeycomb   | 1             | sqrt(3)       |
+            kagome      | 1             | 2/3*sqrt(3)   |
+
+        """
+        #organize_start
+        ridge_length_sorted = np.sort(self.ridge_length)#small to large
+        #ridge_length_rank#short to long, rank 0,1,2...
+        list_short_ridge_bool = self.ridge_length[:] <= self.ridge_first_minima_left
+        short_ridge_length_rank = np.sum(list_short_ridge_bool.astype(int)) - 1
+        n_ridges = np.shape(list_short_ridge_bool)[0]
+        ridge_length_rank_ratio = (short_ridge_length_rank+1)/n_ridges
+        #scan a range around self.ridge_first_minima_left
+        if scan_mode =='local_scan':
+            scan_range_relative = 0.1
+        elif scan_mode =='global_scan':
+            scan_range_relative = 1.0
+        scan_ridge_length_rank_min = (ridge_length_rank_ratio - scan_range_relative)*n_ridges
+        scan_ridge_length_rank_min = self.check_scan_ridge_length_rank(scan_ridge_length_rank_min,n_ridges)
+        scan_ridge_length_rank_max = (ridge_length_rank_ratio + scan_range_relative)*n_ridges
+        scan_ridge_length_rank_max = self.check_scan_ridge_length_rank(scan_ridge_length_rank_max,n_ridges)
+        list_short_ridge_rank = np.linspace(scan_ridge_length_rank_min,scan_ridge_length_rank_max-1,scan_ridge_length_rank_max-scan_ridge_length_rank_min)
+        list_short_ridge_rank = list_short_ridge_rank.astype(int)
+        
+        record_costs = np.zeros( (np.shape(list_short_ridge_rank)[0],3) )
+        ridge_rank_min_cost = 0
+        min_cost = 1
+        for ridge_rank in list_short_ridge_rank:
+            ridge_first_minima_ml = ridge_length_sorted[ridge_rank] + 1e-5
+            #use ridge_first_minima_ml replace self.ridge_first_minima_left
+            #get n_clusters and sum(variance_cluster)
+            list_polygon_rate  = self.get_conditional_bonds_and_simplices_ml(ridge_first_minima_ml)
+            #self.vertex_bonds_index #short bonds index offered by ridge comapre method 
+            #self.list_simplex_cluster #[vertex_id,cluster_id]
+            index1 = int(ridge_rank-list_short_ridge_rank[0])
+            if cost_mode == 'sum_var':
+                record_costs[index1,0],record_costs[index1,1],record_costs[index1,2] \
+                    = self.get_cost_function_cluster_ml_method_sum_var()
+            elif cost_mode == 'mean_var':
+                record_costs[index1,0],record_costs[index1,1],record_costs[index1,2] \
+                    = self.get_cost_function_cluster_ml_method_mean_var()
+            #refresh the minima of cost
+            if record_costs[index1,0]<min_cost:
+               ridge_rank_min_cost = ridge_rank
+               min_cost = record_costs[index1,0]
+        print('ridge_length = ',np.round(ridge_length_sorted[ridge_rank_min_cost],3),' is best\n')
+
+        if not png_filename is None:
+            fig,ax = plt.subplots()
+            ax.plot(ridge_length_sorted,record_costs[:,0],'r',label='cost')#,legend
+            ax.plot(ridge_length_sorted,record_costs[:,1],'g',label='$r(n_{cluster})$')#n_cluster_norm
+            if cost_mode == 'sum_var':
+                ax.plot(ridge_length_sorted,record_costs[:,2],'b',label='$r(\Sigma \sigma^2)$')#sum_var_norm
+            elif cost_mode == 'mean_var':
+                ax.plot(ridge_length_sorted,record_costs[:,2],'b',label='$r(\langle \sigma^2 \rangle)$')#mean_var_norm
+                #'$r(\overline{\sigma^2})$' looks ugly
+            ax.scatter(ridge_length_sorted[short_ridge_length_rank],record_costs[int(short_ridge_length_rank-list_short_ridge_rank[0]),0],c='k')
+            #prefix = '/home/remote/Downloads/'
+            #png_filename = 'costs.png'
+            ax.legend()
+            ax.set_xlabel('ridge_length(1)')
+            ax.set_xlabel('cost(1)')
+            fig.savefig(png_filename)#prefix+
+
+        return list_short_ridge_rank,record_costs
+
+    def get_conditional_bonds_and_simplices_ml(self,ridge_first_minima_ml):#[x]
+        R"""
+        return:
+            vertex_bonds_index: n rows of [start_point_index, end_point_index]
+            list_simplex_cluster: n_vertices rows of [simplex_id, cluster_id],
+                where delaunay.simplices[simplex_id], 
+                and cluster_id is the cluster the simplex belonging to
+        method:
+            vertices cluster method: find the shortest ridges and link the related vertices.
+            pandas.array
+            self.voronoi.vertices[self.voronoi.ridge_vertices[:,0],:] #position of vertices
+            self.voronoi.ridge_length#ridge_row -> [ridge_length]
+            self.voronoi.ridge_points#ridge_row -> [start_point_row,end_point_row]
+            self.voronoi.ridge_vertices#ridge_row -> [start_vertex_row,end_vertex_row]
+        """
+        list_short_ridge_bool = self.ridge_length[:] <= ridge_first_minima_ml
+        #list_short_bonds = self.ridge_points[np.logical_not(list_short_ridge_bool)]#[start_point_index, end_point_index]
+        list_ridge_vertices_index = self.ridge_vertices[list_short_ridge_bool]
+        list_vertices_index = np.unique(list_ridge_vertices_index)
+        n_vertices_in_cluster = np.shape(list_vertices_index)[0]#count the vertices of short ridge to form cluster
+        n_vertices_reasonable = np.shape(self.vertices)[0]#count all the rational vertices
+        
+        #record_vertices_cluster: n_vertices rows of [vertex_id, cluster_id],
+        #where vertex_id belongs to list_vertices
+        #when cluster_id=-1, the vertex has not been included by any cluster.
+        record_vertices_cluster = np.ones((n_vertices_in_cluster,2))
+        record_vertices_cluster[:,1]=range(n_vertices_in_cluster)#watch initial value, 0,1,2...
+        record_vertices_cluster[:,0]=list_vertices_index
+        #cluster_id = 0
+        for i in range(n_vertices_in_cluster):
+            vertex_id = list_vertices_index[i]
+            #print("cluster_id\n",cluster_id)
+            list_linked = np.where(list_ridge_vertices_index[:,:]==vertex_id)
+            list_linked_vertices_pair = list_ridge_vertices_index[list_linked[0]]
+            #print("vertices_pair\n",list_linked_vertices_pair)
+            list_vertex_id_of_cluster1 = np.unique(list_linked_vertices_pair)
+            cluster_id = list_vertex_id_of_cluster1[0]#set the cluster_id to merge cluster1
+            for j in list_vertex_id_of_cluster1:
+                record_id = record_vertices_cluster[:,0]==j#find the row_index for vertex_id
+                #new cluster merge old one by refreshing a list of vertices in old cluster
+                contradictory_cluster_id = record_vertices_cluster[record_id,1]
+                list_bool_of_cluster_to_merge= (record_vertices_cluster[:,1]==contradictory_cluster_id)
+                record_vertices_cluster[list_bool_of_cluster_to_merge,1]=cluster_id
+            #cluster_id +=1
+        #statistics for clusters
+        list_cluster_id = np.unique(record_vertices_cluster[:,1])
+        
+        #if polygon_statistics:
+        count_polygon = np.zeros((n_vertices_reasonable,2))#(10,2)
+        for i in list_cluster_id:
+            list_cluster_i = record_vertices_cluster[record_vertices_cluster[:,1]==i,0]
+            n_complex_i = np.shape(list_cluster_i)[0]
+            count_polygon[n_complex_i,0]=n_complex_i+2#[x]frame=1421,polygon=10;1609,12
+            count_polygon[n_complex_i,1]+=1
+        count_polygon[0,0]=2
+        count_polygon[1,0]=3
+        count_polygon[1,1]+= n_vertices_reasonable - n_vertices_in_cluster
+
+        n_cluters_and_vertex = n_vertices_reasonable - n_vertices_in_cluster + len(list_cluster_id)#n_polygon also
+        check_1 = False
+        if check_1:
+            print('n_cluters_and_vertex','n_polygon')
+            print(n_cluters_and_vertex,sum(count_polygon[:,1]))
+            np.sum(np.logical_not(list_short_ridge_bool).astype(int))#np.shape(list_short_bonds)[0]
+        #print("polygon_n, count\n",count_polygon)
+        count_polygon_relative = np.array(count_polygon)
+        #n_polygons = sum(count_polygon[:,1])
+        count_polygon_relative[:,1] = count_polygon[:,1]/n_vertices_reasonable \
+                                        *(count_polygon[:,0]-2)*100#see one simplex as one weight, unit=100%
+        #print("polygon_n, count%\n",count_polygon_relative)
+        check_2 = True
+        if check_2:
+            count_max = np.max(count_polygon[:,1])
+            row_domain = np.where(count_polygon[:,1]==count_max)
+            print('domain polygon, domain_rate% ','n rest vertices')
+            print(count_polygon_relative[row_domain],n_vertices_reasonable - n_vertices_in_cluster)
+        self.count_polygon_number = count_polygon #[polygon_name, count_polygons]
+
+        #self.vertex_bonds_index = list_short_bonds#short bonds index offered by ridge comapre method 
+        self.list_simplex_cluster = record_vertices_cluster #n_vertices rows of [vertex_id, cluster_id],
+        
+        return count_polygon_relative#n_cluters_and_vertex#
+        
+    def check_scan_ridge_length_rank(self,scan_ridge_length_rank,n_ridges):
+        if scan_ridge_length_rank < 0:
+            scan_ridge_length_rank = 0
+        elif scan_ridge_length_rank > n_ridges:
+            scan_ridge_length_rank = n_ridges
+        else:
+            scan_ridge_length_rank = int(scan_ridge_length_rank)
+        return scan_ridge_length_rank
+
+    def get_cost_function_cluster_ml_method_sum_var(self):#,list_cluster_ids,vertex_cluster_positions[x]
+        R"""
+        introduction:
+            cost = normalized_n_clusters + normalized_sum_variance_n_clusters
+            
+            self.vertex_bonds_index #short bonds index offered by ridge comapre method 
+            self.list_simplex_cluster #[vertex_id,cluster_id]
+        return:
+            cost    
+        """
+        vertex_positions = np.array(self.vertices)
+        #get n_clusters_norm
+        n_vertices = np.shape(vertex_positions)[0]
+        n_clusters_0 = n_vertices
+        n_clusters = sum(self.count_polygon_number[:,1])#edges not cut ! [x]
+        n_clusters_norm = n_clusters/n_clusters_0
+        #get sum_var_norm
+        sum_var_0 = np.var(vertex_positions[:,0])+np.var(vertex_positions[:,1])
+        sum_var_0 = sum_var_0 *n_vertices#consider the contribution of each vertex
+        list_cluster_ids_unique = np.unique( self.list_simplex_cluster[:,1])
+        list_var_of_clusters = np.zeros((len(list_cluster_ids_unique),))#this is too large but okay anyway.
+        #[here a new i array should be set to match cluster ids]
+        for i in range(len(list_cluster_ids_unique)):
+            cluster_id = list_cluster_ids_unique[i]
+            list_vertices_indices_bool = self.list_simplex_cluster[:,1] == cluster_id#list_bool
+            list_vertices_indices = np.array(self.list_simplex_cluster[list_vertices_indices_bool,0]).astype(int)
+            n_vertices_in_cluster_id = len(list_vertices_indices)#np.sum .astype(int)
+            list_var_of_clusters[i] = np.var(vertex_positions[list_vertices_indices,0])+np.var(vertex_positions[list_vertices_indices,1])
+            list_var_of_clusters[i] = list_var_of_clusters[i] * n_vertices_in_cluster_id#consider the contribution of each vertex
+        sum_var = np.sum(list_var_of_clusters)
+        sum_var_norm = sum_var/sum_var_0
+        cost = n_clusters_norm + sum_var_norm
+        #print(n_clusters,n_clusters_norm,np.round(sum_var_norm,2))
+        return cost,n_clusters_norm,sum_var_norm
+
+    def get_cost_function_cluster_ml_method_mean_var(self):#
+        vertex_positions = np.array(self.vertices)
+        #get n_clusters_norm
+        n_vertices = np.shape(vertex_positions)[0]
+        n_clusters_0 = n_vertices
+        n_clusters = sum(self.count_polygon_number[:,1])
+        n_clusters_norm = n_clusters/n_clusters_0
+        #get var_norm
+        var_0 = np.var(vertex_positions[:,0])+np.var(vertex_positions[:,1])
+        list_cluster_ids_unique = np.unique( self.list_simplex_cluster[:,1])
+        list_var_of_clusters = np.zeros((len(list_cluster_ids_unique),))#this is too large but okay anyway.
+        #[here a new i array should be set to match cluster ids]
+        for i in range(len(list_cluster_ids_unique)):
+            cluster_id = list_cluster_ids_unique[i]
+            list_vertices_indices_bool = self.list_simplex_cluster[:,1] == cluster_id#list_bool
+            list_vertices_indices = np.array(self.list_simplex_cluster[list_vertices_indices_bool,0]).astype(int)
+            list_var_of_clusters[i] = np.var(vertex_positions[list_vertices_indices,0])+np.var(vertex_positions[list_vertices_indices,1])
+        mean_var = np.sum(list_var_of_clusters)/n_clusters#mean cluster+vertex
+        #np.mean(list_var_of_clusters)#mean cluster
+        mean_var_norm = mean_var/var_0
+        cost = n_clusters_norm + mean_var_norm
+        #print(n_clusters,n_clusters_norm,np.round(sum_var_norm,2))
+        return cost,n_clusters_norm,mean_var_norm
+
+
+class show_cairo_order_parameter:
+    def __init__(self) -> None:
+        pass
+    def compute_theoretical_diagram(self):
+        R"""
+        output:
+            record: [cn3,cn4,order_parameter_for_cairo]
+        example:
+            import workflow_analysis as wa
+            ca = wa.show_cairo_order_parameter()
+            xyc = ca.compute()
+            ca.plot_diagram(xyc)
+        """
+        num_x = 99
+        list_num = np.linspace(0.01,0.99,num_x)
+        num_scan = 0.5*num_x*(num_x+1)
+        record = np.zeros((int(num_scan),3))
+        count = 0
+        for cn3 in list_num:
+            for cn4 in list_num:
+                p1 = cn3+cn4
+                if p1<=1:
+                    cn4_normal = cn4*2
+                    r34 = cn3/cn4_normal
+                    r43 = cn4_normal/cn3
+                    p2 = np.minimum(r34,r43)
+                    p = p1*p2
+                    record[count] = [cn3,cn4,p]
+                    count = count + 1
+        return record
+    
+    def compute_cairo_order_parameter(self,cn3,cn4):
+        R"""
+        output:
+            p: order_parameter_for_cairo
+        introduction:
+            p_cairo = (cn3 + cn4)*min(cn3/2cn4,2cn4/cn3)
+        """
+        p1 = cn3+cn4
+        if p1<=1:
+            cn4_normal = cn4*2
+            r0 = cn3*cn4
+            if r0>0:
+                r34 = cn3/cn4_normal
+                r43 = cn4_normal/cn3
+                p2 = np.minimum(r34,r43)
+                p = p1*p2
+            else:
+                p = 0
+        else:
+            print('error: cn3+cn4>1')
+            p = -1
+                    
+        return p
+
+    def plot_diagram(self,account='remote',fig=None,ax=None,save=False):
+        if ax is None:
+            fig,ax = plt.subplots()
+        xyc = self.compute_theoretical_diagram()
+        #ax.scatter(pos[:,0],pos[:,1],c='k')
+        scat = ax.scatter(xyc[:,0],xyc[:,1],c=xyc[:,2])
+        ax.set_aspect('equal','box')
+        ax.set_xlabel('cn3(1)')
+        ax.set_ylabel('cn4(1)')
+        ax.set_title('order_parameter_for_cairo')
+        fig.colorbar(scat,ax=ax)
+        if save:
+            prefix = "/home/"+account+"/Downloads/"
+            png_filename=prefix+'test_order_parameter_for_cairo.png'
+            plt.savefig(png_filename)
+        else:
+            return fig,ax
+
+class energy_computer:
+    R"""
+    Introduction:
+        input particle positions, substrate array, to calculate the free energy of the system.
+    steps of operation:
+        1. define_system_manual or define_system_from_gsd
+        2. compute_energy(extended_positions)
+        3. use self.energy_mechanical
+
+    example:
+        import proceed_file as pf
+        import points_analysis_2D as pa
+        import numpy as np
+        record_energy = np.zeros((2001,3))
+        filename_trap='/home/remote/hoomd-examples_0/testhoneycomb3-8-12-part1'
+        pos_traps = np.loadtxt(filename_trap)
+        gsd_data = pf.proceed_gsd_file(None,'remote',4302,9)
+        gsd_data.get_trajectory_data()
+        frames = range(2001)
+        for frame_id in frames:#[0,1,10,100,1000,2000]:
+            extended_positions = gsd_data.get_extended_positions(frame_id)
+            points = gsd_data.txyz[frame_id,:,0:2]
+            nps = len(points)
+            #filename_array = "/home/remote/Downloads/index4302_9"
+            en = pa.energy_computer()
+            en.define_system_manual(points,300,0.25,15,pos_traps,0.81,700,1)
+            en.compute_energy(extended_positions)
+            record_energy[frame_id,0] = en.energy_pin
+            record_energy[frame_id,1] = en.energy_interaction
+            record_energy[frame_id,2] = en.energy_mechanical
+            #print(frame_id)
+            #print(en.energy_pin/nps)
+            #print(en.energy_interaction/nps)
+            #print(en.energy_mechanical/nps)#the mechanical energy is increasing?
+        np.savetxt('/home/remote/Downloads/energy_per_particle_index4302_9.txt',record_energy)#energy_index4302_9.txt
+        #np.savetxt('/home/remote/Downloads/energy_index4302_9.txt',record_energy)
+
+    """
+    def __init__(self):
+        pass
+
+    def define_system_manual(self,xy,a_yukawa,kappa,r_cut_interaction,traps,lcr,k,r_cut_trap):#box,
+        #self.box = box
+        self.xy = xy
+        self.a_yukawa = a_yukawa
+        self.kappa = kappa
+        self.r_cut_interaction = r_cut_interaction
+        self.traps = traps*lcr
+        self.lcr = lcr
+        self.k = k
+        self.r_cut_trap = r_cut_trap
+
+    def define_system_from_gsd(self,simu_index,seed,account):
+        import proceed_file as pf
+        prefix='/home/'+account+'/Downloads/'#'/home/tplab/Downloads/'
+        log_prefix='/home/'+account+'/hoomd-examples_0/'#'/home/tplab/hoomd-examples_0/'
+        #load time steps
+        if seed is None:
+            str_index=str(int(simu_index))
+            gsd_data = pf.proceed_gsd_file(simu_index=simu_index)
+        else:
+            str_index=str(int(simu_index))+'_'+str(seed)
+            file_gsd = log_prefix+'trajectory_auto'+str_index+'.gsd'#+'_'+str(seed)
+            gsd_data = pf.proceed_gsd_file(filename_gsd_seed=file_gsd,account=account)
+            
+        file_log=log_prefix+'log-output_auto'+str_index+'.log'#+'_'+str(seed)
+        log_data = np.genfromtxt(fname=file_log, skip_header=True)
+        time_steps = log_data[:,0]
+        iframes = 0
+        nframes=gsd_data.num_of_frames
+        af = gsd_data.trajectory.read_frame(iframes)
+        pos_list = np.zeros([nframes,af.particles.N,3])#gsd_data.trajectory[0].particles.N,
+        while iframes < nframes:
+            af = gsd_data.trajectory.read_frame(iframes)
+            pos_list[iframes] = af.particles.position
+            iframes = iframes + 1
+        af.configuration.box
+        pass
+
+    def compute_energy(self,extended_positions):
+        R"""
+        Intro:
+            including two parts of energy: 
+            1 of particle-particle interaction and 
+            2 particle-trap interaction.
+        question:
+            how to define entropy and hence compute free energy?
+            for orthogonal system, F = - ln(Z) / beta 
+        """
+        list_interaction_distance = self.compute_distance(extended_positions,self.r_cut_interaction,True) 
+        list_trap_distance = self.compute_distance(self.traps,self.r_cut_trap)
+        
+        list_energy_interaction_step1 = self.a_yukawa*np.exp(-self.kappa*list_interaction_distance)
+        list_energy_interaction_step2 = np.divide(list_energy_interaction_step1,2*list_interaction_distance)
+        # the 2 at denominator are used to calculate particle-wise energy only once, no overlaps. 
+        list_energy_pin = 0.5*self.k*( np.square(list_trap_distance) - self.r_cut_trap*self.r_cut_trap)
+
+        self.energy_interaction = np.sum(list_energy_interaction_step2)
+        self.energy_pin = np.sum(list_energy_pin)
+        self.energy_mechanical = self.energy_interaction + self.energy_pin
+    
+    def compute_energy_particle_wise(self,extended_positions):#[ongoing]
+        R"""
+        Intro:
+            including two parts of energy: 
+            1 of particle-particle interaction and 
+            2 particle-trap interaction.
+        result:
+            self.energy_inter_pin_mecha: [Nparticles,3],containing energy_interaction,energy_pin,energy_mechanical
+        question:
+            how to define entropy and hence compute free energy?
+            for orthogonal system, F = - ln(Z) / beta 
+        """
+        list_interaction_distance = self.compute_distance(extended_positions,self.r_cut_interaction,True,True) 
+        list_trap_distance = self.compute_distance(self.traps,self.r_cut_trap,False,True)
+        
+        n_particles = len(list_interaction_distance)#trap_d = len(list_trap_distance)
+        self.energy_inter_pin_mecha = np.zeros((n_particles,3))
+        for j in range(n_particles):
+            list_energy_interaction_step1 = self.a_yukawa*np.exp(-self.kappa*list_interaction_distance[j])
+            list_energy_interaction_step2 = np.divide(list_energy_interaction_step1,2*list_interaction_distance[j])
+            # the 2 at denominator are used to calculate particle-wise energy only once, no overlaps. 
+            list_energy_pin = 0.5*self.k*( np.square(list_trap_distance[j]) - self.r_cut_trap*self.r_cut_trap)
+
+            self.energy_inter_pin_mecha[j,0] = np.sum(list_energy_interaction_step2)
+            self.energy_inter_pin_mecha[j,1] = np.sum(list_energy_pin)
+            self.energy_inter_pin_mecha[j,2] = self.energy_inter_pin_mecha[j,0] + self.energy_inter_pin_mecha[j,1]
+
+    def compute_distance(self,reference_positions,r_cut,interact_mode=False,particle_wise_mode=False):
+        R"""
+        Introduction:
+            compute the distance between positions and reference_positions.
+            list_dis: a (1,n) array containing the distances within r_cut. 
+        """
+        reference_positions = reference_positions[:,0:2]#force 3d array to be 2d array
+        self.list_interparticle_distance=distance.cdist(self.xy, reference_positions, 'euclidean')
+        check_if_effective_interaction = self.list_interparticle_distance[:,:]<r_cut
+        if interact_mode:
+            d_particle = 0.99
+            # the diameter of particles, 
+            # check to prevent the problem of
+            # f(x)/x -> f(0)/0
+            check_if_effective_interaction2 = self.list_interparticle_distance > d_particle
+            check_if_effective_interaction = np.logical_and(check_if_effective_interaction,check_if_effective_interaction2)
+
+        if particle_wise_mode:
+            list_dis_value = self.get_distance_particle_wise(check_if_effective_interaction)
+        else:#array mode
+            list_dis_value = self.get_distance_as_array(check_if_effective_interaction)
+                
+        return list_dis_value
+
+    def get_distance_as_array(self,check_if_effective_interaction):
+        for i in range(len(check_if_effective_interaction)):
+            list_dis_value_one_row = self.list_interparticle_distance[i,check_if_effective_interaction[i]]#if it is true?
+            #print(list_dis)
+            if i==0:
+                list_dis_value = list_dis_value_one_row
+            else:
+                list_dis_value = np.concatenate((list_dis_value,list_dis_value_one_row))
+        return list_dis_value
+
+    def get_distance_particle_wise(self,check_if_effective_interaction):
+        
+        for i in range(len(check_if_effective_interaction)):
+            list_dis_value_one_row = self.list_interparticle_distance[i,check_if_effective_interaction[i]]#if it is true?
+            #print(list_dis)
+            if i==0:
+                list_dis_value = [list_dis_value_one_row]
+            else:
+                list_dis_value.append(list_dis_value_one_row)
+        return list_dis_value
+
+    def plot_energy_vs_t(self,data):
+        data = data[:,:]/256
+        fig,ax = plt.subplots()
+        times = np.linspace(0,2000,2001)
+        ax.semilogx(times,data[:,0],label='energy_pin')
+        #ax.semilogx(times,data[:,1],label='energy_inter')
+        #ax.semilogx(times,data[:,2],label='energy_mecha')
+        plt.legend()
+        plt.title('energy_per_particle')
+        plt.xlabel('time(steps)')
+        plt.ylabel('energy($k_BT$)')
+        png_filename = '/home/remote/Downloads/4302_9/energy_vs_t.png'
+        plt.savefig(png_filename)
+        plt.close()
+
+    def check_case(self):
+        R"""
+        bugs:
+        1 denominators are zero. fixed.
+        2 not multiply lcr yet. fixed
+
+        #case 1: sparse square, to test pin        
+        box = np.array([18,18,1,0,0,0],'float64')
+        points = np.array([[0,0],[3,0],[0,3],[3,3]],'float64')
+        pos_traps = points
+        gsd_data = pf.proceed_gsd_file(None,'remote',4302,9)
+        extended_positions = gsd_data.get_extended_positions_from_points(box,points)
+        en = pa.energy_computer()
+        en.define_system_manual(points,300,0.25,15.0,pos_traps,1.0,200.0,1.0)
+        en.compute_energy(extended_positions)
+        print(en.energy_pin)
+        print(en.energy_interaction)
+        print(en.energy_mechanical)
+
+        #case2: sparse triangle, to test far from trap and 3 typical bonds.        
+        test = 100*np.exp(-0.75)
+        print(test)
+        box = np.array([24,24,1,0,0,0],dtype='float64')
+        points = np.array([[0,0],[3,0],[1.5,1.5*np.sqrt(3)]],dtype='float64')
+        pos_traps = np.array([[10,10],[13,0],[15,10*np.sqrt(3)]])
+        gsd_data = pf.proceed_gsd_file(None,'remote',4302,9)
+        extended_positions = gsd_data.get_extended_positions_from_points(box,points)
+        en = pa.energy_computer()
+        en.define_system_manual(points,300,0.25,15.0,pos_traps,1.0,200.0,1.0)
+        """
+        lcr=0.79
+        index1=4302#5238
+        seed=9
+        r_trap=0.5
+        simu_index = str(index1)+'_'+str(seed)
+        file_txyz = '/home/remote/Downloads/'+simu_index+'/txyz.npy'#_stable
+        file_reference_points = '/home/remote/hoomd-examples_0/testhoneycomb3-8-12'
+        #/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/testhoneycomb3-8-12-part1
+        # '/home/remote/hoomd-examples_0/testhoneycomb3-8-12'
+        txyz = np.load(file_txyz)
+        reference_points = np.loadtxt(file_reference_points)
+        reference_points_lcr = np.multiply(lcr,reference_points) 
+
+        #small test system
+        xy=[[0,0],[3,0],[1.5,1.5*np.sqrt(3)]]
         pass
