@@ -402,7 +402,7 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
         ml = polygon_analyzer_ml(self.voronoi,self.ridge_first_minima_left)
         ml.scan_conditional_bonds_and_simplices_ml(mode,png_filename)
 
-    def get_conditional_bonds_and_simplices(self,ridge_first_minima_left=None):#long_bond_cutoff=6,
+    def get_conditional_bonds_and_simplices_vertex_length(self,ridge_first_minima_left=None):#long_bond_cutoff=6,
         R"""
         return:
             vertex_bonds_index: n rows of [start_point_index, end_point_index]
@@ -563,31 +563,6 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
         count_polygon_relative[:,1] = count_polygon[:,1]/sum(count_polygon[:,1]) \
                                         *100#see one simplex as one weight
         return count_polygon_relative
-
-    def draw_bonds_simplex_conditional_oop(self,png_filename=None,xy_stable=None,nb_change=None,x_unit='(um)',
-                                    LinearCompressionRatio=None,trap_filename=None,
-                                    axis_limit=None,fig=None,ax=None):
-        R"""
-        xy(self.points) must be a frame of txyz( not txyz_stable)!
-        xy_stable: a frame of txyz_stable
-        LinearCompressionRatio=0.79
-        trap_filename="/home/tplab/hoomd-examples_0/testhoneycomb3-8-12-part1"
-        """
-        if ax is None:
-            self.draw_bonds = bond_plot_module_old()
-        else:
-            self.draw_bonds = bond_plot_module_old(fig,ax)    
-        self.draw_bonds.restrict_axis_property_relative(self.points,x_unit=x_unit)
-        if not axis_limit is None:
-            self.draw_bonds.restrict_axis_limitation(axis_limit[0],axis_limit[1])
-        self.draw_bonds.draw_points_with_conditional_vertices(self.points,self.bond_length,self.vertex_bonds_index)
-        #self.draw_bonds.draw_bonds_conditional_bond(self.points,self.bond_length,bond_length_limmit=check,x_unit=x_unit)
-        if not trap_filename is None:
-            self.draw_bonds.plot_traps(trap_filename=trap_filename,LinearCompressionRatio=LinearCompressionRatio)
-        if not nb_change is None:
-            self.draw_bonds.plot_neighbor_change(xy_stable,nb_change)
-        if not png_filename is None:
-            self.draw_bonds.save_figure(png_filename)
     
     def plot_bond_ridge_rank_idea(self):
         R"""
@@ -607,8 +582,6 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
             is_polygon_n: mark the num n of edges of the polygon.
         
         """
-        from matplotlib.patches import Polygon
-        from matplotlib.collections import PatchCollection
         if ax is None:
             fig,ax = plt.subplots()
 
@@ -757,7 +730,7 @@ class static_points_analysis_2d:#old_class_name: PointsAnalysis2D
             self.__coordination_bond=self.__coordination_bond[0]#remove a [] in [[]] structure
         elif method == "ridge_length_method":
             self.get_first_minima_ridge_length_distribution()
-            self.get_conditional_bonds_and_simplices()
+            self.get_conditional_bonds_and_simplices_vertex_length()
             self.__coordination_bond=self.vertex_bonds_index
         
         #self._particle_id_max=np.max(self.__coordination_bond[:])#get the largest id of particle to restrain while loop
@@ -1062,9 +1035,9 @@ index 10 is out of bounds for axis 0 with size 10
         
         #That directly using 'and' has been banned, so 'logical_and' is necessary
         list_xmin = self.points[:,0] >= xmin
-        list_xmax = self.points[:,0] <= xmax
+        list_xmax = self.points[:,0] < xmax
         list_ymin = self.points[:,1] >= ymin
-        list_ymax = self.points[:,1] <= ymax
+        list_ymax = self.points[:,1] < ymax
         list_x = np.logical_and(list_xmin,list_xmax)
         list_y = np.logical_and(list_ymin,list_ymax)
         list_xy = np.logical_and(list_x,list_y)
@@ -1090,9 +1063,9 @@ index 10 is out of bounds for axis 0 with size 10
         
         #That directly using 'and' has been banned, so 'logical_and' is necessary
         list_xmin = points[:,0] >= xmin
-        list_xmax = points[:,0] <= xmax
+        list_xmax = points[:,0] < xmax
         list_ymin = points[:,1] >= ymin
-        list_ymax = points[:,1] <= ymax
+        list_ymax = points[:,1] < ymax
         list_x = np.logical_and(list_xmin,list_xmax)
         list_y = np.logical_and(list_ymin,list_ymax)
         list_xy = np.logical_and(list_x,list_y)
@@ -1296,31 +1269,6 @@ index 10 is out of bounds for axis 0 with size 10
         if not nb_change is None:
             self.draw_bonds.plot_neighbor_change(xy_stable,nb_change)
         if not png_filename is None:
-            self.draw_bonds.save_figure(png_filename)
-
-    def draw_bonds_conditional_ridge_oop(self,check,png_filename=None,xy_stable=None,nb_change=None,x_unit='(um)',
-                                    LinearCompressionRatio=None,trap_filename=None,
-                                    axis_limit=None):
-        R"""
-        xy(self.points) must be a frame of txyz( not txyz_stable)!
-        xy_stable: a frame of txyz_stable
-        LinearCompressionRatio=0.79
-        trap_filename="/home/tplab/hoomd-examples_0/testhoneycomb3-8-12-part1"
-        """
-        self.draw_bonds = bond_plot_module_old()
-        self.draw_bonds.restrict_axis_property_relative(self.points,x_unit=x_unit)
-        if not axis_limit is None:
-            xlim = [0,axis_limit[0]]
-            ylim = [0,axis_limit[1]]
-            self.draw_bonds.restrict_axis_limitation(xlim,ylim)
-
-        self.draw_bonds.draw_points_with_conditional_bond(self.points,self.bond_length,bond_length_limmit=check)
-        #self.draw_bonds.draw_bonds_conditional_bond(self.points,self.bond_length,bond_length_limmit=check,x_unit=x_unit)
-        if not trap_filename is None:
-            self.draw_bonds.plot_traps(trap_filename=trap_filename,LinearCompressionRatio=LinearCompressionRatio)
-        if not nb_change is None:
-            self.draw_bonds.plot_neighbor_change(xy_stable,nb_change)
-        if not png_filename is None:                
             self.draw_bonds.save_figure(png_filename)
 
     def draw_bonds_conditional_bond_for_image_oop(self,image,check,png_filename=None,xy_stable=None,nb_change=None,x_unit='(um)',
@@ -2010,7 +1958,7 @@ class dynamic_points_analysis_2d:#old_class_name: msd
         circle_color = 'limegreen'#'orange'
         arrow_color = 'limegreen'
 
-        bpm = bond_plot_module_old()
+        bpm = bond_plot_module()
         bpm.restrict_axis_property_relative(xy_init,'($\sigma$)')
         #bpm.ax.set_xlim(3,16)#plt.xlim(-dis+center[0],dis+center[0])
         #bpm.ax.set_ylim(-12,1)#plt.ylim(-dis+center[1],dis+center[1])
@@ -2083,13 +2031,13 @@ class dynamic_points_analysis_2d:#old_class_name: msd
         arrow_color = 'limegreen'
 
         
-        bpm = bond_plot_module_old()
+        bpm = bond_plot_module()
         bpm.restrict_axis_property_relative(xy_init,'($\sigma$)')  
         #draw bonds
         a_frame = static_points_analysis_2d(points=xy_init)
         a_frame.get_first_minima_bond_length_distribution(lattice_constant=1,hist_cutoff=bond_cut_off)#,png_filename=png_filename1
         check=[0.4, a_frame.bond_first_minima_left]
-        bpm.draw_points_with_conditional_bond(xy_init,a_frame.bond_length,check,particle_size=particle_size)  
+        bpm.draw_points_with_given_bonds(xy_init,a_frame.bond_length,check,particle_size=particle_size)  
         #draw arrows
         df2 = displacemnt_field_2D(self.txyz_stable,bpm.ax,bpm.fig)  
         ids_in = df2.get_displacement_field_xy_id(frame_init,frame_final)
@@ -2132,13 +2080,13 @@ class dynamic_points_analysis_2d:#old_class_name: msd
         arrow_color = 'limegreen'
         
         
-        bpm = bond_plot_module_old()
+        bpm = bond_plot_module()
         bpm.restrict_axis_property_relative(xy_init,'($\sigma$)')  
         #draw bonds
         a_frame = static_points_analysis_2d(points=xy_init)
         a_frame.get_first_minima_bond_length_distribution(lattice_constant=1,hist_cutoff=bond_cut_off)#,png_filename=png_filename1
         check=[0.4, a_frame.bond_first_minima_left]
-        bpm.draw_points_with_conditional_bond(xy_init,a_frame.bond_length,check,particle_size=particle_size)  
+        bpm.draw_points_with_given_bonds(xy_init,a_frame.bond_length,check,particle_size=particle_size)  
         #draw arrows
         df2 = displacemnt_field_2D(self.txyz_stable,bpm.ax,bpm.fig)  
         df2.get_displacements(frame_final,frame_init)
@@ -2464,8 +2412,6 @@ class trajectory_module:
             print(i_bins_for_count_peak_2)
             print(i_bins_for_count_1st_peak) 
             """
-            #list_xy = np.logical_and(list_x,list_y)
-            #self.edge_cut_positions_list = np.where(==)
             i = i_bins_for_count_1st_peak
             while i < i_max-3:#i start from 0, which have to -1;compares i,i+1 and i+2, which have to -2, hence -3
                 if self._count[i] > self._count[i+1]:
@@ -3200,314 +3146,6 @@ class displacemnt_field_2D:
         #print(rank_frame)
         return rank_relative#normalized
 
-class bond_plot_module_old:
-    def __init__(self,fig=None,ax=None):
-        if ax is None:
-            self.fig,self.ax = plt.subplots()
-        else:
-            self.fig = fig
-            self.ax = ax
-        
-    def restrict_axis_property_relative(self,xy,x_unit='(um)'):
-        R"""
-        Parameters:
-            txyz: all the particle positions, no one removed.
-            bond_length: [particle_id1,particle_id2, bond_length] for txyz.
-            check: limit the shortest and longest bond( in bond_length) to draw.
-            png_filename: "prefix/bond_plot_index1513.png"
-        weight of shapes:
-            bond(blue line) < particles(black circle) < neighbor_change(orange circle) < traps(red cross)
-            0   1   2   3   
-        """
-        
-        #if dis is None:
-        self.points = xy
-        xmax = max(self.points[:,0]) #- 3
-        ymax = max(self.points[:,1]) #- 3
-        xmin = min(self.points[:,0]) #+ 3
-        ymin = min(self.points[:,1]) #+ 3
-        dis = min(xmax-xmin,ymax-ymin)/2.0#half of the length of the system.
-        dis = dis - 0 #cut the edge if necessary(eg. size & scale of images not match)
-
-        center = [(xmax+xmin)*0.5,(ymax+ymin)*0.5]
-        center_origin_distance = np.abs(np.dot(center,center))
-        if  center_origin_distance < 1.0:# center is really close to origin
-            center = [0,0]
-
-        #draw a figure with edges
-        if x_unit == '($\sigma$)':
-            """
-            plt.rcParams.update({
-            "text.usetex": True,
-            "font.family": "Helvetica"
-            })
-            """
-            x_unit = '($\sigma$)'#pip install latex is necessary for plt.savefig
-        self.ax.set_aspect('equal','box')#plt.axis('equal')
-        self.ax.set_xlabel('x'+x_unit)  # Add an x-label to the axes.
-        self.ax.set_ylabel('y'+x_unit)  # Add a y-label to the axes.
-        """
-        the displayed image size will be the smaller one 
-        between axis limitation for xlim/ylim or data itself. 
-        Hence the effective xlim/ylim should be set smaller than data.
-
-        To ensure that xlim/ylim < data region, 
-        we add physically meaningless points.
-        """
-        #restrict ticks to show
-        """
-        #(let all the images share the same size)
-        new_ticks = np.linspace(-dis,dis,int(2*dis+1))
-        new_ticks = new_ticks.astype(int)
-        #print(new_ticks.astype(str))
-        #print((new_ticks))
-        plt.xticks(new_ticks,new_ticks.astype(str))
-        plt.yticks(new_ticks,new_ticks.astype(str))
-        """
-        #restrict data region to show
-        #self.ax.set_xlim(-dis+center[0],dis+center[0])#plt.xlim(-dis+center[0],dis+center[0])
-        #self.ax.set_ylim(-dis+center[1],dis+center[1])#plt.ylim(-dis+center[1],dis+center[1])
-        self.x_unit = x_unit
-
-    def restrict_axis_limitation(self,xlim,ylim):
-        #restrict data region to show
-        self.ax.set_xlim(xlim)
-        self.ax.set_ylim(ylim)
-
-    def draw_points_with_conditional_bond(self,xy,bond_length=None,bond_length_limmit=[0.9,2.0],particle_size=None):
-        R"""
-        Parameters:
-            xy: particle positions of a frame, with no one removed.
-            bond_length: [particle_id1,particle_id2, bond_length] for txyz.
-            bond_length_limmit: limit the shortest and longest bond( in bond_length) to draw.
-        weight of shapes:
-            bond(blue line) < particles(black circle) < neighbor_change(orange circle) < traps(red cross)
-            0   1   2   3   
-        Examples:
-            import points_analysis_2D as pa
-            s = "/home/tplab/Downloads/"
-            index_num = 1387
-            index_name = "index"+str(index_num)
-            fname = s+index_name
-            bb = pa.PointsAnalysis2D(filename=fname)
-            oname1 = s+"bond_hist_"+index_name
-            bb.draw_bond_length_distribution_and_first_minima(png_filename=oname1)
-            oname2 = s+"bond_plot_"+index_name
-            bb.draw_bonds_conditional_bond(check=[0.9, bb.bond_first_minima_left], png_filename=oname2)
-        """
-        self.points = xy
-        if not (bond_length is None):
-            bond_check= tuple([bond_length_limmit[0],bond_length_limmit[1]])
-            #add lines for edges
-            for i in range(np.shape(bond_length)[0]):
-                if (bond_length[i,2] > bond_check[0])&(bond_length[i,2] < bond_check[1]) :
-                    edge = tuple(bond_length[i,0:2].astype(int))
-                    pt1,pt2 = [self.points[edge[0]],self.points[edge[1]]]
-                    line = plt.Polygon([pt1,pt2], closed=None, fill=None, edgecolor='b',zorder=0)#,lineStyle='dashed'
-                    self.ax.add_line(line)
-            self.ax.set_title("bond_length:"+str(np.around(bond_length_limmit,2))+self.x_unit)  # Add a title to the axes
-
-        if not particle_size is None:
-            self.ax.scatter(xy[:,0],xy[:,1],color='k',zorder=1,s=particle_size)
-        else:
-            self.ax.scatter(xy[:,0],xy[:,1],color='k',zorder=1)
-
-    def draw_points_with_conditional_vertices(self,xy,bond_length=None,vertex_bonds_index=None,particle_size=None):
-        R"""
-        Parameters:
-            xy: particle positions of a frame, with no one removed.
-            bond_length: [particle_id1,particle_id2, bond_length] for txyz.
-            vertex_bonds_index: [particle_id1,particle_id2]
-        weight of shapes:
-            bond(blue line) < particles(black circle) < neighbor_change(orange circle) < traps(red cross)
-            0   1   2   3   
-        Examples:
-        """
-        self.points = xy
-        if not (bond_length is None):
-            #add lines for edges
-            for i in range(np.shape(vertex_bonds_index)[0]):
-                #vertex_bonds_index = vertex_bonds_index[i,0:2].astype(int)
-                #bond_index=vertex_bonds_index[i]
-                #pt1,pt2 = [self.points[int(bond_length[bond_index,0])],self.points[int(bond_length[bond_index,1])]]
-                pt1,pt2 = [self.points[vertex_bonds_index[i,0]],self.points[vertex_bonds_index[i,1]]]
-                line = plt.Polygon([pt1,pt2], closed=None, fill=None, edgecolor='k')
-                plt.gca().add_line(line)
-            self.ax.set_title("bond_length: vertices"+self.x_unit)  # Add a title to the axes
-
-        """if not particle_size is None:
-            self.ax.scatter(xy[:,0],xy[:,1],color='k',zorder=1,s=particle_size)
-        else:
-            self.ax.scatter(xy[:,0],xy[:,1],color='k',zorder=1)"""
-
-    def plot_neighbor_change(self,xy_stable,nb_change):
-        R"""
-        txyz_stable:array[Nframes,Nparticles,xyz]
-                for simu data, 
-                    ensure that particles never move across the boundary(box)!
-                for exp data, 
-                    unit of xyz must be um! 
-                    ensure that particles are always in the vision field!
-        nb_change: particle ids( in txyz_stable) which change neighbors.
-        """
-        self.ax.scatter(xy_stable[nb_change,0],xy_stable[nb_change,1],color='orange',zorder=2)
-            
-    def plot_traps(self,trap_filename="/home/tplab/hoomd-examples_0/testhoneycomb3-8-12-part1",LinearCompressionRatio=0.79,mode='map'):
-        R"""
-        trap_filename:
-                '/home/remote/hoomd-examples_0/testhoneycomb3-8-12'
-                '/home/remote/hoomd-examples_0/testhoneycomb3-8-12-part1'
-                '/home/remote/hoomd-examples_0/testkagome3-11-6'
-                '/home/remote/hoomd-examples_0/testkagome_part3-11-6'
-        mode: 'array'(scatter) or 'map'(pcolormesh)
-        """
-        traps=np.loadtxt(trap_filename)
-        traps=np.multiply(traps,LinearCompressionRatio)
-        if mode=='array':
-            #x_scale = 200
-            self.ax.scatter(traps[:,0], traps[:,1],c='r',zorder=3)#marker = 'x',s=x_scale
-        elif mode=='map':
-            """
-            #get points
-            N = 256
-            vals = np.ones((N, 4))
-            vals[:, 0] = np.linspace(1, 1, N)
-            vals[:, 1] = np.linspace(1, 128/256, N)
-            vals[:, 2] = np.linspace(1, 128/256, N)
-            newcmp = ListedColormap(vals)#LinearSegmentedColormap(vals)#ListedColormap(vals)
-            
-            cmp = plt.get_cmap('autumn')
-            cmp.reversed('autumn_r')
-            """
-            rcut=1.0
-            cmap_name = 'Reds'#'autumn_r'#'autumn'#newcmp#'binary'#
-            transparency = 0.5#0.3
-
-
-            #set traps
-            max = np.max(traps)
-            min = np.min(traps)
-            length = (max - min)
-            steps = length/(rcut/10.0)
-            #plt.style.use('_mpl-gallery-nogrid')
-
-            # make data
-            X, Y = np.meshgrid(np.linspace(min, max, steps.astype(int)), np.linspace(min, max, steps.astype(int)))
-            HarmonicK = 100
-            #origin = np.zeros((1,2))
-            sz = np.shape(traps)
-            i = 0
-            Z = ( (0.50*HarmonicK*rcut*rcut-0.50*HarmonicK*((X-traps[i,0])**2 + (Y-traps[i,1])**2))\
-                *(((X-traps[i,0])**2 + (Y-traps[i,1])**2) < rcut*rcut) )
-            i = i+1
-            while i<sz[0]:#sz[0]
-                Zi = (0.50*HarmonicK*rcut*rcut-0.50*HarmonicK*((X-traps[i,0])**2 + (Y-traps[i,1])**2))\
-                    *(((X-traps[i,0])**2 + (Y-traps[i,1])**2) < rcut*rcut)
-                Z = Z + Zi
-                i = i+1
-            
-            self.ax.pcolormesh(X, Y, Z,cmap=cmap_name,zorder = -1,alpha=transparency)#,zorder=1
-
-    def save_figure(self,png_filename):
-        R"""
-        parameter:
-            png_filename: "prefix/bond_plot_index1513.png"
-
-        if latex is used in matplolib,
-        'pip install latex' is necessary for plt.savefig()
-        """
-        self.fig.savefig(png_filename)#plt.savefig(png_filename)
-        plt.close() # closes the current active figure
-        #del self.ax,self.fig
-
-    def draw_bonds_conditional_bond(self,xy,bond_length,bond_length_limmit=[0.9,2.0],x_unit='(um)'):#compatible module
-        R"""
-        Parameters:
-            txyz: all the particle positions, no one removed.
-            bond_length: [particle_id1,particle_id2, bond_length] for txyz.
-            check: limit the shortest and longest bond( in bond_length) to draw.
-            png_filename: "prefix/bond_plot_index1513.png"
-        weight of shapes:
-            bond(blue line) < particles(black circle) < neighbor_change(orange circle) < traps(red cross)
-            0   1   2   3   
-        Examples:
-            import points_analysis_2D as pa
-            s = "/home/tplab/Downloads/"
-            index_num = 1387
-            index_name = "index"+str(index_num)
-            fname = s+index_name
-            bb = pa.PointsAnalysis2D(filename=fname)
-            oname1 = s+"bond_hist_"+index_name
-            bb.draw_bond_length_distribution_and_first_minima(png_filename=oname1)
-            oname2 = s+"bond_plot_"+index_name
-            bb.draw_bonds_conditional_bond(check=[0.9, bb.bond_first_minima_left], png_filename=oname2)
-        """
-        bond_check= tuple([bond_length_limmit[0],bond_length_limmit[1]])
-        
-        #if dis is None:
-        self.points = xy
-        xmax = max(self.points[:,0]) #- 3
-        ymax = max(self.points[:,1]) #- 3
-        xmin = min(self.points[:,0]) #+ 3
-        ymin = min(self.points[:,1]) #+ 3
-        dis = min(xmax-xmin,ymax-ymin)/2.0#half of the length of the system.
-        dis = dis - 0 #cut the edge if necessary(eg. size & scale of images not match)
-
-        center = [(xmax+xmin)*0.5,(ymax+ymin)*0.5]
-        center_origin_distance = np.abs(np.dot(center,center))
-        if  center_origin_distance < 1.0:# center is really close to origin
-            center = [0,0]
-
-        #draw a figure with edges
-        if x_unit == '(sigma)':
-            """
-            plt.rcParams.update({
-            "text.usetex": True,
-            "font.family": "Helvetica"
-            })
-            """
-            x_unit = '($\sigma$)'#pip install latex is necessary for plt.savefig
-        self.ax.set_aspect('equal','box')#plt.axis('equal')
-        self.ax.set_xlabel('x'+x_unit)  # Add an x-label to the axes.
-        self.ax.set_ylabel('y'+x_unit)  # Add a y-label to the axes.
-        self.ax.set_title("bond_length:"+str(np.around(bond_length_limmit,2))+x_unit)  # Add a title to the axes
-        """
-        the displayed image size will be the smaller one 
-        between axis limitation for xlim/ylim or data itself. 
-        Hence the effective xlim/ylim should be set smaller than data.
-
-        To ensure that xlim/ylim < data region, 
-        we add physically meaningless points.
-        """
-        #restrict ticks to show
-        """
-        #(let all the images share the same size)
-        new_ticks = np.linspace(-dis,dis,int(2*dis+1))
-        new_ticks = new_ticks.astype(int)
-        #print(new_ticks.astype(str))
-        #print((new_ticks))
-        plt.xticks(new_ticks,new_ticks.astype(str))
-        plt.yticks(new_ticks,new_ticks.astype(str))
-        """
-        #restrict data region to show
-        self.ax.set_xlim(-dis+center[0],dis+center[0])#plt.xlim(-dis+center[0],dis+center[0])
-        self.ax.set_ylim(-dis+center[1],dis+center[1])#plt.ylim(-dis+center[1],dis+center[1])
-        
-        #add lines for edges
-        for i in range(np.shape(bond_length)[0]):
-            if (bond_length[i,2] > bond_check[0])&(bond_length[i,2] < bond_check[1]) :
-                edge = tuple(bond_length[i,0:2].astype(int))
-                pt1,pt2 = [self.points[edge[0]],self.points[edge[1]]]
-                line = plt.Polygon([pt1,pt2], closed=None, fill=None, edgecolor='b',zorder=0)
-                self.ax.add_line(line)
-        """
-        particle_ids = np.linspace(0,self.points.shape[0]-1,self.points.shape[0],dtype=int)
-        particle_ids_str = particle_ids.astype(str)
-        for j in particle_ids:
-            plt.annotate(particle_ids_str[j],self.points[j])
-        """
-        self.ax.scatter(xy[:,0],xy[:,1],color='k',zorder=1)
-
 class bond_plot_module:
     def __init__(self,fig=None,ax=None):
         if ax is None:
@@ -3516,9 +3154,10 @@ class bond_plot_module:
             self.fig = fig
             self.ax = ax
         
-    def restrict_axis_property_relative(self,x_unit='(um)'):#,xy
+    def restrict_axis_property_relative(self,x_unit=None,hide_axis=False):#,xy
         R"""
         Parameters:
+            x_unit: '($/sigma$)','(um)'
             txyz: all the particle positions, no one removed.
             bond_length: [particle_id1,particle_id2, bond_length] for txyz.
             check: limit the shortest and longest bond( in bond_length) to draw.
@@ -3543,17 +3182,21 @@ class bond_plot_module:
         self.ax.set_xlim(-dis+center[0],dis+center[0])#plt.xlim(-dis+center[0],dis+center[0])
         self.ax.set_ylim(-dis+center[1],dis+center[1])#plt.ylim(-dis+center[1],dis+center[1])"""
         #draw a figure with edges
-        if x_unit == '(sigma)':
+        if not x_unit is None:
             """
             plt.rcParams.update({
             "text.usetex": True,
             "font.family": "Helvetica"
             })
             """
-            x_unit = '($\sigma$)'#pip install latex is necessary for plt.savefig
+            self.ax.set_xlabel('x'+x_unit)  # Add an x-label to the axes.
+            self.ax.set_ylabel('y'+x_unit)  # Add a y-label to the axes.
+            self.ax.set_title("bond_length: vertices"+x_unit)  # Add a title to the axes
         self.ax.set_aspect('equal','box')#plt.axis('equal')
-        self.ax.set_xlabel('x'+x_unit)  # Add an x-label to the axes.
-        self.ax.set_ylabel('y'+x_unit)  # Add a y-label to the axes.
+        if hide_axis:
+            #hide xy-axis
+            self.ax.set_xticks([])
+            self.ax.set_yticks([])
         """
         the displayed image size will be the smaller one 
         between axis limitation for xlim/ylim or data itself. 
@@ -3601,7 +3244,6 @@ class bond_plot_module:
             #pt1,pt2 = [self.points[list_bonds_index[i,0]],self.points[list_bonds_index[i,1]]]
             #line = plt.Polygon([pt1,pt2], closed=None, fill=None, edgecolor= bond_color,linewidth=bond_width)
             self.ax.add_line(line)#plt.gca().add_line(line)
-        self.ax.set_title("bond_length: vertices"+self.x_unit)  # Add a title to the axes
 
         if not particle_size is None:
             self.ax.scatter(xy[:,0],xy[:,1],color=particle_color,zorder=1,s=particle_size)
@@ -3618,13 +3260,13 @@ class bond_plot_module:
         list_bond_index = ridge_points[np.logical_not(list_short_ridge_bool)]
         return list_bond_index
 
-    def get_bonds_with_conditional_bond_length(self,bond_length=None,bond_length_limmit=[0.9,2.0]):
+    def get_bonds_with_conditional_bond_length(self,bond_length,bond_length_limmit=[0.9,2.0]):
         R"""
         Introduction:
             In Delauny triangulation, remove long bonds and 
             reserve short bonds to show polygons formed by particles. 
         """
-        list_longer = bond_length[:,2] > bond_length_limmit[0]
+        list_longer = bond_length[:,2] >= bond_length_limmit[0]
         list_shorter = bond_length[:,2] < bond_length_limmit[1]
         list_bond_bool = np.logical_and(list_longer,list_shorter)
         list_bond_index = bond_length[list_bond_bool,0:2].astype(int)
@@ -3669,7 +3311,7 @@ class bond_plot_module:
         """
         self.ax.scatter(xy_stable[nb_change,0],xy_stable[nb_change,1],color='orange',zorder=2)
             
-    def plot_traps(self,traps=None,trap_filename=None,LinearCompressionRatio=0.79,mode='map',trap_color='r',trap_size=1):
+    def plot_traps(self,traps=None,trap_filename=None,LinearCompressionRatio=1.0,mode='map',trap_color='r',trap_size=1):
         R"""
         trap_filename:
                 '/home/remote/hoomd-examples_0/testhoneycomb3-8-12'
@@ -3737,7 +3379,7 @@ class bond_plot_module:
         if latex is used in matplolib,
         'pip install latex' is necessary for plt.savefig()
         """
-        self.fig.savefig(png_filename)#plt.savefig(png_filename)
+        self.fig.savefig(png_filename,bbox_inches='tight')#plt.savefig(png_filename)
         plt.close('all')#self.fig,plt.close() # closes the current active figure
 
 class bond_plot_module_for_image:

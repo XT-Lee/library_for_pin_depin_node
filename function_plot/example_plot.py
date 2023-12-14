@@ -48,6 +48,68 @@ class functions_plot_module:
         x = np.linspace(0.1,0.9,10)
         y = np.exp(-x)*2/1.1
         return x,y
+    
+    def generate_gaussian(self,epsilon = 300,sigma = 1,rcut = 2):
+        R"""
+        introduction: 
+            
+        return: 
+            x,y
+        example:
+            import function_plot.example_plot as fp
+            fpm = fp.functions_plot_module()
+            fpm.generate_gaussian(1,1,1)
+            fpm.generate_gaussian(10,1,1)
+            fpm.generate_gaussian(1,0.6,2)
+            fpm.generate_gaussian(10,0.6,2)
+        """
+        # = 
+        
+        x = np.linspace(-rcut,rcut,41)
+        y = -np.exp(-0.5*((x/sigma)**2))*epsilon + np.exp(-0.5*((rcut/sigma)**2))*epsilon
+        delta_energy_per_epsilon = (1 - np.exp(-0.5*((rcut/sigma)**2)))*epsilon
+        print('sigma',sigma,'rcut',rcut,'dE',delta_energy_per_epsilon)
+        return x,y
+    
+    def generate_harmonic(self,epsilon = 300):
+        R"""
+        introduction: 
+            ln(y) = x*ln(e), linear in semilogy
+            when e > 1 , the cumulation is convergent series
+        return: 
+            x,y
+        """
+        # = 
+        #sigma = 1
+        x = np.linspace(-1,1,21)
+        y = 0.5*(x**2)*epsilon - 0.5*epsilon
+        return x,y
+
+    def generate_gaussian_force(self,epsilon = 300,sigma = 1):
+        R"""
+        introduction: 
+            ln(y) = x*ln(e), linear in semilogy
+            when e > 1 , the cumulation is convergent series
+        return: 
+            x,y
+        """
+        x = np.linspace(-1,1,21)
+        y = x*np.exp(-0.5*((x/sigma)**2))*epsilon/(sigma**2)
+        return x,y
+    
+    def generate_harmonic_force(self,epsilon = 300):
+        R"""
+        introduction: 
+            ln(y) = x*ln(e), linear in semilogy
+            when e > 1 , the cumulation is convergent series
+        return: 
+            x,y
+        """
+        # = 
+        #sigma = 1
+        x = np.linspace(-1,1,21)
+        y = x*epsilon
+        return x,y
 
     def generate_kauzmann_glass(self,b,m):
         R"""
@@ -87,7 +149,6 @@ class functions_plot_module:
         x = 1/xm#T/Tg
         print(x)
 
-
     def plot_function_glass(self,x,y):
         fig,ax = plt.subplots()
         ax.plot(1/x,y)
@@ -98,6 +159,46 @@ class functions_plot_module:
     def plot_function(self,x,y):
         fig,ax = plt.subplots()
         ax.plot(x,y)
+        plt.show()
+    
+    def plot_function2(self,x,y1,y2):
+        R"""
+        intro: U/kt = eps ~ k/2; force_gaus < force_harmo,
+            when sigma=0.6, the two potential look similar.
+        import function_plot.example_plot as ep
+        fpm = ep.functions_plot_module()
+        eps=300
+        x1,y1 = fpm.generate_gaussian(eps,0.6)
+        x2,y2 = fpm.generate_harmonic(2*eps)
+        fpm.plot_function2(x1,y1,y2)
+        """
+        fig,ax = plt.subplots()
+        ax.plot(x,y1,label='gaus')
+        ax.plot(x,y2,label='harm')
+        plt.legend()
+        plt.show()
+    
+    def plot_function22(self,x1,y1,x2,y2):
+        R"""
+        intro: U/kt = eps ~ k/2; force_gaus < force_harmo,
+            when epsilon=2k, sigma=0.6,rcut=2, 
+            the two potential look similar.
+        import function_plot.example_plot as ep
+        fpm = ep.functions_plot_module()
+
+        eps=300
+        for sigma in [0.6,1]:
+            x1,y1 = fpm.generate_gaussian(eps,sigma)
+            x2,y2 = fpm.generate_harmonic(2*eps)
+            fpm.plot_function22(x1,y1,x2,y2)
+            x1,y1 = fpm.generate_gaussian_force(eps,sigma)
+            x2,y2 = fpm.generate_harmonic_force(2*eps)
+            fpm.plot_function22(x1,y1,x2,y2)
+        """
+        fig,ax = plt.subplots()
+        ax.plot(x1,y1,label='gaus')
+        ax.plot(x2,y2,label='harm')
+        plt.legend()
         plt.show()
     
     def plot_function_loglog(self,x,y):

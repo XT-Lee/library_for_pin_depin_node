@@ -24,6 +24,21 @@
 	and others.
 
 ## log:
+- 20231213 add set_new_gsd_file_2types_by_box_or_n_size
+			in symmetry_transformation_v4_3.system_parameters_generators.initial_state_generator
+			edit generate_gaussian in function_plot.example_plot.functions_plot_module
+- 20231212 add generate_initial_state_hexagonal_particle_honeycomb_part_gaus_eq_harmo_trap_scan_csv in 
+			symmetry_transformation_v4_3.simulation_controller
+			add generate_gaussian_force, generate_harmonic_force, generate_gaussian, generate_harmonic in example_plot
+			add get_bonds_from_simu_indices_type_n_from_csv in symmetry_transformation_v4_3.list_code_analysis.analyze_a_series_of_gsd_file
+- 20231211 add get_2_k_cn3_stds_and_plot,get_cn3s_from_two_csv_files 
+			in symmetry_transformation_v4_3.list_code_analysis.analyze_a_series_of_gsd_file
+			add merge_two_csvs in proceed_file.
+			edit set_simulation_parameters self.width = 1 in simulation_core.simulation_core_traps
+- 20231208 clear bond_plot_module_old in points_analysis_2D.
+			add workflow_type_n in workflow_analysis.archimedean_tilings_polygon_dye.
+			edit perturbation, fix positions.z = 0  in system_parameters_generators.initial_state_generator.set_new_gsd_file_2types_by_n_size
+- 20231207 add generate_type_n_part,generate_type_n in workflow_analysis.archimedean_tilings
 - 20231204 add trap_fill_box in system_parameters_generators.initial_state_generator.set_new_gsd_file_2types
 			add get_gsds_from_mysql.get_record_from_csv
 - 20231130 add get_conditional_bonds_and_simplices_bond_length in points_analysis_2D.static_points_analysis_2d.
