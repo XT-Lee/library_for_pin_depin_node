@@ -355,3 +355,14 @@ class proceed_exp_file:
     see particle_tracking.py to get trajectories of particles from a video.
     """
     pass
+
+class merge_two_csvs:
+    def __init__(self,csv_filename1,csv_filename2,csv_filename_merged=None):
+        import pandas as pd
+        csv1 = pd.read_csv(csv_filename1)
+        csv2 = pd.read_csv(csv_filename2)
+        csv_merged = pd.concat([csv1,csv2])
+        if not csv_filename_merged is None: 
+            pd.DataFrame.to_csv(csv_merged,csv_filename_merged)
+        #return csv_merged
+        self.csv_merged = csv_merged

@@ -38,6 +38,7 @@ class simulation_core_traps:
         self.kT = 1.0
         self.dt = 0.002
         self.total_steps = 2e6+1
+        self.width = 1# 1,10 the size of cell, larger for type4 lattice
 
     def set_file_parameters(self,simu_index,seed):
         self.prefix_read =  "/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/"
@@ -71,7 +72,8 @@ class simulation_core_traps:
 
         #set interaction
         # Apply the harmonic traps on the particles.
-        gauss_cell = hoomd.md.nlist.Cell(1)#default_r_cut=15.0 ? 'particle','trap'
+        
+        gauss_cell = hoomd.md.nlist.Cell(self.width)#default_r_cut=15.0 ? 'particle','trap'
         gauss = hoomd.md.pair.Gaussian(nlist=gauss_cell,default_r_cut=self.gauss_r_cut)
         gauss.params[('particle','trap')] = dict(epsilon=self.gauss_epsilon,sigma=self.gauss_sigma)
         gauss.params[('particle','particle')] = dict(epsilon=0.0,sigma=1.0)
@@ -81,7 +83,7 @@ class simulation_core_traps:
         gauss.r_cut[('trap','trap')] = 0.0
         
         # Apply the yukawa interaction on the particles.
-        yukawa_cell = hoomd.md.nlist.Cell(1)#('trap',)
+        yukawa_cell = hoomd.md.nlist.Cell(self.width)#('trap',)
         yukawa = hoomd.md.pair.Yukawa(nlist=yukawa_cell,default_r_cut=self.yukawa_r_cut)
         yukawa.params[('particle','particle')] = dict(epsilon=self.yukawa_epsilon,kappa=self.yukawa_kappa)
         yukawa.params[('particle','trap')] = dict(epsilon=0.0,kappa=0.0)
@@ -128,7 +130,7 @@ class simulation_core_traps:
         #https://gsd.readthedocs.io/en/v3.2.0/python-module-gsd.hoomd.html#gsd.hoomd.open
         gsd_writer = hoomd.write.GSD(filename=self.output_file_gsd,
                                     trigger=hoomd.trigger.Periodic(self.snap_period),
-                                    mode='xb')#deprecated: 'xb'
+                                    mode='wb')#deprecated: 'xb'
         sim.operations.writers.append(gsd_writer)
         sim.run(self.total_steps)
 
