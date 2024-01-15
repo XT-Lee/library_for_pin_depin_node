@@ -1,6 +1,6 @@
 #import time
 
-def getTimeCost(t1,t2):
+def getTimeCost(t1,t2,if_print=True):
     R"""
     parameters"
         t1:start time as time.localtime()
@@ -26,12 +26,24 @@ def getTimeCost(t1,t2):
         dt_h=dt_h+24
         dt_d=dt_d-1
 
-    if dt_d>0:
-        print("start",t1.tm_mday,":",t1.tm_hour,":",t1.tm_min,":",t1.tm_sec)
-        print("end  ",t2.tm_mday,":",t2.tm_hour,":",t2.tm_min,":",t2.tm_sec)
-        print("cost ",dt_d,":",dt_h,":",dt_m,":",dt_s)
+    if if_print:
+        if dt_d>0.9:
+            print("start",t1.tm_mday,":",t1.tm_hour,":",t1.tm_min,":",t1.tm_sec)
+            print("end  ",t2.tm_mday,":",t2.tm_hour,":",t2.tm_min,":",t2.tm_sec)
+            print("cost ",dt_d,":",dt_h,":",dt_m,":",dt_s)
+        elif dt_d<-0.1:
+            print("start",t1.tm_hour,":",t1.tm_min,":",t1.tm_sec)
+            print("end  ",t2.tm_hour,":",t2.tm_min,":",t2.tm_sec)
+            print("cost ",dt_d+30,":",dt_h,":",dt_m,":",dt_s)
+        elif dt_d<0.1:
+            print("start",t1.tm_hour,":",t1.tm_min,":",t1.tm_sec)
+            print("end  ",t2.tm_hour,":",t2.tm_min,":",t2.tm_sec)
+            print("cost ",dt_h,":",dt_m,":",dt_s)
     else:
-        print("start",t1.tm_hour,":",t1.tm_min,":",t1.tm_sec)
-        print("end  ",t2.tm_hour,":",t2.tm_min,":",t2.tm_sec)
-        print("cost ",dt_h,":",dt_m,":",dt_s)
+        if dt_d>0.9:
+            return [dt_d,dt_h,dt_m,dt_s]
+        elif dt_d<-0.1:
+            return [dt_d+30,dt_h,dt_m,dt_s]
+        elif dt_d<0.1:
+            return [0,dt_h,dt_m,dt_s]
         
