@@ -3248,6 +3248,60 @@ class archimedean_tilings:
         pt = test.voronoi.vertices
         return pt
     
+    def get_type_n_lcr0(self):
+        R"""
+        introduction:
+            lcr0 is a parameter when a_hex * lcr0 = a_type_n, 
+            the particle density of n_hex and n_type_n are equal. 
+        return:
+            record_lcr0:(11,)[lcr0_for_type1,2,3...,11]
+        """
+        record_lcr0 = np.zeros((11,))
+        for i in range(11):
+            self.generate_type_n(i+1)
+            cross_lattice = np.cross(self.a1,self.a2)
+            area_per_particle = cross_lattice[2]/len(self.position)
+            area_hex = np.sqrt(3)/2.0
+            lcr0 = np.sqrt(area_hex/area_per_particle)
+            record_lcr0[i] = lcr0
+            #print("type"+str(i+1)+": "+str(np.round(lcr0,4) ))
+            #del at
+        return record_lcr0
+    
+    def get_coordination_number_k_for_type_n(self,type_n):
+        R"""
+        inform the users using which order parameter 
+        to evaluate the ratio of type_n transformation 
+        """
+        if type_n==1:
+            coord_num_k=6
+        elif type_n==2:
+            coord_num_k=4
+        elif type_n==3:
+            coord_num_k=3
+        elif type_n==4:
+            coord_num_k=3
+        elif type_n==5:
+            coord_num_k=3
+        elif type_n==6:
+            coord_num_k=3
+        elif type_n==7:
+            coord_num_k=4
+        elif type_n==8:
+            coord_num_k=4
+        elif type_n==9:
+            coord_num_k=5
+        elif type_n==10:
+            coord_num_k=5
+        elif type_n==11:
+            coord_num_k=5
+        elif type_n==62:
+            coord_num_k=3
+        elif type_n==72:
+            coord_num_k=4
+
+        return coord_num_k
+    
 class archimedean_tilings_polygon_dye:
     def __init__(self):
         R"""
@@ -4764,8 +4818,6 @@ class controller_get_honey_part_cn3_vs_u_sub:
         record_res[:,1] = record[:,5]
         np.savetxt(filename+'_',record_res)
     
-    
-
 class controller_get_kagome_part_cn3_vs_u_sub:
     def __init__(self):
         pass

@@ -26,6 +26,19 @@
 	and others.
 
 ## log:
+- 20240119 edit get_data_from_a_gsd_frame_with_traps.get_cn_k_from_a_gsd_frame
+- 20240118 add generate_simu_index_csv_scan_u_phi_sparse in 
+			edit symmetry_transformation_v4_3.analysis_controller.get_data_from_a_gsd_frame.get_cn_k_from_a_gsd_frame
+			add symmetry_transformation_v4_3.list_code_analysis.analyze_a_series_of_gsd_file.extract_data_from_csv
+			to adapt cnk bond_length cutoff a,
+			edit batchsub_wca_dipole_sparse,batchsub_wca_dipole,batchsub_wca_yukawa_depin,batchsub_wca_yukawa
+			add batchsub_wca_yukawa_depin_fix_phi
+- 20240117 add gen_core_activator_py_wca_dipole in proceed_file.processor_py_file
+			add generate_simu_index_csv_scan_u_phi, generate_initial_state_type2_particle_scan_csv
+			in simulation_controller.simulation_controller_wca_dipole.
+			add caution in simulation_core
+- 20240116 in workflow_analysis.archimedean_tilings.
+			add get_type_n_lcr0, get_coordination_number_k_for_type_n
 - 20240115 add api in computeTime.getTimeCost.
 			in symmetry_transformation_v4_3.list_code_analysis.analyze_a_series_of_gsd_file
 			edit get_cnks_from_csv_type_n_part_core,

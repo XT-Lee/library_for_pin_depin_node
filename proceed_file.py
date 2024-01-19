@@ -410,6 +410,7 @@ class processor_py_file:
         self.seed = 0
         self.kT = 0
         self.u_yukawa = 0
+        self.u_dipole = 0
         self.gauss_epsilon = 0
         self.init_gsd_filename = ""
         self.mode = "cpu"
@@ -443,6 +444,27 @@ class processor_py_file:
         f.write("sim.kT = %f\n"%self.kT)
         f.write("sim.input_file_gsd = \"%s\"\n"%self.init_gsd_filename)
         f.write("sim.operate_simulation_langevin_wca_yukawa_traps()\n")
+        f.write("print(\"simu_index:\"+str(%d)+\"_\"+str(%d)+\" finish\")\n"%(self.simu_index,self.seed))
+        #calculate time cost
+        f.write("tm2=time.localtime(time.time())\n")
+        f.write("ct.getTimeCost(tm1,tm2)\n")
+        f.close()
+
+    def gen_core_activator_py_wca_dipole(self,prefix):
+        f = open(prefix+"activate_core.py","w")
+        #calculate time cost
+        f.write("import time\n")
+        f.write("import computeTime as ct\n")
+        f.write("tm1=time.localtime(time.time())\n")
+        #main
+        f.write("import simulation_core as sco\n")
+        f.write("sim = sco.simulation_core(%d,%d)\n" %(self.simu_index,self.seed) )
+        f.write("sim.seed = %d\n" %self.seed)
+        f.write("sim.mode = \"%s\"\n"%self.mode)
+        f.write("sim.opp_c1 =%f\n"%self.u_dipole)
+        f.write("sim.kT = %f\n"%self.kT)
+        f.write("sim.input_file_gsd = \"%s\"\n"%self.init_gsd_filename)
+        f.write("sim.operate_simulation_langevin_wca_dipole()\n")
         f.write("print(\"simu_index:\"+str(%d)+\"_\"+str(%d)+\" finish\")\n"%(self.simu_index,self.seed))
         #calculate time cost
         f.write("tm2=time.localtime(time.time())\n")
