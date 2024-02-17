@@ -26,7 +26,37 @@
 	and others.
 
 ## log:
+- 20240214 in proceed_file.processor_py_file.
+			edit get_params_for_gen_core_activator,
+			edit gen_core_activator_py_yukawa_traps
+			edit gen_core_activator_py_dipole_traps
+			in simulation_controller.
+			edit simulation_controller_honeycomb_traps.generate_initial_state_hex_particle_honeycomb_trap_scan_csv
+			edit simulation_controller_honeycomb_part_traps.generate_initial_state_hex_particle_honeycomb_part_trap_scan_csv
+			edit simulation_controller_kagome_traps.generate_initial_state_hex_particle_kagome_trap_scan_csv
+			edit simulation_controller_kagome_part_traps.generate_initial_state_hex_particle_kagome_part_trap_scan_csv
+- 20240213 add script_gsds_to_csv_diagram_type3
+			add get_cnks_from_csv_dipole_core_traps in symmetry_transformation_v4_3.list_code_analysis.analyze_a_series_of_gsd_file
+- 20240211 add batchsub_honeycomb_dipole,
+			batchsub_honeycomb_part_dipole,
+			batchsub_kagome_dipole,
+			batchsub_kagome_part_dipole.
+			add getDataAndDiagramCsv
+- 20240210 repeat simulation for dipole potential
+			in symmetry_transformation_v4_3.simulation_core.simulation_core_traps,
+			add operate_simulation_langevin_dipole_traps, 
+			rename operate_simulation_langevin as operate_simulation_langevin_yukawa_traps
+- 20240131 add get_positions_in_all_but_not_in_part in workflow_analysis.archimedean_tilings
+- 20240130 in workflow_analysis.archimedean_tilings, 
+			add complement set of archimedeans.
+			add get_dual_subtract_type_n_part_complement
+		   in workflow_analysis.archimedean_tilings_polygon_dye, 
+			add workflow_type_n_complement
+- 20240121 edit get_radial_distribution_function, add normalize_r0, precisize the distance in points_analysis_2D.static_points_analysis_2d
+- 20240120 edit get_radial_distribution_function in points_analysis_2D.static_points_analysis_2d
 - 20240119 edit get_data_from_a_gsd_frame_with_traps.get_cn_k_from_a_gsd_frame
+			edit cut_edge_of_positions_by_box in points_analysis_2D.static_points_analysis_2d
+			add get_radial_distribution_function[unchecked] in points_analysis_2D.static_points_analysis_2d
 - 20240118 add generate_simu_index_csv_scan_u_phi_sparse in 
 			edit symmetry_transformation_v4_3.analysis_controller.get_data_from_a_gsd_frame.get_cn_k_from_a_gsd_frame
 			add symmetry_transformation_v4_3.list_code_analysis.analyze_a_series_of_gsd_file.extract_data_from_csv
