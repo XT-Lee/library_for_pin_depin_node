@@ -769,6 +769,104 @@ index 10 is out of bounds for axis 0 with size 10
         sca = show_cairo_order_parameter()
         return sca.compute_cairo_order_parameter(cn3,cn4)
 
+    def get_radial_distribution_function_triu(self, box, dr=0.1):
+        R"""
+        box: [LX,LY]
+        dr: resolution of rdf
+        """
+        num_particles = len(self.points)
+        r_max = np.min(box)
+        n_bins = int(r_max / dr)
+        
+        rdf = np.zeros(n_bins)
+        bond_length_all=distance.cdist(self.points[:], self.points[:], 'euclidean')
+        bond_length_all_tu=np.triu(bond_length_all,k=1)#upper triangle
+        bond_length_all_dr_unit = np.divide(bond_length_all_tu,dr,dtype=int)#discrete array with dr as unit
+        del bond_length_all,bond_length_all_tu
+        r_temp = dr
+        
+        while r_temp < r_max:
+            nr_temp = r_temp/dr
+            inbox_positions_list,inbox_positions_bool = self.cut_edge_of_positions_by_box(self.points,[box[0]-r_temp,box[1]-r_temp],True)
+            bond_length_select1 = bond_length_all_dr_unit[inbox_positions_bool]
+            bond_length_select2 = bond_length_all_dr_unit[:,inbox_positions_bool]
+            list_r_bool1 = bond_length_select1[:,:]==nr_temp
+            list_r_bool2 = bond_length_select2[:,:]==nr_temp
+            count = np.sum(np.array(list_r_bool1,dtype=int))+np.sum(np.array(list_r_bool2,dtype=int))
+            n_particle_inbox = np.sum(np.array(inbox_positions_bool,dtype=int))
+            n_ds = 2*np.pi*r_temp*dr*n_particle_inbox
+
+        for i in range(num_particles):
+            for j in range(i + 1, num_particles):
+                separation_vector = self.points[j] - self.points[i]#self.bond_length
+                separation_distance = np.linalg.norm(separation_vector)
+                
+                bin_index = int(separation_distance / dr)
+                
+                if bin_index < n_bins:
+                    rdf[bin_index] += 2  # Count both particles in the pair
+                        
+        # Normalize RDF
+        particle_n_density = num_particles / (box[0]*box[1])
+        normalization_factor = np.pi * dr**2 * particle_n_density
+        rdf /= normalization_factor
+        
+        distances = np.arange(dr / 2.0, r_max, dr)
+        
+        return distances, rdf
+    
+    def get_radial_distribution_function(self, box, dr=0.1,r_max=None,png_filename=None,points=None,normalize_r0=None):
+        R"""
+        box: [LX,LY]
+        dr: resolution of rdf
+        points: if just trap a small box, this attribute is used to record the points in that small box.
+        normalize_r0: the mean 1st neighbor distance expected, to normalize the distance.
+        """
+        if points is None:
+            points = self.points
+        num_particles = len(points)
+        if r_max is None:
+            r_max = np.min(box)/2
+        ndr_max = int(r_max/dr)#r:0-102.4 -> 0-102
+        
+        data_count = ndr_max-1#ndr:1-102 -> 1-101
+        rdf = np.zeros(data_count)
+        bond_length_all=distance.cdist(self.points[:], self.points[:], 'euclidean')
+        bond_length_all_dr_unit = np.array(bond_length_all/dr,dtype=int)#discrete array with dr as unit, 0~0.99 -> 0
+        bond_length_all=None
+        
+        
+        for i in range(data_count):
+            ndr_temp = i+1
+            r_temp = ndr_temp*dr
+            inbox_positions_list,inbox_positions_bool = self.cut_edge_of_positions_by_box(points,[box[0]-2*r_temp,box[1]-2*r_temp],True)
+            bond_length_select = bond_length_all_dr_unit[inbox_positions_bool]
+            list_ndr_bool = bond_length_select[:,:]==ndr_temp
+            count = np.sum(np.array(list_ndr_bool,dtype=int))
+            n_particle_inbox = np.sum(np.array(inbox_positions_bool,dtype=int))
+            n_ds = 2*np.pi*r_temp*dr*n_particle_inbox
+            rdf[i] = count/n_ds
+        particle_n_density_global = num_particles/(box[0]*box[1])
+        rdf_normalized = rdf/particle_n_density_global
+        distances = np.linspace(1,data_count,data_count)*dr+0.5*dr#ndr:1-101 -> 1.5-101.5
+
+        if not png_filename is None:
+            fig,ax = plt.subplots()
+            if normalize_r0 is None:
+                ax.plot(distances,rdf_normalized,c='k')
+            else:
+                distances_n = distances/normalize_r0
+                ax.plot(distances_n,rdf_normalized,c='k')
+            ax.set_xlabel('r($\sigma$)')
+            ax.set_ylabel('g(r)(1)')
+            plt.savefig(png_filename)
+            plt.close()
+        
+        if normalize_r0 is None:
+            return distances, rdf_normalized
+        else:
+            return distances_n, rdf_normalized
+
     def search_neighbor_id(self,id):
         #cut edge to remove CN012
         R"""
@@ -1045,7 +1143,7 @@ index 10 is out of bounds for axis 0 with size 10
         self.edge_cut_positions_list = np.where(list_xy)
         self.edge_cut_positions_bool = list_xy # T for body, F for edge.
 
-    def cut_edge_of_positions_by_box(self,points,box):
+    def cut_edge_of_positions_by_box(self,points,box,temp=False):
         R"""
         Variables:
             points:n rows of [x,y]
@@ -1053,7 +1151,6 @@ index 10 is out of bounds for axis 0 with size 10
             inbox_positions_list: self.
             inbox_positions_bool: self.
         """
-        
         #sz = len(self.init_positions)#np.size
         #xy = self.init_positions
         xmax = box[0]/2.0
@@ -1070,9 +1167,6 @@ index 10 is out of bounds for axis 0 with size 10
         list_y = np.logical_and(list_ymin,list_ymax)
         list_xy = np.logical_and(list_x,list_y)
 
-        self.inbox_positions_list = np.where(list_xy)
-        self.inbox_positions_bool = list_xy # T for body, F for edge.
-
         #get the position of vertices of box
         position_box = np.zeros((5,2))
         position_box[0] = [xmin,ymin]
@@ -1081,6 +1175,12 @@ index 10 is out of bounds for axis 0 with size 10
         position_box[3] = [xmin,ymax]
         position_box[4] = [xmin,ymin]#back to origin
         self.position_box = position_box
+
+        if temp:
+            return np.where(list_xy),list_xy
+        else:
+            self.inbox_positions_list = np.where(list_xy)
+            self.inbox_positions_bool = list_xy # T for body, F for edge.
 
     def get_bond_orientational_order_selected(self,k_set=6,lower_limit=0.9):
         R"""
