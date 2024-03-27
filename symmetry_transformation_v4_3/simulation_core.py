@@ -2,7 +2,7 @@ import hoomd
 import gsd.hoomd
 #import proceed_file as pf
 import numpy as np
-
+#copy a new core and delete the codes in case of wrong simulation
 class simulation_core_traps:
     def __init__(self,simu_index,seed):
         R"""
@@ -40,9 +40,12 @@ class simulation_core_traps:
         self.wca_sigma = 1.0
         self.wca_epsilon = 1.0
 
+        self.opp_r_cut = 15.0
+        self.opp_c1 = 1500
+
         self.kT = 1.0
         self.dt = 0.002
-        self.total_steps = 2e6+1
+        self.total_steps = 2e6+2
         self.width = 1# 1,10 the size of cell, larger for type4 lattice
 
     def set_file_parameters(self,simu_index,seed):
@@ -63,7 +66,7 @@ class simulation_core_traps:
         #self.gsd_data = pf.proceed_gsd_file(filename_gsd_seed=self.input_file_gsd,account=account)
         self.init_snap = self.trajectory._read_frame(0)
     
-    def operate_simulation_langevin(self):
+    def operate_simulation_langevin_yukawa_traps(self):
         #initialize
         if self.mode == 'cpu':
             device=hoomd.device.CPU()
@@ -81,7 +84,7 @@ class simulation_core_traps:
         gauss.params[('particle','trap')] = dict(epsilon=self.gauss_epsilon,sigma=self.gauss_sigma)
         gauss.params[('particle','particle')] = dict(epsilon=0.0,sigma=1.0)
         gauss.params[('trap','trap')] = dict(epsilon=0.0,sigma=1.0)
-        gauss.r_cut[('particle','trap')] = 1.0
+        gauss.r_cut[('particle','trap')] = self.gauss_r_cut#1.0
         gauss.r_cut[('particle','particle')] = 0.0
         gauss.r_cut[('trap','trap')] = 0.0
         
@@ -149,7 +152,7 @@ class simulation_core_traps:
         gauss.params[('particle','trap')] = dict(epsilon=self.gauss_epsilon,sigma=self.gauss_sigma)
         gauss.params[('particle','particle')] = dict(epsilon=0.0,sigma=1.0)
         gauss.params[('trap','trap')] = dict(epsilon=0.0,sigma=1.0)
-        gauss.r_cut[('particle','trap')] = 1.0
+        gauss.r_cut[('particle','trap')] = self.gauss_r_cut#1.0
         gauss.r_cut[('particle','particle')] = 0.0
         gauss.r_cut[('trap','trap')] = 0.0
 
@@ -179,6 +182,54 @@ class simulation_core_traps:
         sim.operations.integrator = integrator
 
         
+        #https://gsd.readthedocs.io/en/v3.2.0/python-module-gsd.hoomd.html#gsd.hoomd.open
+        gsd_writer = hoomd.write.GSD(filename=self.output_file_gsd,
+                                    trigger=hoomd.trigger.Periodic(self.snap_period),
+                                    mode='xb')#deprecated: "xb"
+        sim.operations.writers.append(gsd_writer)
+        sim.run(self.total_steps)
+    
+    def operate_simulation_langevin_dipole_traps(self):
+        #initialize
+        if self.mode == "cpu":
+            device=hoomd.device.CPU()
+        elif self.mode == "gpu":
+            device=hoomd.device.GPU()
+        sim = hoomd.Simulation(device=device, seed=self.seed)
+        self.__set_init_state_parameters()
+        sim.create_state_from_snapshot(self.init_snap)
+
+        #set interaction
+        # Apply the gaussian traps on the particles.
+        gauss_cell = hoomd.md.nlist.Cell(self.width)#default_r_cut=15.0 ? 'particle','trap'
+        gauss = hoomd.md.pair.Gaussian(nlist=gauss_cell,default_r_cut=self.gauss_r_cut,mode="xplor")
+        gauss.params[('particle','trap')] = dict(epsilon=self.gauss_epsilon,sigma=self.gauss_sigma)
+        gauss.params[('particle','particle')] = dict(epsilon=0.0,sigma=1.0)
+        gauss.params[('trap','trap')] = dict(epsilon=0.0,sigma=1.0)
+        gauss.r_cut[('particle','trap')] = self.gauss_r_cut#1.0
+        gauss.r_cut[('particle','particle')] = 0.0
+        gauss.r_cut[('trap','trap')] = 0.0
+
+        # Apply the opp interaction(interfacial dipolar here) on the particles.
+        print("the opp_c1 is:"+str(self.opp_c1))
+        opp_cell = hoomd.md.nlist.Cell(self.width)#("trap",)
+        opp = hoomd.md.pair.OPP(nlist=opp_cell,default_r_cut=self.opp_r_cut,mode="xplor")
+        opp.params[("particle","particle")] = dict(C1=self.opp_c1,C2=0,eta1=3,eta2=0,k=0,phi=0)#interfacial dipolar here
+        opp.params[("particle","trap")] = dict(C1=0,C2=0,eta1=3,eta2=0,k=0,phi=0)
+        opp.params[("trap","trap")] = dict(C1=0,C2=0,eta1=3,eta2=0,k=0,phi=0)
+
+        #find the mobile particles
+        list_ids = self.init_snap.particles.typeid#range(21)#np.linspace(0,20,21,dtype=int)
+        list_Particles_index = list_ids == 0
+        tags = list(np.where(list_Particles_index))
+        #set system
+        mobile_particles= hoomd.filter.Tags(tags)#tag n is the n-th particle, must be a list or iterator 
+        langevin = hoomd.md.methods.Langevin(filter= mobile_particles, kT=self.kT,)#hoomd.filter.All()
+        integrator = hoomd.md.Integrator(dt=self.dt,
+                                        methods=[langevin],
+                                        forces=[gauss,opp])
+        sim.operations.integrator = integrator
+
         #https://gsd.readthedocs.io/en/v3.2.0/python-module-gsd.hoomd.html#gsd.hoomd.open
         gsd_writer = hoomd.write.GSD(filename=self.output_file_gsd,
                                     trigger=hoomd.trigger.Periodic(self.snap_period),
@@ -289,16 +340,18 @@ class simulation_core:
         self.yukawa_epsilon = 300
         self.yukawa_kappa = 0.25
         self.yukawa_r_cut = 15.0#5.0
+
         self.kT = 1.0
         self.dt = 0.002
         self.total_steps = 2e6+1
         self.width = 1# 1,10 the size of cell, larger for type4 lattice
+
         self.wca_r_cut = np.power(2,1/6)#r=2^(1/6) is the minima of LJ potential
         self.wca_sigma = 1.0
         self.wca_epsilon = 1.0
-        self.opp_epsilon = 300
+
         self.opp_r_cut = 15.0
-        self.opp_c1 = 100
+        self.opp_c1 = 1500
 
     def set_file_parameters(self,simu_index,seed):
         self.prefix_read =  "/home/lixt/home/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_1/"
@@ -341,15 +394,6 @@ class simulation_core:
         wca = hoomd.md.pair.LJ(nlist=wca_cell,default_r_cut=self.wca_r_cut,mode="shift")
         wca.params[("particle","particle")] = dict(sigma=self.wca_sigma,epsilon=self.wca_epsilon)#self.wca_sigma = 1.0,self.wca_epsilon = 1.0
         
-        """#find the mobile particles
-        #list_particles = range(self.snap.particles.N)
-        list_ids = self.init_snap.particles.typeid#range(21)#np.linspace(0,20,21,dtype=int)
-        list_Particles_index = list_ids == 0
-        tags = list(np.where(list_Particles_index))
-        #set system
-        mobile_particles= hoomd.filter.Tags(tags)#tag n is the n-th particle, must be a list or iterator 
-        #stationary_particles = hoomd.filter.Tags([1])
-        #mobile_particles = hoomd.filter.SetDifference(hoomd.filter.All(),stationary_particles)"""
         langevin = hoomd.md.methods.Langevin(filter=hoomd.filter.All(), kT=self.kT,)#mobile_particles
         integrator = hoomd.md.Integrator(dt=self.dt,
                                         methods=[langevin],
@@ -364,7 +408,7 @@ class simulation_core:
                                     mode='xb')#deprecated: "xb"
         sim.operations.writers.append(gsd_writer)
         sim.run(self.total_steps)
-
+    """
     def operate_simulation_langevin_wca_yukawa_resize_Box(self):
         #initialize
         if self.mode == "cpu":
@@ -388,15 +432,6 @@ class simulation_core:
         wca = hoomd.md.pair.LJ(nlist=wca_cell,default_r_cut=self.wca_r_cut,mode="shift")
         wca.params[("particle","particle")] = dict(sigma=self.wca_sigma,epsilon=self.wca_epsilon)#self.wca_sigma = 1.0,self.wca_epsilon = 1.0
         
-        """#find the mobile particles
-        #list_particles = range(self.snap.particles.N)
-        list_ids = self.init_snap.particles.typeid#range(21)#np.linspace(0,20,21,dtype=int)
-        list_Particles_index = list_ids == 0
-        tags = list(np.where(list_Particles_index))
-        #set system
-        mobile_particles= hoomd.filter.Tags(tags)#tag n is the n-th particle, must be a list or iterator 
-        #stationary_particles = hoomd.filter.Tags([1])
-        #mobile_particles = hoomd.filter.SetDifference(hoomd.filter.All(),stationary_particles)"""
         langevin = hoomd.md.methods.Langevin(filter=hoomd.filter.All(), kT=self.kT,)#mobile_particles
         integrator = hoomd.md.Integrator(dt=self.dt,
                                         methods=[langevin],
@@ -415,8 +450,8 @@ class simulation_core:
         ramp = hoomd.variant.Ramp(A=0,B=1,t_start=sim.timestep,t_ramp=2e4)
         rho = sim.state.N_particles/sim.state.box.volume
         sim.box
-    
-    def operate_simulation_langevin_wca_opp(self):
+    """
+    def operate_simulation_langevin_wca_dipole(self):
         #initialize
         if self.mode == "cpu":
             device=hoomd.device.CPU()

@@ -61,7 +61,7 @@ class get_data_from_a_gsd_frame_with_traps:
         self.points = xy_particles_traps[list_p]
         self.traps = xy_particles_traps[list_t]
 
-    def get_cn_k_from_a_gsd_frame(self,tune_dis = 2.4,k=3):
+    def get_cn_k_from_a_gsd_frame(self,tune_dis = 2.4,k=None):
         points = self.points
         traps = self.traps
         obj_of_simu_index = pa.static_points_analysis_2d(points)#,hide_figure=False
@@ -71,7 +71,7 @@ class get_data_from_a_gsd_frame_with_traps:
         xmin = min(traps[:,0]) + tune_dis
         ymin = min(traps[:,1]) + tune_dis
         obj_of_simu_index.cut_edge_of_positions_by_xylimit(xmin,xmax,ymin,ymax)
-        obj_of_simu_index.get_coordination_number_conditional()
+        obj_of_simu_index.get_coordination_number_conditional(tune_dis)
         ccn=obj_of_simu_index.count_coordination_ratio
         #print(ccn[3])
 
@@ -88,23 +88,27 @@ class get_data_from_a_gsd_frame_with_traps:
         ax.set_aspect('equal','box')
         plt.show()
         plt.close('all')"""
-
-        return ccn[k]
+        if k is None:
+            return ccn
+        else:
+            return ccn[k]
     
-    def get_bonds_png_from_a_gsd_frame(self,png_filename):
+    def get_bonds_png_from_a_gsd_frame(self,png_filename, tune_dis=2.4):
         import matplotlib.pyplot as plt
         fig,ax = plt.subplots()
         p2d = pa.static_points_analysis_2d(self.points,hide_figure=False)#dis_edge_cut=
         
-        p2d.get_first_minima_bond_length_distribution(png_filename='bond_hist.png')
+        p2d.get_first_minima_bond_length_distribution(
+            lattice_constant=tune_dis, png_filename='bond_hist.png')
         #draw bonds selected
         bpm = pa.bond_plot_module(fig,ax)#
         bpm.restrict_axis_property_relative('(sigma)')#'(sigma)',hide_axis=True
-        list_bond_index = bpm.get_bonds_with_conditional_bond_length(p2d.bond_length,[1.2,p2d.bond_first_minima_left])
+        list_bond_index = bpm.get_bonds_with_conditional_bond_length(
+            p2d.bond_length,[1.2,p2d.bond_first_minima_left])
         
         bpm.draw_points_with_given_bonds(self.points,list_bond_index,bond_color='k',particle_color='k')#p2d.bond_length[:,:2].astype(int)
         bpm.plot_traps(self.traps)
-        bpm.restrict_axis_limitation([-10,10],[-10,10])#[-20,0],[-5,15]
+        #bpm.restrict_axis_limitation([-10,10],[-10,10])#[-20,0],[-5,15]
         bpm.save_figure(png_filename)
         del bpm
     
@@ -141,7 +145,13 @@ class get_data_from_a_gsd_frame:
         xmin = min(points[:,0]) + tune_dis
         ymin = min(points[:,1]) + tune_dis
         obj_of_simu_index.cut_edge_of_positions_by_xylimit(xmin,xmax,ymin,ymax)
-        obj_of_simu_index.get_coordination_number_conditional()
+        obj_of_simu_index.get_coordination_number_conditional(lattice_constant=tune_dis)
         ccn=obj_of_simu_index.count_coordination_ratio
         #print(ccn[3])
         return ccn[k]
+    
+    def get_grs_from_a_gsd_frame(self,tune_dis = 2.4,png_filename=None,normalize_r0=None):
+        points = self.points
+        obj_of_simu_index = pa.static_points_analysis_2d(points,dis_edge_cut=tune_dis)#,hide_figure=False
+        box = self.last_frame.configuration.box[:2]
+        obj_of_simu_index.get_radial_distribution_function(box,r_max=tune_dis*4,dr=tune_dis/11,png_filename=png_filename,normalize_r0=normalize_r0)#

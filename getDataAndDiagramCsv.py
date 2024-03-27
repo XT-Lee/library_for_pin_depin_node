@@ -118,7 +118,7 @@ def get_diagram_from_csv_type8():
     coord_num_k = at.get_coordination_number_k_for_type_n(8)
     column_name_to_merge = 'cn'+str(coord_num_k)
     cnk_averaged = merge_cnk_by_seed(cdp.record,column_name_to_merge,10)
-    cdp.sub_record['cn4'] = cnk_averaged
+    #cdp.sub_record['cn4'] = cnk_averaged
     cdp.save_sub_csv('diagram_pin_hex_to_type_8.csv')
     cdp.get_data_diagram(coord_num_k)
     fig,ax = plt.subplots()
@@ -148,7 +148,7 @@ def get_diagram_from_csv_type8_part():
     coord_num_k = at.get_coordination_number_k_for_type_n(8)
     column_name_to_merge = 'cn'+str(coord_num_k)
     cnk_averaged = merge_cnk_by_seed(cdp.record,column_name_to_merge,10)
-    cdp.sub_record['cn4'] = cnk_averaged
+    #cdp.sub_record['cn4'] = cnk_averaged
     cdp.save_sub_csv('diagram_pin_hex_to_type_8_part.csv')
     cdp.get_data_diagram(4)
     fig,ax = plt.subplots()
@@ -178,7 +178,7 @@ def get_diagram_from_csv_type3(csv_filename):
     coord_num_k = at.get_coordination_number_k_for_type_n(3)
     column_name_to_merge = 'cn'+str(coord_num_k)
     cnk_averaged = merge_cnk_by_seed(cdp.record,column_name_to_merge,10)
-    cdp.sub_record[column_name_to_merge] = cnk_averaged
+    #cdp.sub_record[column_name_to_merge] = cnk_averaged
     cdp.save_sub_csv('diagram_pin_hex_to_type_3.csv')
     cdp.get_data_diagram(3)
     fig,ax = plt.subplots()
@@ -191,7 +191,7 @@ def get_diagram_from_csv_type3(csv_filename):
     dpm.set_figure_elements()
     dpm.save_figure('diagram_pin_hex_to_type_3.png')
 
-def get_diagram_from_csv_type3_part():
+def get_diagram_from_csv_type3_part(csv_filename):
     """
     import getDataAndDiagramCsv as gdc
     #gdc.get_diagram_from_csv_type8()
@@ -204,7 +204,7 @@ def get_diagram_from_csv_type3_part():
     '/home/remote/xiaotian_file/link_to_HDD/record_results_v430/type_n_pin/pin_hex_to_type_8_part_klt_2m_gauss_513.csv'
     '/home/remote/xiaotian_file/link_to_HDD/record_results_v430/type_n_pin/pin_hex_to_type_8_klt_2m_gauss_243.csv'
     
-    csv_filename ='/home/remote/xiaotian_file/link_to_HDD/record_results_v430/honeycomb_part_pin/pin_hex_to_honeycomb_part_klt_2m_gauss_6373_6612.csv'
+    #csv_filename ='/home/remote/xiaotian_file/link_to_HDD/record_results_v430/honeycomb_part_pin/pin_hex_to_honeycomb_part_klt_2m_gauss_6373_6612.csv'
     cdp = csv_data_processor(csv_filename)
     #cdp.get_relative_rho(3)
     #cdp.save_csv(csv_filename)
@@ -215,8 +215,8 @@ def get_diagram_from_csv_type3_part():
     coord_num_k = at.get_coordination_number_k_for_type_n(3)
     column_name_to_merge = 'cn'+str(coord_num_k)
     cnk_averaged,cnk_std = merge_cnk_std_by_seed(cdp.record,column_name_to_merge,10)
-    cdp.sub_record[column_name_to_merge] = cnk_averaged
-    cdp.sub_record[column_name_to_merge+'std'] = cnk_std
+    #cdp.sub_record[column_name_to_merge] = cnk_averaged
+    #cdp.sub_record[column_name_to_merge+'std'] = cnk_std
     cdp.sub_record['U_eq'] = -cdp.sub_record['U_eq'].values
     cdp.save_sub_csv('diagram_pin_hex_to_type_3_part.csv')
     cdp.get_data_diagram(coord_num_k)
@@ -264,7 +264,7 @@ def get_diagram_from_csv_type_n(csv_filename,type_n,part):
     cnk_averaged,cnk_std = merge_cnk_std_by_seed(cdp.record,column_name_to_merge,10)
     cdp.sub_record[column_name_to_merge] = cnk_averaged
     cdp.sub_record[column_name_to_merge+'std'] = cnk_std
-    cdp.sub_record['U_eq'] = -cdp.sub_record['U_eq'].values
+    cdp.sub_record['U_eq'] = cdp.sub_record['U_eq'].values
     if part:
         cdp.save_sub_csv('diagram_pin_hex_to_type_'+str(type_n)+'_part'+'.csv')
     else:

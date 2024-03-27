@@ -26,6 +26,31 @@
 	and others.
 
 ## log:
+- 20240326 edit operate_simulation_langevin_yukawa_traps in proceed_file.processor_py_file.gen_core_activator_py_yukawa_traps.
+			add running_mode_sh, running_mode_py in  simulation_controller
+			.simulation_controller_type_n_part_traps.generate_initial_state_type_n_particle_type_n_part_trap_depin_scan_csv_node.
+			add get_cnks_from_csv_type_mix_core in list_code_analysis.analyze_a_series_of_gsd_file
+- 20240318 rename workflow_analysis as workflow_analysis_achimedean, and
+			add generate_type9_superlattice, generate_type9_part_superlattice in archimedean_tilings
+			add generate_cairo, generate_cairo_part in archimedean_tilings
+
+			add self.width in proceed_file.simulation_core_traps.gen_core_activator_py_yukawa_traps
+- 20240306 edit node_list=none in symmetry_transformation_v4_3.simulation_controller
+			fangh occupies the node1 and 2, and even the node not specified, slurm will allocate tasks to them.
+- 20240305 edit *0.86466 replace *0.99613 in list_code_analysis
+			add script_honeycomb_dipole_724_bond
+			edit symmetry_transformation_v4_3.list_code_analysis.get_bonds_from_simu_indices_list_type_n
+			edit symmetry_transformation_v4_3.analysis_controller.get_bonds_png_from_a_gsd_frame
+			edit get_data_from_a_gsd_frame_with_traps in symmetry_transformation_v4_3.list_code_analysis.
+			add batchsub_*_dipole_724
+			edit list_type_n[i] in simulation_controller.simulation_controller_kagome_traps.generate_initial_state_hex_particle_kagome_trap_scan_csv
+			edit list_type_n[i] in simulation_controller.simulation_controller_kagome_part_traps.generate_initial_state_hex_particle_kagome_part_trap_scan_csv
+- 20240304 add batchsub_honeycomb_dipole_724,
+			add generate_simu_index_csv_11513_11752 in symmetry_transformation_v4_3.simulation_controller.simulation_controller_honeycomb_traps
+			edit gauss.r_cut = self.gauss_r_cut not = 1.0 in simulation_core.operate_simulation_langevin_yukawa_traps
+			deit py_p.total_steps = 2e6+2 in symmetry_transformation_v4_3.simulation_controller.simulation_controller_honeycomb_traps.
+- 20240301 add generate_simu_index_csv_scan_u_phi_sparse in symmetry_transformation_v4_3.simulation_controller.simulation_controller_wca_yukawa.
+			add proceed_file.processor_py_file.gen_core_activator_py_wca_yukawa
 - 20240214 in proceed_file.processor_py_file.
 			edit get_params_for_gen_core_activator,
 			edit gen_core_activator_py_yukawa_traps

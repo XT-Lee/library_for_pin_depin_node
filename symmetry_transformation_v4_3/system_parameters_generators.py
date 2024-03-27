@@ -131,7 +131,7 @@ class initial_state_generator:
         if perturb:#warning: the particle positions after perturbation are not checked inbox!
             perturbation = np.random.random(position_total.shape)*perturb_amp
             perturbation[:,2] = 0
-            snap.particles.position = (position_total + perturbation)*0.999
+            snap.particles.position = (position_total + perturbation)*0.999#25.01*0.999=24.985
             #(1-2*perturb_amp/min(snap.configuration.box[:2])) 
             #precisely equalled bond will let delaunay disfunction! 
             # or let particle position as NaN. so fix it!

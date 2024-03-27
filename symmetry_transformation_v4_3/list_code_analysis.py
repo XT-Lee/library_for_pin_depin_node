@@ -222,7 +222,7 @@ class analyze_a_series_of_gsd_file:
         import pandas as pd
         df = pd.DataFrame(ggfs.record,columns=[ 'simu_index','seed',"lcr",'trap_gauss_epsilon','temperature'])
         df['cn3'] = list_cn3
-        df['U_eq'] = df['trap_gauss_epsilon'].values*0.99613
+        df['U_eq'] = df['trap_gauss_epsilon'].values*0.86466#*0.99613
         """import matplotlib.pyplot as plt
         import matplotlib
         matplotlib.use(backend="QtAgg")#Backend agg is non-interactive backend. Turning interactive mode off. 'QtAgg' is interactive mode
@@ -252,27 +252,261 @@ class analyze_a_series_of_gsd_file:
         index1 = 6963#6823#[x]
         list_type_n = 4#[x]
         output_file_csv = prefix_write + 'pin_hex_to_type_'+str(int(list_type_n))+'_part_klt_2m_gauss_'+str(int(index1))+'.csv'#[x]
-        self.get_cnks_from_csv_type_n_part_core(3,output_file_csv)
+        self.get_cnks_from_csv_type_n_part_phi_core(3,output_file_csv)
 
         #generate_simu_index_csv_type_5_pin_3_30()
         index1 = 7013#6823#[x]
         list_type_n = 5#[x]
         output_file_csv = prefix_write + 'pin_hex_to_type_'+str(int(list_type_n))+'_part_klt_2m_gauss_'+str(int(index1))+'.csv'#[x]
-        self.get_cnks_from_csv_type_n_part_core(3,output_file_csv)
+        self.get_cnks_from_csv_type_n_part_phi_core(3,output_file_csv)
 
         #generate_simu_index_csv_type_6_pin_3_30()
         index1 = 7063#6823#[x]
         list_type_n = 6#[x]
         output_file_csv = prefix_write + 'pin_hex_to_type_'+str(int(list_type_n))+'_part_klt_2m_gauss_'+str(int(index1))+'.csv'#[x]
-        self.get_cnks_from_csv_type_n_part_core(3,output_file_csv)
+        self.get_cnks_from_csv_type_n_part_phi_core(3,output_file_csv)
 
         #generate_simu_index_csv_type_9_pin_3_30()
         index1 = 7113#6823#[x]
         list_type_n = 9#[x]
         output_file_csv = prefix_write + 'pin_hex_to_type_'+str(int(list_type_n))+'_part_klt_2m_gauss_'+str(int(index1))+'.csv'#[x]
-        self.get_cnks_from_csv_type_n_part_core(5,output_file_csv)
+        self.get_cnks_from_csv_type_n_part_phi_core(5,output_file_csv)
 
-    def get_cnks_from_csv_type_n_part_core(self,coord_num_k,output_file_csv):
+    def get_cnks_from_csv_type_n_part_phi_core(self,coord_num_k,output_csv_filename):
+        R"""
+        parameter:
+            cn_k:(int) the k to calculate cn_k
+        example:
+            import symmetry_transformation_v4_3.list_code_analysis as lca
+            asg = lca.analyze_a_series_of_gsd_file()
+            asg.get_cn5s_from_csv_files()
+            #["simu_index","seed","a","phi","u_dipole","temperature","type_n"]
+        """
+        import symmetry_transformation_v4_3.analysis_controller as ac
+        gg = ac.get_gsds_from_csv()
+        gsds_filename = gg.get_record_from_csv(output_csv_filename)
+        lis_simu = gg.record['simu_index'].values
+        list_as = gg.record['a'].values
+        list_phis = gg.record['phi'].values#phi = pi/(2*sqrt(3)*a^2),a^2=pi/(2*sqrt(3)*phi)
+        list_a_hexs = np.sqrt(np.pi/(list_phis*2*np.sqrt(3)))
+        #lcrs = gg.record['lcr'].values
+        pdata = ac.get_a_gsd_from_setup()
+        cnks = np.zeros((len(gsds_filename),))
+        for i in range(len(gsds_filename)):
+            isExists=os.path.exists(gsds_filename[i])
+            if isExists:
+                file_size_b = os.path.getsize(gsds_filename[i])
+                file_size_kb = file_size_b/1024
+                if file_size_kb>100:
+                    pdata.get_gsd_data_from_filename(gsds_filename[i])
+                    gdata = ac.get_data_from_a_gsd_frame(pdata.gsd_data[-1])#get_data_from_a_gsd_frame_with_traps(pdata.gsd_data[-1])
+                    cnk = gdata.get_cn_k_from_a_gsd_frame(tune_dis=list_a_hexs[i],k=coord_num_k)#3*lcrs[i]
+                    cnks[i] = cnk
+                else:
+                    cnks[i] = -1    
+            else:
+                cnks[i] = -1
+        col_cnk = 'cn'+str(int(coord_num_k))
+        gg.record[col_cnk] = cnks
+        gg.record['a_hex'] = list_a_hexs
+        r1 = np.exp(-0.25)
+        gg.record['u_yukawa_r1'] =  gg.record['u_yukawa'].values*r1
+        #gg.record['U_eq'] =  gg.record['trap_gauss_epsilon'].values*0.86466#*0.99613
+        import pandas as pd
+        list_col = gg.record.columns.values[1:]#to strip 'unnamed:0' column which contains [1,2,3...]
+        pd.DataFrame.to_csv(gg.record[list_col],output_csv_filename)
+    
+    def get_cnks_from_csv_type_mix_core(self,coord_num_k,output_csv_filename):
+        R"""
+        parameter:
+            cn_k:(int) the k to calculate cn_k
+        example:
+            import symmetry_transformation_v4_3.list_code_analysis as lca
+            asg = lca.analyze_a_series_of_gsd_file()
+            asg.get_cn5s_from_csv_files()
+            #["simu_index","seed","a","phi","u_dipole","temperature","type_n"]
+        """
+        import symmetry_transformation_v4_3.analysis_controller as ac
+        gg = ac.get_gsds_from_csv()
+        gsds_filename = gg.get_record_from_csv(output_csv_filename)
+        if coord_num_k is None:
+            list_type_n = gg.record['type_n'].values
+            list_type_n = np.array(list_type_n,dtype=int)
+        
+        #lis_simu = gg.record['simu_index'].values
+        #list_as = gg.record['a'].values
+        #list_phis = gg.record['phi'].values#phi = pi/(2*sqrt(3)*a^2),a^2=pi/(2*sqrt(3)*phi)
+        #list_a_hexs = np.sqrt(np.pi/(list_phis*2*np.sqrt(3)))
+        lcrs = gg.record['lcr'].values
+        pdata = ac.get_a_gsd_from_setup()
+        cnks = np.zeros((len(gsds_filename),))
+        for i in range(len(gsds_filename)):
+            isExists=os.path.exists(gsds_filename[i])
+            if isExists:
+                file_size_b = os.path.getsize(gsds_filename[i])
+                file_size_kb = file_size_b/1024
+                if file_size_kb>1000:
+                    pdata.get_gsd_data_from_filename(gsds_filename[i])
+                    gdata = ac.get_data_from_a_gsd_frame_with_traps(pdata.gsd_data[-1])#get_data_from_a_gsd_frame_with_traps(pdata.gsd_data[-1])
+                    cnk = gdata.get_cn_k_from_a_gsd_frame(tune_dis=3*lcrs[i],k=coord_num_k)#
+                    cnks[i] = cnk
+                else:
+                    cnks[i] = -1    
+            else:
+                cnks[i] = -1
+        col_cnk = 'cnk'#+str(int(coord_num_k))
+        gg.record[col_cnk] = cnks
+        #gg.record['a_hex'] = list_a_hexs
+        #r1 = np.exp(-0.25)
+        #gg.record['u_yukawa_r1'] =  gg.record['u_yukawa'].values*r1
+        gg.record['U_eq'] =  gg.record['trap_gauss_epsilon'].values*0.86466#*0.99613
+        import pandas as pd
+        list_col = gg.record.columns.values[1:]#to strip 'unnamed:0' column which contains [1,2,3...]
+        pd.DataFrame.to_csv(gg.record[list_col],output_csv_filename)
+
+    def get_cnks_from_csv_dipole_core_traps(self,coord_num_k,output_csv_filename):
+        R"""
+        parameter:
+            cn_k:(int) the k to calculate cn_k
+        example:
+            import symmetry_transformation_v4_3.list_code_analysis as lca
+            asg = lca.analyze_a_series_of_gsd_file()
+            asg.get_cn5s_from_csv_files()
+            #["simu_index","seed","a","phi","u_dipole","temperature","type_n"]
+        """
+        import symmetry_transformation_v4_3.analysis_controller as ac
+        gg = ac.get_gsds_from_csv()
+        gsds_filename = gg.get_record_from_csv(output_csv_filename)
+        #lis_simu = gg.record['simu_index'].values
+        #list_as = gg.record['a'].values
+        #list_phis = gg.record['phi'].values#phi = pi/(2*sqrt(3)*a^2),a^2=pi/(2*sqrt(3)*phi)
+        #list_a_hexs = np.sqrt(np.pi/(list_phis*2*np.sqrt(3)))
+        lcrs = gg.record['lcr'].values
+        pdata = ac.get_a_gsd_from_setup()
+        cnks = np.zeros((len(gsds_filename),))
+        for i in range(len(gsds_filename)):
+            isExists=os.path.exists(gsds_filename[i])
+            if isExists:
+                file_size_b = os.path.getsize(gsds_filename[i])
+                file_size_kb = file_size_b/1024
+                if file_size_kb>1000:
+                    pdata.get_gsd_data_from_filename(gsds_filename[i])
+                    gdata = ac.get_data_from_a_gsd_frame_with_traps(pdata.gsd_data[-1])#get_data_from_a_gsd_frame_with_traps(pdata.gsd_data[-1])
+                    cnk = gdata.get_cn_k_from_a_gsd_frame(tune_dis=3*lcrs[i],k=coord_num_k)#
+                    cnks[i] = cnk
+                else:
+                    cnks[i] = -1    
+            else:
+                cnks[i] = -1
+        col_cnk = 'cn'+str(int(coord_num_k))
+        gg.record[col_cnk] = cnks
+        #gg.record['a_hex'] = list_a_hexs
+        #r1 = np.exp(-0.25)
+        #gg.record['u_yukawa_r1'] =  gg.record['u_yukawa'].values*r1
+        gg.record['U_eq'] =  gg.record['trap_gauss_epsilon'].values*0.86466#*0.99613
+        import pandas as pd
+        list_col = gg.record.columns.values[1:]#to strip 'unnamed:0' column which contains [1,2,3...]
+        pd.DataFrame.to_csv(gg.record[list_col],output_csv_filename)
+
+    def get_cnks_from_csv_dipole_core(self,coord_num_k,output_csv_filename):
+        R"""
+        parameter:
+            cn_k:(int) the k to calculate cn_k
+        example:
+            import symmetry_transformation_v4_3.list_code_analysis as lca
+            asg = lca.analyze_a_series_of_gsd_file()
+            asg.get_cn5s_from_csv_files()
+            #["simu_index","seed","a","phi","u_dipole","temperature","type_n"]
+        """
+        import symmetry_transformation_v4_3.analysis_controller as ac
+        gg = ac.get_gsds_from_csv()
+        gsds_filename = gg.get_record_from_csv(output_csv_filename)
+        #lis_simu = gg.record['simu_index'].values
+        #list_as = gg.record['a'].values
+        #list_phis = gg.record['phi'].values#phi = pi/(2*sqrt(3)*a^2),a^2=pi/(2*sqrt(3)*phi)
+        #list_a_hexs = np.sqrt(np.pi/(list_phis*2*np.sqrt(3)))
+        lcrs = gg.record['lcr'].values
+        pdata = ac.get_a_gsd_from_setup()
+        cnks = np.zeros((len(gsds_filename),))
+        for i in range(len(gsds_filename)):
+            isExists=os.path.exists(gsds_filename[i])
+            if isExists:
+                file_size_b = os.path.getsize(gsds_filename[i])
+                file_size_kb = file_size_b/1024
+                if file_size_kb>1000:
+                    pdata.get_gsd_data_from_filename(gsds_filename[i])
+                    gdata = ac.get_data_from_a_gsd_frame_with_traps(pdata.gsd_data[-1])#get_data_from_a_gsd_frame_with_traps(pdata.gsd_data[-1])
+                    cnk = gdata.get_cn_k_from_a_gsd_frame(tune_dis=3*lcrs[i],k=coord_num_k)#
+                    cnks[i] = cnk
+                else:
+                    cnks[i] = -1    
+            else:
+                cnks[i] = -1
+        col_cnk = 'cn'+str(int(coord_num_k))
+        gg.record[col_cnk] = cnks
+        #gg.record['a_hex'] = list_a_hexs
+        #r1 = np.exp(-0.25)
+        #gg.record['u_yukawa_r1'] =  gg.record['u_yukawa'].values*r1
+        gg.record['U_eq'] =  gg.record['trap_gauss_epsilon'].values*0.86466#*0.99613
+        import pandas as pd
+        list_col = gg.record.columns.values[1:]#to strip 'unnamed:0' column which contains [1,2,3...]
+        pd.DataFrame.to_csv(gg.record[list_col],output_csv_filename)
+
+    def extract_data_from_csv_u_dipole_phi_cn6(self,input_csv_filename,output_csv_filename):
+        R"""
+        import symmetry_transformation_v4_3.list_code_analysis as lca
+        agf = lca.analyze_a_series_of_gsd_file()
+        agp = agf.extract_data_from_csv(output_file_csv,"wca_dipole_"+str(int(index1))+"_p.csv")
+        """
+        import pandas as pd
+        record = pd.read_csv(input_csv_filename)
+        record_seed0 = record[record['seed']==0]
+        sub_record = record_seed0[['u_dipole','phi','cn6']]
+        pd.DataFrame.to_csv(sub_record,output_csv_filename)
+    
+    def extract_data_from_csv_u_yukawa_r1_phi_cn6(self,input_csv_filename,output_csv_filename):
+        R"""
+        import symmetry_transformation_v4_3.list_code_analysis as lca
+        agf = lca.analyze_a_series_of_gsd_file()
+        agp = agf.extract_data_from_csv(output_file_csv,"wca_dipole_"+str(int(index1))+"_p.csv")
+        """
+        import pandas as pd
+        record = pd.read_csv(input_csv_filename)
+        record_seed0 = record[record['seed']==0]
+        sub_record = record_seed0[['u_yukawa_r1','phi','cn6']]
+        pd.DataFrame.to_csv(sub_record,output_csv_filename)
+    
+    def extract_data_from_csv_u_yukawa_r1_U_eq_cnk(self,input_csv_filename,output_csv_filename,coord_num_k):
+        R"""
+        import symmetry_transformation_v4_3.list_code_analysis as lca
+        agf = lca.analyze_a_series_of_gsd_file()
+        agp = agf.extract_data_from_csv(output_file_csv,"wca_dipole_"+str(int(index1))+"_p.csv")
+        """
+        import pandas as pd
+        record = pd.read_csv(input_csv_filename)
+        record_seed0 = record[record['seed']==0]
+        sub_record = record_seed0[['u_yukawa_r1','U_eq','cn'+str(coord_num_k)]]
+        pd.DataFrame.to_csv(sub_record,output_csv_filename)
+    
+    def get_grs_from_csv_type_n_part(self,input_csv_filename):
+        import symmetry_transformation_v4_3.analysis_controller as ac
+        gg = ac.get_gsds_from_csv()
+        gsds_filename = gg.get_record_from_csv(input_csv_filename)
+        lis_simu = gg.record['simu_index'].values
+        list_seeds = gg.record['seed'].values
+        list_as = gg.record['a'].values
+        list_phis = gg.record['phi'].values#phi = pi/(2*sqrt(3)*a^2),a^2=pi/(2*sqrt(3)*phi)
+        list_a_hexs = gg.record['a_hex'].values
+        #lcrs = gg.record['lcr'].values
+        pdata = ac.get_a_gsd_from_setup()
+        for i in range(len(gsds_filename)):
+            if (list_seeds[i]==0) and (lis_simu[i]>=7753):
+                pdata.get_gsd_data_from_filename(gsds_filename[i])
+                gdata = ac.get_data_from_a_gsd_frame(pdata.gsd_data[-1])#get_data_from_a_gsd_frame_with_traps(pdata.gsd_data[-1])
+                gdata.get_grs_from_a_gsd_frame(list_a_hexs[i],str(lis_simu[i])+"_"+str(list_a_hexs[i])+".png",list_a_hexs[i])
+
+   
+    def get_cnks_from_csv_type_n_part_wca_yukawa_depin(self,coord_num_k,output_file_csv):
         R"""
         parameter:
             cn_k:(int) the k to calculate cn_k
@@ -288,110 +522,41 @@ class analyze_a_series_of_gsd_file:
         lcrs = gg.record['lcr'].values
         pdata = ac.get_a_gsd_from_setup()
         cnks = np.zeros((len(gsds_filename),))
+        cn6s = np.zeros((len(gsds_filename),))
         for i in range(len(gsds_filename)):
             isExists=os.path.exists(gsds_filename[i])
             if isExists:
+                #analyze gsd file only which have been written completely 
                 file_size_b = os.path.getsize(gsds_filename[i])
                 file_size_kb = file_size_b/1024
                 if file_size_kb>1000:
                     pdata.get_gsd_data_from_filename(gsds_filename[i])
                     gdata = ac.get_data_from_a_gsd_frame_with_traps(pdata.gsd_data[-1])
-                    cnk = gdata.get_cn_k_from_a_gsd_frame(tune_dis=3*lcrs[i],k=coord_num_k)
-                    cnks[i] = cnk
+                    cnk = gdata.get_cn_k_from_a_gsd_frame(tune_dis=3*lcrs[i])#,k=coord_num_k
+                    cnks[i] = cnk[coord_num_k]
+                    cn6s[i] = cnk[6]
                 else:
-                    cnks[i] = -1    
+                    #print(gsds_filename[i])
+                    #print(file_size_kb)
+                    cnks[i] = -1   
+                    cn6s[i] = -1
             else:
                 cnks[i] = -1
+                cn6s[i] = -1
         col_cnk = 'cn'+str(int(coord_num_k))
         gg.record[col_cnk] = cnks
-        gg.record['U_eq'] =  gg.record['trap_gauss_epsilon'].values*0.99613
+        gg.record['cn6'] = cn6s
+        gg.record['U_eq'] =  gg.record['gauss_epsilon'].values*(-0.99613)
+        r1 = np.exp(-0.25)
+        gg.record['u_yukawa_r1'] =  gg.record['u_yukawa'].values*r1
         import pandas as pd
         list_col = gg.record.columns.values[1:]#to strip 'unnamed:0' column which contains [1,2,3...]
         pd.DataFrame.to_csv(gg.record[list_col],output_file_csv)
-    
-    def get_cnks_from_csv_type_n_part_wca_yukawa_depin(self,coord_num_k,output_file_csv):
-        R"""
-        parameter:
-            cn_k:(int) the k to calculate cn_k
-        example:
-            import symmetry_transformation_v4_3.list_code_analysis as lca
-            asg = lca.analyze_a_series_of_gsd_file()
-            asg.get_cn5s_from_csv_files()
-        """
-        import symmetry_transformation_v4_3.analysis_controller as ac
-        gg = ac.get_gsds_from_csv()
-        gsds_filename = gg.get_record_from_csv(output_file_csv)
-        lis_simu = gg.record['simu_index'].values
-        lcrs = gg.record['a'].values
-        pdata = ac.get_a_gsd_from_setup()
-        cnks = np.zeros((len(gsds_filename),))
-        for i in range(len(gsds_filename)):
-            isExists=os.path.exists(gsds_filename[i])
-            if isExists:
-                file_size_b = os.path.getsize(gsds_filename[i])
-                file_size_kb = file_size_b/1024
-                if file_size_kb>1000:
-                    pdata.get_gsd_data_from_filename(gsds_filename[i])
-                    gdata = ac.get_data_from_a_gsd_frame_with_traps(pdata.gsd_data[-1])
-                    cnk = gdata.get_cn_k_from_a_gsd_frame(tune_dis=lcrs[i],k=coord_num_k)#3*
-                    cnks[i] = cnk
-                else:
-                    print(gsds_filename[i])
-                    print(file_size_kb)
-                    cnks[i] = -1    
-            else:
-                cnks[i] = -1
-        col_cnk = 'cn'+str(int(coord_num_k))
-        gg.record[col_cnk] = cnks
-        gg.record['U_eq'] =  gg.record['gauss_epsilon'].values*0.99613
-        import pandas as pd
-        list_col = gg.record.columns.values[1:]#to strip 'unnamed:0' column which contains [1,2,3...]
-        pd.DataFrame.to_csv(gg.record[list_col],output_file_csv)
-
-    def get_cnks_from_csv_type_n_part(self):
-        R"""
-        import symmetry_transformation_v4_3.list_code_analysis as lca
-        asg = lca.analyze_a_series_of_gsd_file()
-        asg.get_cnks_from_csv_type_n_part()
-        """
-        type_ns = [3,72,8,10,11]
-        index1s = [7333,7333+70,7333+70*2,7333+70*3,7333+70*4]
-        for i in range(5):
-            type_n = type_ns[i]
-            index1 = index1s[i]
-            prefix_write = "/home/lixt/home/media/remote/32E2D4CCE2D49607/file_lxt/record_results_v430/wca_yukawa/"
-            output_file_csv = prefix_write + "wca_yukawa_depin_from_type"+str(type_n)+"_"+str(int(index1))+".csv"
-            cnk_to_get = self.get_coordination_number_k_by_given_type_n(type_n)
-            self.get_cnks_from_csv_type_n_part_wca_yukawa_depin(cnk_to_get,output_file_csv)
     
     def get_coordination_number_k_by_given_type_n(self,type_n):
-        if type_n==1:
-            coord_num_k=6
-        elif type_n==2:
-            coord_num_k=4
-        elif type_n==3:
-            coord_num_k=3
-        elif type_n==4:
-            coord_num_k=3
-        elif type_n==5:
-            coord_num_k=3
-        elif type_n==6:
-            coord_num_k=3
-        elif type_n==7:
-            coord_num_k=4
-        elif type_n==8:
-            coord_num_k=4
-        elif type_n==9:
-            coord_num_k=5
-        elif type_n==10:
-            coord_num_k=5
-        elif type_n==11:
-            coord_num_k=5
-        elif type_n==62:
-            coord_num_k=3
-        elif type_n==72:
-            coord_num_k=4
-
+        import workflow_analysis as wa
+        at = wa.archimedean_tilings()
+        coord_num_k = at.get_coordination_number_k_for_type_n(type_n)
         return coord_num_k
         
     def get_cn5s_from_csv_files_type_11_part(self):
@@ -419,7 +584,7 @@ class analyze_a_series_of_gsd_file:
             else:
                 cn5s[i] = -1
         gg.record['cn5'] = cn5s
-        gg.record['U_eq'] =  gg.record['trap_gauss_epsilon'].values*0.99613
+        gg.record['U_eq'] =  gg.record['trap_gauss_epsilon'].values*0.86466#*0.99613
         import pandas as pd
         list_col = gg.record.columns.values[1:]#to strip 'unnamed:0' column which contains [1,2,3...]
         pd.DataFrame.to_csv(gg.record[list_col],output_file_csv)
@@ -447,7 +612,7 @@ class analyze_a_series_of_gsd_file:
             cn4s[i] = cn4
 
         gg.record['cn4'] = cn4s
-        gg.record['U_eq'] =  gg.record['trap_gauss_epsilon'].values*0.99613
+        gg.record['U_eq'] =  gg.record['trap_gauss_epsilon'].values*0.86466#*0.99613
         import pandas as pd
         list_col = gg.record.columns.values[1:]#to strip 'unnamed:0' column which contains [1,2,3...]
         pd.DataFrame.to_csv(gg.record[list_col],output_file_csv)
@@ -478,7 +643,7 @@ class analyze_a_series_of_gsd_file:
             else:
                 cn4s[i] = -1
         gg.record['cn4'] = cn4s
-        gg.record['U_eq'] =  gg.record['trap_gauss_epsilon'].values*0.99613
+        gg.record['U_eq'] =  gg.record['trap_gauss_epsilon'].values*0.86466#*0.99613
         import pandas as pd
         list_col = gg.record.columns.values[1:]#to strip 'unnamed:0' column which contains [1,2,3...]
         pd.DataFrame.to_csv(gg.record[list_col],output_file_csv)
@@ -509,7 +674,7 @@ class analyze_a_series_of_gsd_file:
             else:
                 cn4s[i] = -1
         gg.record['cn4'] = cn4s
-        gg.record['U_eq'] =  gg.record['trap_gauss_epsilon'].values*0.99613
+        gg.record['U_eq'] =  gg.record['trap_gauss_epsilon'].values*0.86466#*0.99613
         import pandas as pd
         list_col = gg.record.columns.values[1:]#to strip 'unnamed:0' column which contains [1,2,3...]
         pd.DataFrame.to_csv(gg.record[list_col],output_file_csv)
@@ -538,7 +703,7 @@ class analyze_a_series_of_gsd_file:
             else:
                 cn3s[i] = -1
         gg.record['cn3'] = cn3s
-        gg.record['U_eq'] =  gg.record['trap_gauss_epsilon'].values*0.99613
+        gg.record['U_eq'] =  gg.record['trap_gauss_epsilon'].values*0.86466#*0.99613
         import pandas as pd
         list_col = gg.record.columns.values[1:]#to strip 'unnamed:0' column which contains [1,2,3...]
         pd.DataFrame.to_csv(gg.record[list_col],output_file_csv)
@@ -601,7 +766,7 @@ class analyze_a_series_of_gsd_file:
             else:
                 cn3s[i] = -1
         gg.record['cn3'] = cn3s
-        gg.record['U_eq'] =  gg.record['trap_gauss_epsilon'].values*0.99613
+        gg.record['U_eq'] =  gg.record['trap_gauss_epsilon'].values*0.86466#*0.99613
         import pandas as pd
         list_col = gg.record.columns.values[1:]#to strip 'unnamed:0' column which contains [1,2,3...]
         pd.DataFrame.to_csv(gg.record[list_col],output_file_csv)
@@ -801,41 +966,44 @@ class analyze_a_series_of_gsd_file:
         """
         import symmetry_transformation_v4_3.analysis_controller as ac
         #prefix_write = '/media/remote/32E2D4CCE2D49607/file_lxt/hoomd-examples_0/'
-        index0 = 7223#6302
+        index0 = 3#10362#7223#6302
         for i in range(10):
             index1 = index0+i#658#
             #gsd_file = prefix_write + 'trajectory_auto'+str(int(index1))+'_9.gsd'
             ggsd = ac.get_a_gsd_from_setup()
-            ggsd.set_file_parameters(index1,9)
+            ggsd.set_file_parameters(index1,7)
             ggsd.get_gsd_data_from_file()
             frame = ggsd.gsd_data[-1]
             
             gf = ac.get_data_from_a_gsd_frame_with_traps(frame)#error:missing last frame
-            if i<5:
+            """if i<5:
                 gf.get_bonds_png_from_a_gsd_frame('depin_from_type_'+str(6)+'_part_special_'+str(index1)+'.png')#4+i
             else:
                 gf.get_bonds_png_from_a_gsd_frame('depin_from_type_'+str(7)+'_part_special_'+str(index1)+'.png')#4+i
-            del gf
-    
-    def get_bonds_from_simu_indices_list_type_n(self):
-        R"""
+            del gf"""
+            gf.get_bonds_png_from_a_gsd_frame(str(index1)+'_0_final.png')
             
+    def get_bonds_from_simu_indices_list_type_n(self, list_index, list_seed=9, list_lcra=2.4):
+        R"""
+
         """
         import symmetry_transformation_v4_3.analysis_controller as ac
-        list_index = [7001,7052,7112,7137,7141]
-        for i in range(5):
+        # list_index = [7001, 7052, 7112, 7137, 7141]
+        for i in range(len(list_index)):  # range(5):
             index1 = list_index[i]
-            #gsd_file = prefix_write + 'trajectory_auto'+str(int(index1))+'_9.gsd'
+            seed1 = list_seed[i]
+            lcra1 = list_lcra[i]
+            # gsd_file = prefix_write + 'trajectory_auto'+str(int(index1))+'_9.gsd'
             ggsd = ac.get_a_gsd_from_setup()
-            ggsd.set_file_parameters(index1,9)
+            ggsd.set_file_parameters(index1, seed1)
             ggsd.get_gsd_data_from_file()
             frame = ggsd.gsd_data[-1]
-            
-            gf = ac.get_data_from_a_gsd_frame_with_traps(frame)#error:missing last frame
-            gf.get_bonds_png_from_a_gsd_frame(str(index1)+'_9.png')
+
+            gf = ac.get_data_from_a_gsd_frame_with_traps(frame)  # error:missing last frame
+            gf.get_bonds_png_from_a_gsd_frame('bond_'+str(index1)+'_'+str(seed1)+'.png', lcra1)
             del gf
     
-    def get_bonds_from_simu_indices_type_n_from_csv(self):
+    def get_bonds_from_simu_indices_type_n_from_csv(self,filename_csv):
         R"""
             column = ['simu_index','seed','lcr','trap_gauss_epsilon','temperature','type_n']
             manually set bond_length_max = 3*lcr0*1.2, set 1.2 is to avoid 1,414 and 1.73 bond.
@@ -846,8 +1014,8 @@ class analyze_a_series_of_gsd_file:
         """
         import pandas as pd
         import symmetry_transformation_v4_3.analysis_controller as ac
-        prefix_csv = '/media/remote/32E2D4CCE2D49607/file_lxt/record_results_v430/type_n_depin/'#type_n_depin/
-        filename_csv = prefix_csv + 'depin_type_n_from_type_n_part_klt_2m_gauss_7163.csv'
+        #prefix_csv = '/media/remote/32E2D4CCE2D49607/file_lxt/record_results_v430/type_n_depin/'#type_n_depin/
+        #filename_csv = prefix_csv + 'depin_type_n_from_type_n_part_klt_2m_gauss_7163.csv'
         #'pin_hex_to_type_n_part_klt_2m_gauss_6613.csv'#
         #depin_type_n_from_type_n_part_klt_2m_gauss_7163,6053,6293 
         record_csv = pd.read_csv(filename_csv)
@@ -867,6 +1035,32 @@ class analyze_a_series_of_gsd_file:
                 #gf.get_given_bonds_png_from_a_gsd_frame('pin_hex_to_type_type_'+str(type_n)+'_part_'+str(-int(list_trap_gauss_epsilon[i]))+'_.png',3*lcr0*1.2)
                 gf.get_given_bonds_png_from_a_gsd_frame('depin_from_type_'+str(type_n)+'_part_'+str(-int(list_trap_gauss_epsilon[i]))+'_.png',3*lcr0*1.2)
                 del gf
+    
+    def get_bonds_from_simu_indices_type_n_mix_from_csv(self,filename_csv):
+        R"""
+            column = ['simu_index','seed','lcr','trap_gauss_epsilon','temperature','type_n']
+            manually set bond_length_max = 3*lcr0*1.2, set 1.2 is to avoid 1,414 and 1.73 bond.
+        exp:
+            import symmetry_transformation_v4_3.list_code_analysis as lca
+            agf = lca.analyze_a_series_of_gsd_file()
+            agp = agf.get_bonds_from_simu_indices_type_n_from_csv()
+        """
+        import pandas as pd
+        import symmetry_transformation_v4_3.analysis_controller as ac
+        record_csv = pd.read_csv(filename_csv)
+        list_type_n = record_csv['type_n'].values
+        list_seed = record_csv['seed'].values
+        list_index = record_csv['simu_index'].values
+        list_lcr0 = record_csv['lcr'].values
+        list_trap_gauss_epsilon = record_csv['trap_gauss_epsilon'].values
+        ggsd = ac.get_a_gsd_from_setup()
+        for i in range(len(list_index)):
+            ggsd.set_file_parameters(list_index[i],list_seed[i])
+            frame = ggsd.gsd_data[-1]
+            gf = ac.get_data_from_a_gsd_frame_with_traps(frame)#error:missing last frame
+            gf.get_given_bonds_png_from_a_gsd_frame('pin_hex_to_type_type_'+str(list_type_n[i])+'_part_'+str(-int(list_trap_gauss_epsilon[i]))+'_.png',3*list_lcr0[i]*1.3)
+            #gf.get_given_bonds_png_from_a_gsd_frame('depin_from_type_'+str(list_type_n[i])+'_part_'+str(-int(list_trap_gauss_epsilon[i]))+'_.png',3*list_lcr0[i]*1.2)
+            del gf
 
     def get_bonds_from_simu_indices_type_11_from_csv(self):
         R"""
@@ -1001,13 +1195,12 @@ class analyze_a_csv_file:
     def __init__(self):
         pass
 
-    def pin(self):
+    def analyze_pin_node_20240213(self):
         R"""
         | simu_index | seed | lcr  | trap_gauss_epsilon | temperature | type_n | cnk | U_eq |
         """
-        """prefix_write = '/media/remote/32E2D4CCE2D49607/file_lxt/record_results_v430/type_n_pin/'
-        index1 = 513#[x]
-        output_file_csv = prefix_write + 'pin_hex_to_type_8_part_klt_2m_gauss_'+str(int(index1))+'.csv'#[x]
+        prefix_write = "/home/lixt/home/media/remote/32E2D4CCE2D49607/file_lxt/record_results_v430/type_n_pin/"#
+        output_file_csv = prefix_write + "pin_hex_to_type_3_klt_2m_gauss_10333_10572.csv"
         import getDataAndDiagramCsv as gddc
         csvd = gddc.csv_data_processor(output_file_csv)
         csvd.select_single_seed(0)
@@ -1015,23 +1208,13 @@ class analyze_a_csv_file:
         us = csvd.sub_record['U_eq'].values
         cn4s = csvd.sub_record['cn4s'].values
         diagramp = gddc.diagram_processor()
-        diagramp.draw_diagram_scatter_oop()"""
+        diagramp.draw_diagram_scatter_oop()
         pass
 
 def check_lcr():
     import workflow_analysis as wa
-    import numpy as np
-    record_lcr0 = np.zeros((11,))
-    for i in range(11):
-        at = wa.archimedean_tilings()
-        at.generate_type_n(i+1)
-        cross_lattice = np.cross(at.a1,at.a2)
-        area_per_particle = cross_lattice[2]/len(at.position)
-        area_hex = np.sqrt(3)/2.0
-        lcr0 = np.sqrt(area_hex/area_per_particle)
-        record_lcr0[i] = lcr0
-        #print('type'+str(i+1)+': '+str(np.round(lcr0,4) ))
-        del at
+    at = wa.archimedean_tilings()
+    record_lcr0 = at.get_type_n_lcr0()
     return record_lcr0
         
 def show_type_3_11_dual():

@@ -408,6 +408,7 @@ class processor_py_file:
     def get_params_for_gen_core_activator(self):
         self.simu_index = 0
         self.seed = 0
+        self.width = 1
         self.kT = 0
         self.u_yukawa = 0
         self.u_dipole = 0
@@ -423,13 +424,14 @@ class processor_py_file:
         f.write("import simulation_core as sco\n")
         f.write("sim = sco.simulation_core_traps(%d,%d)\n" %(self.simu_index,self.seed) )
         f.write("sim.mode = \"%s\"\n"%self.mode)
+        f.write("sim.width =%f\n"%self.width)
         f.write("sim.yukawa_epsilon =%f\n"%self.u_yukawa)
-        f.write("sim.gauss_epsilon =%f\n"%self.gauss_epsilon)
+        f.write("sim.gauss_epsilon =%f\n"%self.gauss_epsilon)#which is not used before!!index3-242_789 should be repeated
         f.write("sim.kT = %f\n"%self.kT)
         f.write("sim.input_file_gsd = \"%s\"\n"%self.init_gsd_filename)
         f.write("sim.snap_period = %d\n"%self.snap_period)
         f.write("sim.total_steps = %d\n"%self.total_steps)
-        f.write("sim.operate_simulation_langevin_wca_yukawa()\n")
+        f.write("sim.operate_simulation_langevin_yukawa_traps()\n")
         f.write("print(\"simu_index:\"+str(%d)+\"_\"+str(%d)+\" finish\")\n"%(self.simu_index,self.seed))
         f.close()
     
@@ -478,6 +480,29 @@ class processor_py_file:
         f.write("ct.getTimeCost(tm1,tm2)\n")
         f.close()
 
+    def gen_core_activator_py_wca_yukawa(self,prefix):#unfinished
+        f = open(prefix+"activate_core.py","w")
+        #calculate time cost
+        f.write("import time\n")
+        f.write("import computeTime as ct\n")
+        f.write("tm1=time.localtime(time.time())\n")
+        #main
+        f.write("import simulation_core as sco\n")
+        f.write("sim = sco.simulation_core(%d,%d)\n" %(self.simu_index,self.seed) )
+        f.write("sim.seed = %d\n" %self.seed)
+        f.write("sim.mode = \"%s\"\n"%self.mode)
+        f.write("sim.yukawa_epsilon = %f\n"%self.u_yukawa)
+        f.write("sim.kT = %f\n"%self.kT)
+        f.write("sim.snap_period = %d\n"%self.snap_period)
+        f.write("sim.total_steps = %d\n"%self.total_steps)
+        f.write("sim.input_file_gsd = \"%s\"\n"%self.init_gsd_filename)
+        f.write("sim.operate_simulation_langevin_wca_yukawa()\n")
+        f.write("print(\"simu_index:\"+str(%d)+\"_\"+str(%d)+\" finish\")\n"%(self.simu_index,self.seed))
+        #calculate time cost
+        f.write("tm2=time.localtime(time.time())\n")
+        f.write("ct.getTimeCost(tm1,tm2)\n")
+        f.close()
+
     def gen_core_activator_py_wca_dipole(self,prefix):
         f = open(prefix+"activate_core.py","w")
         #calculate time cost
@@ -510,7 +535,7 @@ class processor_sh_file:
         self.nodelist = None#"node1"..."node4"
         self.job_name = "lxt_gpu"
         self.n_tasks = 1
-        self.mode = "cpu"
+        self.mode = "cpu"#"gpu","gpu-limit"
         self.py_file = "activate_core.py"
        
     def gen_run_sh(self,prefix):
